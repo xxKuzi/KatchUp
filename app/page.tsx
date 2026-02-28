@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <Navbar />
-      <main className="flex min-h-screen w-full flex-col items-center justify-center py-32 px-16 bg-white dark:bg-black">
+      <main className="flex min-h-screen w-full flex-col items-center justify-center pb-32 px-16 bg-white dark:bg-black">
         <h1 className="text-3xl tracking-tight text-left w-full text-gray-900 dark:text-white sm:text-5xl">
           <span className="font-bold text-7xl">Hello</span>, welcome to{" "}
           <span className="font-bold text-7xxl">KatchUp</span>...

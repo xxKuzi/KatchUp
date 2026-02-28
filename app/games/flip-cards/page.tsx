@@ -1,6 +1,7 @@
 "use client";
 import React, { Component, useState } from "react";
 import FlipCard from "../../_components/FlipCard";
+import Navbar from "@/app/_components/Navbar";
 
 const GamePage: React.FC = () => {
   let foreign = "Hello";
@@ -13,7 +14,7 @@ const GamePage: React.FC = () => {
 
   return (
     <div className="flex-col flex gap-4 items-center">
-      <h1 className="text-3xl font-bold pt-8">Lets learn!</h1>
+      <Navbar />
       <FlipCard
         foreign={foreign}
         native={native}
