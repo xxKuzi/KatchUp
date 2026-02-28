@@ -1,7 +1,6 @@
 "use client";
 import React, { Component, useState } from "react";
-import Navbar from "../_components/GameNavbar";
-import FlipCard from "../_components/FlipCard";
+import FlipCard from "../../_components/FlipCard";
 
 const GamePage: React.FC = () => {
   let foreign = "Hello";
@@ -14,7 +13,6 @@ const GamePage: React.FC = () => {
 
   return (
     <div className="flex-col flex gap-4 items-center">
-      <Navbar />
       <h1 className="text-3xl font-bold pt-8">Lets learn!</h1>
       <FlipCard
         foreign={foreign}

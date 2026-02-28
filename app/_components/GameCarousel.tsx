@@ -6,7 +6,7 @@ function GameCarousel() {
   const cards = [
     {
       name: "Flip Cards",
-      url: "flip-cards",
+      url: "games/flip-cards",
       img: "flip_cards.png",
       color: "yellow",
       description: "hello",
@@ -14,8 +14,17 @@ function GameCarousel() {
       featureColor: "green",
     },
     {
+      name: "One of Three",
+      url: "games/one-of-three",
+      img: "one_of_three.png",
+      color: "red",
+      description: "hello",
+      feature: "popular",
+      featureColor: "blue",
+    },
+    {
       name: "Flip Cards",
-      url: "flip-cards",
+      url: "games/flip-cards",
       img: "flip_cards.png",
       color: "yellow",
       description: "hello",
@@ -23,45 +32,18 @@ function GameCarousel() {
       featureColor: "green",
     },
     {
+      name: "One of Three",
+      url: "games/one-of-three",
+      img: "one_of_three.png",
+      color: "red",
+      description: "hello",
+      feature: "popular",
+      featureColor: "blue",
+    },
+    {
       name: "Flip Cards",
-      url: "flip-cards",
+      url: "games/flip-cards",
       img: "flip_cards.png",
-      color: "yellow",
-      description: "hello",
-      feature: "favorite",
-      featureColor: "green",
-    },
-    {
-      name: "Flip Cards",
-      url: "flip-cards",
-      img: "guess_match.png",
-      color: "yellow",
-      description: "hello",
-      feature: "favorite",
-      featureColor: "green",
-    },
-    {
-      name: "Flip Cards",
-      url: "flip-cards",
-      img: "guess_match.png",
-      color: "yellow",
-      description: "hello",
-      feature: "favorite",
-      featureColor: "green",
-    },
-    {
-      name: "Flip Cards",
-      url: "flip-cards",
-      img: "guess_match.png",
-      color: "yellow",
-      description: "hello",
-      feature: "favorite",
-      featureColor: "green",
-    },
-    {
-      name: "Flip Cards",
-      url: "flip-cards",
-      img: "guess_match.png",
       color: "yellow",
       description: "hello",
       feature: "favorite",
@@ -75,49 +57,47 @@ function GameCarousel() {
   }, []);
 
   return (
-    <div className="relative mt-16 h-[500px] w-full">
-      {currentCardIndex > 0 && (
-        <button
-          className="absolute bottom-0 left-10 z-10 text-4xl"
-          onClick={() => setCurrentCardIndex((prev) => prev - 1)}
-        >
-          {"<<<"}
-        </button>
-      )}
-      {cards.length > currentCardIndex + 4 && (
-        <button
-          className="absolute bottom-0 right-10 z-10 text-4xl"
-          onClick={() => setCurrentCardIndex((prev) => prev + 1)}
-        >
-          {">>>"}
-        </button>
-      )}
-
-      <div
-        style={{
-          transform: `translateX(${(cards.length - 4) * 160 + -currentCardIndex * 320}px)`,
-          transition: "transform 0.5s ease",
-        }}
-        className="flex items-center justify-center gap-10"
+    <div className="relative h-[450px] w-full">
+      <button
+        className="absolute -bottom-16 px-3 py-2 bg-blue-600 border border-gray-400 transition duration-200 hover:border-white disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full right-30 z-10 text-xl"
+        onClick={() => setCurrentCardIndex((prev) => prev - 1)}
+        disabled={currentCardIndex === 0}
       >
-        {cards.map((card, index) => {
-          return (
-            <GameCard
-              key={index}
-              name={card.name}
-              url={card.url}
-              img={card.img}
-              color={card.color}
-              description={card.description}
-              feature={card.feature}
-              featureColor={card.featureColor}
-            />
-          );
-        })}
-      </div>
+        {"<"}
+      </button>
 
+      <button
+        className="absolute -bottom-16 px-3 py-2 bg-blue-600 border border-gray-400 transition duration-200 hover:border-white disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full right-17 z-10 text-xl"
+        onClick={() => setCurrentCardIndex((prev) => prev + 1)}
+        disabled={cards.length <= currentCardIndex + 4}
+      >
+        {">"}
+      </button>
+      <div className="relative width-[320*4+160*3] overflow-hidden">
+        <div
+          style={{
+            transform: `translateX(${(cards.length - 4) * 160 + -currentCardIndex * 320}px)`,
+            transition: "transform 0.5s ease",
+          }}
+          className="relative flex items-center justify-center gap-10"
+        >
+          {cards.map((card, index) => {
+            return (
+              <GameCard
+                key={index}
+                name={card.name}
+                url={card.url}
+                img={card.img}
+                color={card.color}
+                description={card.description}
+                feature={card.feature}
+                featureColor={card.featureColor}
+              />
+            );
+          })}
+        </div>
+      </div>
       <div className="flex items-center justify-center gap-10"></div>
-      <button>{"asdfasd>"}</button>
     </div>
   );
 }
