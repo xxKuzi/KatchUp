@@ -19,9 +19,26 @@
   }
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  margin-left: calc(100vw - 100%);
+}
+
+/*MY CUSTOM CSS*/
+/*Moves the container from left to right */
+@keyframes marquee-lr {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+.animate-marquee-lr {
+  animation: marquee-lr 20s linear infinite;
 }
