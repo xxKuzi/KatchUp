@@ -3,7 +3,7 @@ import React, { Component, useState } from "react";
 import Navbar from "../../_components/Navbar";
 import FlipCard from "../../_components/FlipCard";
 
-const GamePage: React.FC = () => {
+const OneOfThreePage: React.FC = () => {
   let foreign = "Hello";
   let native = "Ahoj";
   let [isForeign, setIsForeign] = useState(true);
@@ -27,4 +27,4 @@ const GamePage: React.FC = () => {
   );
 };
 
-export default GamePage;
+export default OneOfThreePage;
