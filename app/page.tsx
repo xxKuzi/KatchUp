@@ -15,6 +15,10 @@ export default function Home() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 dark:bg-black">
       <Navbar />
       <main className="flex min-h-screen w-full flex-col items-center justify-center pb-32 px-16 bg-white dark:bg-black">
+        <h1 className="text-3xl tracking-tight text-left w-full text-gray-900 mb-16 mt-8 dark:text-white sm:text-5xl">
+          <span className="font-bold text-7xl">Hello</span>, welcome to{" "}
+          <span className="font-bold text-7xxl">KatchUp</span>...
+        </h1>
         <div>
           <Section>
             <h2 className="text-4xl font-bold text-blue-500">Learn fast</h2>

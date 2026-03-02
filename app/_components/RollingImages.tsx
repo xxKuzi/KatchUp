@@ -4,12 +4,18 @@ function RollingImages() {
   const images = [
     { url: "one_of_three.png", alt: "One of Three" },
     { url: "flip_cards.png", alt: "Flip Cards" },
-    { url: "wordle.png", alt: "Wordle" },
+    { url: "guess_match.png", alt: "Guess Match" },
+    { url: "one_of_three.png", alt: "One of Three" },
+    { url: "flip_cards.png", alt: "Flip Cards" },
+    { url: "guess_match.png", alt: "Guess Match" },
+    { url: "one_of_three.png", alt: "One of Three" },
+    { url: "flip_cards.png", alt: "Flip Cards" },
+    { url: "guess_match.png", alt: "Guess Match" },
   ];
 
   return (
     // 1. OUTER WRAPPER: Takes full width and hides anything that spills over
-    <div className="w-full overflow-hidden py-4">
+    <div className="w-screen overflow-hidden py-4">
       {/* 2. MOVING TRACK: This gets the animation and holds both sets of images */}
       <div className="flex w-max gap-4 animate-marquee-lr">
         {/* Set 1: The original images */}

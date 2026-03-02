@@ -40,5 +40,5 @@ body {
   }
 }
 .animate-marquee-lr {
-  animation: marquee-lr 20s linear infinite;
+  animation: marquee-lr 60s linear infinite;
 }
