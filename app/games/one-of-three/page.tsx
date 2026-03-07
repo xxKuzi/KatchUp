@@ -1,9 +1,9 @@
 "use client";
-import React, { Component, useState } from "react";
-import Navbar from "../../_components/Navbar";
+import { useState } from "react";
 import FlipCard from "../../_components/FlipCard";
+import GamePage from "../_components/GamePage";
 
-const OneOfThreePage: React.FC = () => {
+const OneOfThreePage = () => {
   let foreign = "Hello";
   let native = "Ahoj";
   let [isForeign, setIsForeign] = useState(true);
@@ -13,9 +13,11 @@ const OneOfThreePage: React.FC = () => {
   };
 
   return (
-    <div className="flex-col flex gap-4 items-center">
-      <Navbar />
-      <h1 className="text-3xl font-bold pt-8">Lets learn!</h1>
+    <GamePage
+      name="One of Three"
+      description="Choose the correct translation from three options and build quick recall."
+      bgImage="one_of_three.png"
+    >
       <FlipCard
         foreign={foreign}
         native={native}
@@ -23,7 +25,7 @@ const OneOfThreePage: React.FC = () => {
         flipCard={flipCard}
       />
       <button onClick={flipCard}>Show</button>
-    </div>
+    </GamePage>
   );
 };
 
