@@ -13,8 +13,9 @@ const GamePage: React.FC = () => {
   };
 
   return (
-    <div className="flex-col flex gap-4 items-center">
+    <div className="flex-col flex items-center">
       <Navbar />
+
       <FlipCard
         foreign={foreign}
         native={native}
