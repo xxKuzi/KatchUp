@@ -42,7 +42,7 @@ const GameCard = (props: GameCardProps) => {
 
   return (
     <button
-      className={`relative group overflow-hidden border-gray-400 transition duration-300 hover:border-white xl:min-w-[280px] xl:max-w-[280px] xl:min-h-[450px] border-2 rounded-lg flex flex-col items-center justify-end`}
+      className={`relative group overflow-hidden border-gray-200 dark:border-gray-400 transition duration-300 hover:border-gray-700 dark:hover:border-white xl:min-w-[280px] xl:max-w-[280px] xl:min-h-[450px] border-2 rounded-lg flex flex-col items-center justify-end`}
       onClick={() => router.push(url || "")}
     >
       <div
@@ -58,8 +58,10 @@ const GameCard = (props: GameCardProps) => {
       <div
         className={`relative bg-gradient-to-t ${gradientColor} to-blue-500/[0%] w-full h-[200px] rounded-md p-4 flex-col flex items-center justify-center`}
       >
-        <h2 className="absolute bottom-8 text-4xl font-bold">{name}</h2>
-        <p className="absolute bottom-2">{description}</p>
+        <h2 className="absolute dark:text-white text-white font- bottom-8 text-4xl font-bold">
+          {name}
+        </h2>
+        <p className="absolute dark:text-white bottom-2">{description}</p>
       </div>
     </button>
   );

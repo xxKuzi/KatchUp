@@ -59,7 +59,7 @@ function GameCarousel() {
   return (
     <div className="relative h-[450px] w-full">
       <button
-        className="absolute -bottom-16 px-3 py-2 bg-blue-600 border border-gray-400 transition duration-200 hover:border-white disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full right-30 z-10 text-xl"
+        className="absolute bottom-[194px] px-4 py-4  hover:bg-blue-600/90 bg-blue-600/70 border border-gray-400 transition duration-200 text-white hover:border-white disabled:bg-gray-300 dark:disabled:bg-gray-700 dark:disabled:border-gray-700 dark:hover:disabled:border-gray-700 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full  left-10 z-10 text-xl"
         onClick={() => setCurrentCardIndex((prev) => prev - 1)}
         disabled={currentCardIndex === 0}
       >
@@ -67,13 +67,13 @@ function GameCarousel() {
       </button>
 
       <button
-        className="absolute -bottom-16 px-3 py-2 bg-blue-600 border border-gray-400 transition duration-200 hover:border-white disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full right-17 z-10 text-xl"
+        className="absolute bottom-[194px] px-4 py-4 hover:bg-blue-600/90 bg-blue-600/70  border border-gray-400 transition duration-200 text-white hover:border-white disabled:bg-gray-300 dark:disabled:bg-gray-700 dark:disabled:border-gray-700 dark:hover:disabled:border-gray-700 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full right-10 z-10 text-xl"
         onClick={() => setCurrentCardIndex((prev) => prev + 1)}
         disabled={cards.length <= currentCardIndex + 4}
       >
         {">"}
       </button>
-      <div className="relative width-[320*4+160*3] overflow-hidden">
+      <div className="relative width-[320*4+160*3-200] overflow-hidden">
         <div
           style={{
             transform: `translateX(${(cards.length - 4) * 160 + -currentCardIndex * 320}px)`,
