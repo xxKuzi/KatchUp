@@ -1,41 +1,54 @@
-import React, { use } from "react";
+"use client";
+import React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import ThemeToggle from "./ThemeToggle";
 
 function Navbar() {
   const router = useRouter();
   return (
-    <div className="relative mb-32 w-full flex items-center justify-center">
-      <div className="z-10 fixed top-0 bg-black flex justify-between items-center border-b p-2 mt-2 hover:border-white transition duration-200 border-white/60 sm:min-w-[600px] rounded-xl w-[40%] hover-b-2">
-        <div className="flex items-center justify-center">
+    <div className="relative mb-32 flex w-full items-center justify-center px-3">
+      <div className="fixed top-3 z-20 flex w-full max-w-5xl items-center justify-between rounded-xl border border-slate-300/70 bg-white/85 p-2 text-slate-700 shadow-md backdrop-blur transition hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-200 sm:top-2 sm:px-3">
+        <div className="flex items-center justify-center gap-0.5 sm:gap-1">
           <button
-            className="mb-1 mr-2 cursor-pointer text-white/80 hover:text-white"
+            className="mr-1 cursor-pointer rounded-md p-1 text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
             onClick={() => router.push("/")}
+            aria-label="Go home"
           >
-            <img src={"/katch_up_logo.jpeg"} className="h-10" />
+            <Image
+              src="/katch_up_logo.jpeg"
+              alt="KatchUp logo"
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-md object-cover"
+            />
           </button>
           <button
-            className="px-4 py-2 cursor-pointer text-white/80 hover:text-white transition duration-200 rounded-lg"
+            className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white sm:px-4"
             onClick={() => router.push("/games")}
           >
             Games
           </button>
           <button
-            className="px-4 py-2 cursor-pointer text-white/80 hover:text-white transition duration-200 rounded-lg"
+            className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white sm:px-4"
             onClick={() => router.push("/my-decks")}
           >
             My Decks
           </button>
           <button
-            className="px-4 py-2 cursor-pointer text-white/80 hover:text-white"
+            className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white sm:px-4"
             onClick={() => router.push("/leaderboard")}
           >
-            leaderboard {";)"}
+            Friends {";)"}
           </button>
         </div>
-        <p className="pr-4">
-          Health Bar <span className="text-green-300">OOOO</span>
-        </p>
+        <div className="flex items-center gap-2 pr-1 sm:gap-3 sm:pr-2">
+          <p className="hidden text-xs text-slate-600 dark:text-slate-300 md:block">
+            Health Bar{" "}
+            <span className="text-green-600 dark:text-green-300">OOOO</span>
+          </p>
+          <ThemeToggle />
+        </div>
       </div>
     </div>
   );

@@ -1,29 +1,36 @@
 import React, { useEffect, useState } from "react";
 
-// Updated to perfectly match your database schema
 interface TranslationItem {
   id: number;
-  english: string;
+  native: string;
   foreign: string;
+  foreignLanguage: string;
 }
+
+type StoredWordEntry = Partial<TranslationItem> & {
+  english?: string;
+  czech?: string;
+  language?: string;
+};
 
 function TranslationDisplay() {
   const [translations, setTranslations] = useState<TranslationItem[] | null>(
     null,
   );
 
-  // New state variables for handling edits
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{
-    english: string;
+    native: string;
     foreign: string;
+    foreignLanguage: string;
   }>({
-    english: "",
+    native: "",
     foreign: "",
+    foreignLanguage: "",
   });
 
-  useEffect(() => {
-    const storedData = localStorage.getItem("customTranslations");
+  function loadTranslations() {
+    const storedData = localStorage.getItem("wordDatabase");
 
     if (storedData) {
       try {
@@ -31,13 +38,16 @@ function TranslationDisplay() {
 
         const dataArray = Array.isArray(parsedData)
           ? parsedData
-          : Object.values(parsedData);
+          : Object.values(parsedData as Record<string, StoredWordEntry>);
 
-        const formattedData: TranslationItem[] = dataArray.map((item: any) => ({
-          id: Number(item.id),
-          english: item.english,
-          foreign: item.foreign || item.czech || "Unknown",
-        }));
+        const formattedData: TranslationItem[] = dataArray.map(
+          (item: StoredWordEntry) => ({
+            id: Number(item.id),
+            native: item.native || item.english || "",
+            foreign: item.foreign || item.czech || "",
+            foreignLanguage: item.foreignLanguage || item.language || "",
+          }),
+        );
 
         setTranslations(formattedData);
       } catch (error) {
@@ -47,14 +57,19 @@ function TranslationDisplay() {
         );
       }
     }
+  }
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      loadTranslations();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
-  // Helper to sync state changes back to localStorage
   const updateLocalStorage = (newData: TranslationItem[]) => {
-    localStorage.setItem("customTranslations", JSON.stringify(newData));
+    localStorage.setItem("wordDatabase", JSON.stringify(newData));
   };
-
-  // --- Actions ---
 
   const handleDelete = (id: number) => {
     if (!translations) return;
@@ -65,7 +80,11 @@ function TranslationDisplay() {
 
   const handleEditClick = (item: TranslationItem) => {
     setEditingId(item.id);
-    setEditValues({ english: item.english, foreign: item.foreign });
+    setEditValues({
+      native: item.native,
+      foreign: item.foreign,
+      foreignLanguage: item.foreignLanguage,
+    });
   };
 
   const handleCancelEdit = () => {
@@ -79,8 +98,9 @@ function TranslationDisplay() {
       if (item.id === id) {
         return {
           ...item,
-          english: editValues.english,
+          native: editValues.native,
           foreign: editValues.foreign,
+          foreignLanguage: editValues.foreignLanguage,
         };
       }
       return item;
@@ -88,53 +108,60 @@ function TranslationDisplay() {
 
     setTranslations(updatedTranslations);
     updateLocalStorage(updatedTranslations);
-    setEditingId(null); // Exit edit mode
+    setEditingId(null);
   };
-
-  // --- Renders ---
 
   if (!translations || translations.length === 0) {
     return (
-      <div className="p-8 text-gray-500">
-        No translations loaded yet. Please upload a file!
+      <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+        No words added yet. Add your first word above!
       </div>
     );
   }
 
   return (
-    <div className="p-8 w-full max-w-4xl mx-auto">
-      <h2 className="text-2xl mb-4 font-bold text-gray-800">
-        Current Translations
+    <div className="p-8 w-full max-w-6xl mx-auto">
+      <h2 className="text-2xl mb-4 font-bold text-slate-900 dark:text-slate-100">
+        Word Database ({translations.length})
       </h2>
 
-      <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
-        <table className="min-w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-50 border-b">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <table className="min-w-full text-left text-sm text-slate-600 dark:text-slate-300">
+          <thead className="border-b bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
             <tr>
-              <th className="px-6 py-4 font-medium text-gray-900">English</th>
-              <th className="px-6 py-4 font-medium text-gray-900">Foreign</th>
-              <th className="px-6 py-4 font-medium text-gray-900 text-right">
+              <th className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
+                Native
+              </th>
+              <th className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
+                Foreign
+              </th>
+              <th className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
+                Language
+              </th>
+              <th className="px-6 py-4 font-medium text-slate-900 text-right dark:text-slate-100">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {translations.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                {/* If this row is being edited, show inputs. Otherwise, show text. */}
+              <tr
+                key={item.id}
+                className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/60"
+              >
                 {editingId === item.id ? (
                   <>
                     <td className="px-6 py-4">
                       <input
                         type="text"
-                        value={editValues.english}
+                        value={editValues.native}
                         onChange={(e) =>
                           setEditValues({
                             ...editValues,
-                            english: e.target.value,
+                            native: e.target.value,
                           })
                         }
-                        className="w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                       />
                     </td>
                     <td className="px-6 py-4">
@@ -147,19 +174,32 @@ function TranslationDisplay() {
                             foreign: e.target.value,
                           })
                         }
-                        className="w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <input
+                        type="text"
+                        value={editValues.foreignLanguage}
+                        onChange={(e) =>
+                          setEditValues({
+                            ...editValues,
+                            foreignLanguage: e.target.value,
+                          })
+                        }
+                        className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                       />
                     </td>
                     <td className="px-6 py-4 text-right space-x-2 flex justify-end">
                       <button
                         onClick={() => handleSaveEdit(item.id)}
-                        className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded shadow-sm transition-colors"
+                        className="rounded bg-green-600 px-3 py-1 text-white shadow-sm transition-colors hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400"
                       >
                         Save
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="text-gray-600 bg-gray-100 hover:bg-gray-200 border px-3 py-1 rounded shadow-sm transition-colors"
+                        className="rounded border border-slate-300 bg-slate-100 px-3 py-1 text-slate-700 shadow-sm transition-colors hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                       >
                         Cancel
                       </button>
@@ -167,20 +207,27 @@ function TranslationDisplay() {
                   </>
                 ) : (
                   <>
-                    <td className="px-6 py-4 font-medium text-gray-800">
-                      {item.english}
+                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
+                      {item.native}
                     </td>
-                    <td className="px-6 py-4 text-blue-600">{item.foreign}</td>
+                    <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">
+                      {item.foreign}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                      <span className="inline-block rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
+                        {item.foreignLanguage}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-right space-x-3">
                       <button
                         onClick={() => handleEditClick(item)}
-                        className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                        className="font-medium text-blue-600 transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="text-red-600 hover:text-red-800 font-medium transition-colors"
+                        className="font-medium text-red-600 transition-colors hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                       >
                         Delete
                       </button>

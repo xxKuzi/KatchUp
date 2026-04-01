@@ -16,6 +16,61 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Word Deck Management
+
+### Adding Words
+
+Navigate to the "My Decks" page where you can manage your word decks. You have two options:
+
+#### Option 1: Add Individual Words
+
+Use the form to add words one at a time:
+
+- **Native Word**: The word in your native language (e.g., "Hello")
+- **Foreign Translation**: The translation in the target language (e.g., "Hola")
+- **Foreign Language**: The language you're learning (e.g., "Spanish")
+
+#### Option 2: Import from JSON
+
+Upload a JSON file with the following format:
+
+```json
+[
+  {
+    "id": 1,
+    "native": "Hello",
+    "foreign": "Hola",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 2,
+    "native": "Thank you",
+    "foreign": "Gracias",
+    "foreignLanguage": "Spanish"
+  }
+]
+```
+
+See `public/example-words.json` for a complete example.
+
+### Data Storage
+
+Words are stored in the browser's local storage under the `wordDatabase` key. The data structure includes:
+
+- `id`: Unique identifier for each word
+- `native`: Word in your native language
+- `foreign`: Translation in the foreign language
+- `foreignLanguage`: Name of the target language
+
+### Managing Your Deck
+
+Once words are added, you can:
+
+- **View** all words in your database
+- **Edit** native and foreign translations
+- **Delete** words you no longer need
+- **Filter** by language (shown as badges next to each translation)
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

@@ -1,36 +1,27 @@
 "use client";
-import { use, useState } from "react";
-import { useRouter } from "next/navigation";
-import GameCard from "./_components/GameCard";
-import Carousel from "./_components/GameCarousel";
-import { TrendingUpDown, Star } from "lucide-react";
-import Navbar from "./_components/Navbar";
 import Section from "./_components/Section";
 import RollingImages from "./_components/RollingImages";
 import CutePlayButton from "./_components/CutePlayButton";
+import WelcomeSection from "./_components/WelcomeSection";
 
 export default function Home() {
-  const router = useRouter();
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 dark:bg-black">
-      <Navbar />
-      <main className="flex min-h-screen w-full flex-col items-center justify-center pb-32 px-16 bg-white dark:bg-black">
-        <h1 className="text-3xl tracking-tight text-left w-full text-gray-900 mb-16 mt-8 dark:text-white sm:text-5xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+      <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background px-6 pb-32 sm:px-16">
+        <h1 className="mb-16 mt-8 w-full text-left text-3xl tracking-tight text-foreground sm:text-5xl">
           <span className="font-bold text-7xl">Hello</span>, welcome to{" "}
           <span className="font-bold text-7xxl">KatchUp</span>...
         </h1>
         <div>
-          <Section>
-            <h2 className="text-4xl font-bold text-blue-500">Learn fast</h2>
-            <p className="text-blue-500 text-xl">
-              learn from our big database of actually{" "}
-              <span className="font-bold">useful</span> words
-            </p>
-          </Section>
+          <WelcomeSection />
           <RollingImages />
           <Section>
-            <h2 className="text-4xl font-bold ">Lets make it!</h2>
-            <p className="text-xl">One click and here we go!</p>
+            <h2 className="text-4xl font-bold text-foreground">
+              Lets make it!
+            </h2>
+            <p className="text-xl text-slate-700 dark:text-slate-300">
+              One click and here we go!
+            </p>
 
             <CutePlayButton />
           </Section>

@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "native": "Hello",
+    "foreign": "Hola",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 2,
+    "native": "Thank you",
+    "foreign": "Gracias",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 3,
+    "native": "Goodbye",
+    "foreign": "Adiós",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 4,
+    "native": "Please",
+    "foreign": "Por favor",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 5,
+    "native": "Yes",
+    "foreign": "Sí",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 6,
+    "native": "No",
+    "foreign": "No",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 7,
+    "native": "Good morning",
+    "foreign": "Buenos días",
+    "foreignLanguage": "Spanish"
+  },
+  {
+    "id": 8,
+    "native": "Good night",
+    "foreign": "Buenas noches",
+    "foreignLanguage": "Spanish"
+  }
+]
