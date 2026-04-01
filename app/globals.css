@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
-:root {
-  --background: #edebeb;
-  --foreground: #1a1818;
-}
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
   --color-background: var(--background);
@@ -12,27 +9,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1c1b1b;
-    --foreground: #ededed;
-  }
-}
-
 :root {
-  color-scheme: light;
-}
-
-html[data-theme="light"] {
-  --background: #edebeb;
+  /* Your default theme */
+  --background: #f5f5f8;
   --foreground: #1a1818;
-  color-scheme: light;
 }
 
-html[data-theme="dark"] {
+[data-theme="dark"] {
   --background: #1c1b1b;
   --foreground: #ededed;
-  color-scheme: dark;
 }
 
 html {
