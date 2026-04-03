@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../_lib/languageContext";
+import { LANGUAGES, Language } from "../../_lib/translations";
 import {
   CustomDeck,
   createDeck,
@@ -14,12 +16,14 @@ import {
 } from "../_lib/customDecks";
 
 function DeckEditorPage() {
+  const { nativeLanguage, learningLanguage } = useLanguage();
   const searchParams = useSearchParams();
   const [decks, setDecks] = useState<CustomDeck[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [newDeckName, setNewDeckName] = useState("New Custom Deck");
-  const [newDeckNativeLang, setNewDeckNativeLang] = useState("english");
-  const [newDeckForeignLang, setNewDeckForeignLang] = useState("deutsch");
+  const [newDeckNativeLang, setNewDeckNativeLang] = useState(nativeLanguage);
+  const [newDeckForeignLang, setNewDeckForeignLang] =
+    useState(learningLanguage);
   const [newNativeWord, setNewNativeWord] = useState("");
   const [newForeignWord, setNewForeignWord] = useState("");
 
@@ -28,29 +32,53 @@ function DeckEditorPage() {
       const storedDecks = loadCustomDecks();
       setDecks(storedDecks);
 
+      const pairDecks = storedDecks.filter(
+        (deck) =>
+          deck.nativeLang.trim().toLowerCase() === nativeLanguage &&
+          deck.foreignLang.trim().toLowerCase() === learningLanguage,
+      );
+
       const requestedDeckId = searchParams.get("deck");
       if (
         requestedDeckId &&
-        storedDecks.some((deck) => deck.id === requestedDeckId)
+        pairDecks.some((deck) => deck.id === requestedDeckId)
       ) {
         setSelectedDeckId(requestedDeckId);
         return;
       }
 
-      if (storedDecks.length > 0) {
-        setSelectedDeckId(storedDecks[0].id);
+      if (pairDecks.length > 0) {
+        setSelectedDeckId(pairDecks[0].id);
       }
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [searchParams]);
+  }, [searchParams, nativeLanguage, learningLanguage]);
 
-  const selectedDeck = useMemo(
-    () => decks.find((deck) => deck.id === selectedDeckId) ?? null,
-    [decks, selectedDeckId],
+  useEffect(() => {
+    setNewDeckNativeLang(nativeLanguage);
+    setNewDeckForeignLang(learningLanguage);
+  }, [nativeLanguage, learningLanguage]);
+
+  const filteredDecks = useMemo(
+    () =>
+      decks.filter(
+        (deck) =>
+          deck.nativeLang.trim().toLowerCase() === nativeLanguage &&
+          deck.foreignLang.trim().toLowerCase() === learningLanguage,
+      ),
+    [decks, nativeLanguage, learningLanguage],
   );
 
-  const groupedDecks = useMemo(() => groupDecksByLanguages(decks), [decks]);
+  const selectedDeck = useMemo(
+    () => filteredDecks.find((deck) => deck.id === selectedDeckId) ?? null,
+    [filteredDecks, selectedDeckId],
+  );
+
+  const groupedDecks = useMemo(
+    () => groupDecksByLanguages(filteredDecks),
+    [filteredDecks],
+  );
   const groupEntries = useMemo(
     () => Object.entries(groupedDecks).sort((a, b) => a[0].localeCompare(b[0])),
     [groupedDecks],
@@ -66,8 +94,8 @@ function DeckEditorPage() {
 
     const deck = createDeck({
       name: newDeckName.trim() || "New Custom Deck",
-      nativeLang: newDeckNativeLang.trim() || "english",
-      foreignLang: newDeckForeignLang.trim() || "deutsch",
+      nativeLang: newDeckNativeLang.trim() || nativeLanguage,
+      foreignLang: newDeckForeignLang.trim() || learningLanguage,
     });
 
     const nextDecks = [deck, ...decks];
@@ -105,7 +133,13 @@ function DeckEditorPage() {
 
     const nextDecks = decks.filter((deck) => deck.id !== selectedDeck.id);
     persistDecks(nextDecks);
-    setSelectedDeckId(nextDecks[0]?.id ?? "");
+    setSelectedDeckId(
+      nextDecks.filter(
+        (deck) =>
+          deck.nativeLang.trim().toLowerCase() === nativeLanguage &&
+          deck.foreignLang.trim().toLowerCase() === learningLanguage,
+      )[0]?.id ?? "",
+    );
   };
 
   const handleAddWord = (event: React.FormEvent) => {
@@ -182,20 +216,32 @@ function DeckEditorPage() {
                 placeholder="Deck name"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
-              <input
-                type="text"
+              <select
                 value={newDeckNativeLang}
-                onChange={(event) => setNewDeckNativeLang(event.target.value)}
-                placeholder="Native language"
+                onChange={(event) =>
+                  setNewDeckNativeLang(event.target.value as Language)
+                }
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-              <input
-                type="text"
+              >
+                {Object.entries(LANGUAGES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <select
                 value={newDeckForeignLang}
-                onChange={(event) => setNewDeckForeignLang(event.target.value)}
-                placeholder="Foreign language"
+                onChange={(event) =>
+                  setNewDeckForeignLang(event.target.value as Language)
+                }
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
+              >
+                {Object.entries(LANGUAGES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="submit"
                 className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"

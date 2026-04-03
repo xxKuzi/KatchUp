@@ -3,11 +3,14 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ThemeToggle from "./ThemeToggle";
+import LanguageToggle from "./LanguageToggle";
 import { useTheme } from "next-themes";
+import { useLanguage } from "../_lib/languageContext";
 
 function Navbar() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
+  const { t } = useLanguage();
   const activeTheme = resolvedTheme === "dark" ? "dark" : "light";
 
   return (
@@ -35,26 +38,27 @@ function Navbar() {
             className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white sm:px-4"
             onClick={() => router.push("/games")}
           >
-            Games
+            {t("navbar.games")}
           </button>
           <button
             className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white sm:px-4"
             onClick={() => router.push("/my-decks")}
           >
-            My Decks
+            {t("navbar.myDecks")}
           </button>
           <button
             className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white sm:px-4"
             onClick={() => router.push("/leaderboard")}
           >
-            Friends {";)"}
+            {t("navbar.friends")} {";)"}
           </button>
         </div>
         <div className="flex items-center gap-2 pr-1 sm:gap-3 sm:pr-2">
           <p className="hidden text-xs text-slate-600 dark:text-slate-300 md:block">
-            Health Bar{" "}
+            {t("navbar.healthBar")}{" "}
             <span className="text-green-600 dark:text-green-300">OOOO</span>
           </p>
+          <LanguageToggle />
           <ThemeToggle />
         </div>
       </div>
