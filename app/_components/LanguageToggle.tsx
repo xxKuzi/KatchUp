@@ -50,7 +50,9 @@ export default function LanguageToggle() {
         <span className="grid h-4.5 w-4.5 place-items-center rounded-full bg-slate-100 text-slate-600 transition group-hover:bg-blue-100 group-hover:text-blue-600 dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-blue-950 dark:group-hover:text-blue-300">
           <Globe className="h-3 w-3" />
         </span>
-        <span className="hidden sm:inline">UI: {LANGUAGES[language].split(" ")[0]}</span>
+        <span className="hidden sm:inline">
+          UI: {LANGUAGES[language].split(" ")[0]}
+        </span>
       </button>
 
       <button

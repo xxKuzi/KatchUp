@@ -110,7 +110,8 @@ export default function MyDecksOverview() {
                           {deck.words.length} {t("common.words")}
                         </p>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {t("myDecks.lastPracticed")}: {formatDate(deck.lastPracticed, t)}
+                          {t("myDecks.lastPracticed")}:{" "}
+                          {formatDate(deck.lastPracticed, t)}
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Link

@@ -86,8 +86,7 @@ export const translations: Record<Language, Translations> = {
       info: "Info",
       deckHasWords: "This deck has",
       chooseAMode: "words. Choose a practice mode to start.",
-      deckNotFound:
-        "Deck not found. Please select a deck from the overview.",
+      deckNotFound: "Deck not found. Please select a deck from the overview.",
       gameInfoText: "Choose a practice mode",
     },
     games: {
@@ -176,8 +175,7 @@ export const translations: Record<Language, Translations> = {
       info: "Info",
       deckHasWords: "Tento balíček má",
       chooseAMode: "slov. Vyberte si režim tréninku a začněte.",
-      deckNotFound:
-        "Balíček nenalezen. Vyberte si prosím balíček z přehledu.",
+      deckNotFound: "Balíček nenalezen. Vyberte si prosím balíček z přehledu.",
       gameInfoText: "Vyberte si režim tréninku",
     },
     games: {
@@ -277,7 +275,8 @@ export const translations: Record<Language, Translations> = {
       oneOfThree: "Eins von drei",
       oneOfThreeDesc: "Wählen Sie die richtige Übersetzung aus drei Optionen",
       guessMatch: "Paarspiel",
-      guessMatchDesc: "Ordnen Sie Wörter in Muttersprache ihren Übersetzungen zu",
+      guessMatchDesc:
+        "Ordnen Sie Wörter in Muttersprache ihren Übersetzungen zu",
       quickGuess: "Schneller Tipp",
       quickGuessDesc: "Schnelle Übersetzungsherausforderungen",
     },

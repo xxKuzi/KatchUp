@@ -11,10 +11,30 @@ import {
 } from "../_lib/customDecks";
 
 const GAME_MODE_IDS = [
-  { id: "flip-cards", icon: "🃏", tKey: "games.flipCards", descKey: "games.flipCardsDesc" },
-  { id: "one-of-three", icon: "🎯", tKey: "games.oneOfThree", descKey: "games.oneOfThreeDesc" },
-  { id: "guess-match", icon: "🔗", tKey: "games.guessMatch", descKey: "games.guessMatchDesc" },
-  { id: "quick-guess", icon: "⚡", tKey: "games.quickGuess", descKey: "games.quickGuessDesc" },
+  {
+    id: "flip-cards",
+    icon: "🃏",
+    tKey: "games.flipCards",
+    descKey: "games.flipCardsDesc",
+  },
+  {
+    id: "one-of-three",
+    icon: "🎯",
+    tKey: "games.oneOfThree",
+    descKey: "games.oneOfThreeDesc",
+  },
+  {
+    id: "guess-match",
+    icon: "🔗",
+    tKey: "games.guessMatch",
+    descKey: "games.guessMatchDesc",
+  },
+  {
+    id: "quick-guess",
+    icon: "⚡",
+    tKey: "games.quickGuess",
+    descKey: "games.quickGuessDesc",
+  },
 ];
 
 function PracticeModeSelector() {
@@ -115,7 +135,8 @@ function PracticeModeSelector() {
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               {t("practice.info")}:
             </span>{" "}
-            {t("practice.deckHasWords")} {deck.words.length} {t("practice.chooseAMode")}
+            {t("practice.deckHasWords")} {deck.words.length}{" "}
+            {t("practice.chooseAMode")}
           </p>
         </div>
       </div>
