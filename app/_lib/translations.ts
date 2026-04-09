@@ -14,9 +14,22 @@ export const translations: Record<Language, Translations> = {
   english: {
     navbar: {
       games: "Games",
+      topics: "Topics",
       myDecks: "My Decks",
       friends: "Friends",
       healthBar: "Health Bar",
+    },
+    auth: {
+      signIn: "Sign in",
+      signOut: "Sign out",
+    },
+    authGate: {
+      games:
+        "Your game streak and wins are saved for friends. Sign in to unlock game arena.",
+      topics:
+        "Track your topic progress and unlock packs with keys. Sign in to continue.",
+      friends:
+        "Let your friends see your progress and challenge your streak. Sign in to open Friends.",
     },
     common: {
       welcome: "Welcome",
@@ -99,13 +112,57 @@ export const translations: Record<Language, Translations> = {
       quickGuess: "Quick Guess",
       quickGuessDesc: "Rapid-fire translation challenges",
     },
+    topics: {
+      badge: "Learning Packs",
+      title: "Choose a Topic",
+      subtitle:
+        "Five topics, each with five levels. Finish a topic to earn a key and unlock the next one.",
+      keys: "Keys",
+      levelsDone: "levels done",
+      topic: "Topic",
+      locked: "Locked Topic",
+      needKey: "Use 1 key to unlock this pack.",
+      unlock: "Unlock with key",
+      noKeys: "No keys yet",
+      notFound: "Topic was not found.",
+      back: "Back to topics",
+      progress: "Progress",
+      level: "Level",
+      done: "Done",
+      pending: "Pending",
+      mode: "Mode",
+      play: "Play",
+      markComplete: "Mark complete",
+      completedTitle: "Topic completed",
+      completedText: "You earned a key. Return to topics to unlock a new pack.",
+      ascend: "Ascend this pack",
+      ascended: "Ascended",
+    },
+    leaderboard: {
+      title: "Friends Leaderboard",
+      subtitle:
+        "Coming next: friend invites, weekly races, and shared milestones.",
+    },
   },
   czech: {
     navbar: {
       games: "Hry",
+      topics: "Temata",
       myDecks: "Moje balíčky",
       friends: "Přátelé",
       healthBar: "Zdravolní stav",
+    },
+    auth: {
+      signIn: "Prihlasit se",
+      signOut: "Odhlasit se",
+    },
+    authGate: {
+      games:
+        "Vase herni serie a vyhry se ukladaji pro pratele. Prihlaste se pro odemceni her.",
+      topics:
+        "Sledujte pokrok v tematech a odemykejte balicky pomoci klicu. Prihlaste se.",
+      friends:
+        "At vasi pratele vidi vas pokrok a vyzyvaji vas. Prihlaste se pro sekci Pratele.",
     },
     common: {
       welcome: "Vítejte",
@@ -188,13 +245,57 @@ export const translations: Record<Language, Translations> = {
       quickGuess: "Rychlý odhad",
       quickGuessDesc: "Rychlé výzvy překladu",
     },
+    topics: {
+      badge: "Balicky uceni",
+      title: "Vyberte tema",
+      subtitle:
+        "Pet temat, kazde s peti urovnemi. Dokoncete tema, ziskejte klic a odemknete dalsi.",
+      keys: "Klice",
+      levelsDone: "urovni hotovo",
+      topic: "Tema",
+      locked: "Zamcene tema",
+      needKey: "Pouzijte 1 klic pro odemceni.",
+      unlock: "Odemknout klicem",
+      noKeys: "Zatim zadne klice",
+      notFound: "Tema nebylo nalezeno.",
+      back: "Zpet na temata",
+      progress: "Pokrok",
+      level: "Uroven",
+      done: "Hotovo",
+      pending: "Ceka",
+      mode: "Rezim",
+      play: "Hrat",
+      markComplete: "Oznacit jako hotove",
+      completedTitle: "Tema dokonceno",
+      completedText:
+        "Ziskali jste klic. Vratte se na temata a odemknete novy balicek.",
+      ascend: "Povysit tento balicek",
+      ascended: "Povyseno",
+    },
+    leaderboard: {
+      title: "Zebricek pratel",
+      subtitle: "Brzy: pozvanky, tydenni zavody a sdilene milniky.",
+    },
   },
   deutsch: {
     navbar: {
       games: "Spiele",
+      topics: "Themen",
       myDecks: "Meine Decks",
       friends: "Freunde",
       healthBar: "Gesundheitsbalken",
+    },
+    auth: {
+      signIn: "Anmelden",
+      signOut: "Abmelden",
+    },
+    authGate: {
+      games:
+        "Deine Spielserie und Siege werden fur Freunde gespeichert. Melde dich an, um Spiele freizuschalten.",
+      topics:
+        "Verfolge deinen Themenfortschritt und schalte Pakete mit Schlusseln frei. Melde dich an.",
+      friends:
+        "Lass Freunde deinen Fortschritt sehen und dich herausfordern. Melde dich an fur Freunde.",
     },
     common: {
       welcome: "Willkommen",
@@ -279,6 +380,38 @@ export const translations: Record<Language, Translations> = {
         "Ordnen Sie Wörter in Muttersprache ihren Übersetzungen zu",
       quickGuess: "Schneller Tipp",
       quickGuessDesc: "Schnelle Übersetzungsherausforderungen",
+    },
+    topics: {
+      badge: "Lernpakete",
+      title: "Thema auswahlen",
+      subtitle:
+        "Funf Themen mit jeweils funf Levels. SchlieBe ein Thema ab, erhalte einen Schlussel und schalte das nachste frei.",
+      keys: "Schlussel",
+      levelsDone: "Levels fertig",
+      topic: "Thema",
+      locked: "Gesperrtes Thema",
+      needKey: "Nutze 1 Schlussel, um dieses Paket zu entsperren.",
+      unlock: "Mit Schlussel entsperren",
+      noKeys: "Noch keine Schlussel",
+      notFound: "Thema wurde nicht gefunden.",
+      back: "Zuruck zu Themen",
+      progress: "Fortschritt",
+      level: "Level",
+      done: "Fertig",
+      pending: "Offen",
+      mode: "Modus",
+      play: "Spielen",
+      markComplete: "Als fertig markieren",
+      completedTitle: "Thema abgeschlossen",
+      completedText:
+        "Du hast einen Schlussel erhalten. Gehe zur Themenubersicht, um ein neues Paket zu entsperren.",
+      ascend: "Dieses Paket aufwerten",
+      ascended: "Aufgewertet",
+    },
+    leaderboard: {
+      title: "Freunde-Rangliste",
+      subtitle:
+        "Demnachst: Einladungen, Wochenrennen und gemeinsame Meilensteine.",
     },
   },
 };

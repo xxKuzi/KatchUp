@@ -39,11 +39,19 @@ const GameCard = (props: GameCardProps) => {
   const gradientColor: string = colorVariants[color] || "from-gray-500";
   const featureColorConst: string =
     featureColorVariants[featureColor] || "from-gray-500";
+  const isClickable = Boolean(url);
 
   return (
     <button
-      className={`relative group overflow-hidden border-gray-200 dark:border-gray-400 transition duration-300 hover:border-gray-700 dark:hover:border-white xl:min-w-[280px] xl:max-w-[280px] xl:min-h-[450px] border-2 rounded-lg flex flex-col items-center justify-end`}
-      onClick={() => router.push(url || "")}
+      className={`relative group overflow-hidden border-gray-200 dark:border-gray-400 transition duration-300 hover:border-gray-700 dark:hover:border-white xl:min-w-[280px] xl:max-w-[280px] xl:min-h-[450px] border-2 rounded-lg flex flex-col items-center justify-end ${
+        isClickable ? "cursor-pointer" : "cursor-default"
+      }`}
+      onClick={() => {
+        if (url) {
+          router.push(url);
+        }
+      }}
+      type="button"
     >
       <div
         style={img ? { backgroundImage: `url('/${img}')` } : undefined}

@@ -43,3 +43,18 @@ body {
 .animate-marquee-lr {
   animation: marquee-lr 60s linear infinite;
 }
+
+@keyframes topicPulse {
+  0% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+  50% {
+    transform: scale(1.03);
+    filter: saturate(1.35);
+  }
+  100% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+}
