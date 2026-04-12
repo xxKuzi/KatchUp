@@ -13,7 +13,7 @@ export const LANGUAGES: Record<Language, string> = {
 export const translations: Record<Language, Translations> = {
   english: {
     navbar: {
-      games: "Games",
+      games: "Online Games",
       topics: "Topics",
       myDecks: "My Decks",
       friends: "Friends",
@@ -35,6 +35,9 @@ export const translations: Record<Language, Translations> = {
       welcome: "Welcome",
       language: "Language",
       theme: "Theme",
+      auto: "Auto",
+      light: "Light",
+      dark: "Dark",
       edit: "Edit",
       delete: "Delete",
       save: "Save",
@@ -168,6 +171,9 @@ export const translations: Record<Language, Translations> = {
       welcome: "Vítejte",
       language: "Jazyk",
       theme: "Motiv",
+      auto: "Auto",
+      light: "Svetly",
+      dark: "Tmavy",
       edit: "Upravit",
       delete: "Smazat",
       save: "Uložit",
@@ -301,6 +307,9 @@ export const translations: Record<Language, Translations> = {
       welcome: "Willkommen",
       language: "Sprache",
       theme: "Design",
+      auto: "Auto",
+      light: "Hell",
+      dark: "Dunkel",
       edit: "Bearbeiten",
       delete: "Löschen",
       save: "Speichern",

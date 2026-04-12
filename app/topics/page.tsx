@@ -40,7 +40,10 @@ export default function TopicsPage() {
   useEffect(() => {
     if (lastCompletedTopic) {
       window.history.replaceState({}, "", "/topics");
-      const timeout = window.setTimeout(() => setLastCompletedTopic(null), 3200);
+      const timeout = window.setTimeout(
+        () => setLastCompletedTopic(null),
+        3200,
+      );
       return () => {
         window.clearTimeout(timeout);
       };
@@ -104,65 +107,76 @@ export default function TopicsPage() {
           </section>
 
           <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {topicCards.map(({ topic, levelCount, unlocked, justCompleted, ascended }) => {
-              return (
-                <div
-                  key={topic.id}
-                  className={`relative rounded-xl ${
-                    justCompleted ? "animate-[topicPulse_1.1s_ease-in-out_3]" : ""
-                  }`}
-                >
-                  <div className={!unlocked ? "opacity-75" : ""}>
-                    <GameCard
-                      name={`${topic.icon} ${topic.names[language]}`}
-                      img="flip_cards.png"
-                      color={topic.color}
-                      description={`${levelCount}/5 ${t("topics.levelsDone", "levels done")}`}
-                      url={unlocked ? `/topics/${topic.id}` : undefined}
-                      feature={ascended ? t("topics.ascended", "Ascended") : t("topics.topic", "Topic")}
-                      featureColor={ascended ? "yellow" : "green"}
-                    />
-                  </div>
-
-                  <div className="absolute bottom-3 left-0 right-0 px-4">
-                    <div className="rounded-xl border border-slate-200/80 bg-white/90 p-3 text-xs font-medium text-slate-700 shadow dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200">
-                      <p>{topic.descriptions[language]}</p>
+            {topicCards.map(
+              ({ topic, levelCount, unlocked, justCompleted, ascended }) => {
+                return (
+                  <div
+                    key={topic.id}
+                    className={`relative rounded-xl ${
+                      justCompleted
+                        ? "animate-[topicPulse_1.1s_ease-in-out_3]"
+                        : ""
+                    }`}
+                  >
+                    <div className={!unlocked ? "opacity-75" : ""}>
+                      <GameCard
+                        name={`${topic.icon} ${topic.names[language]}`}
+                        img="flip_cards.png"
+                        color={topic.color}
+                        description={`${levelCount}/5 ${t("topics.levelsDone", "levels done")}`}
+                        url={unlocked ? `/topics/${topic.id}` : undefined}
+                        feature={
+                          ascended
+                            ? t("topics.ascended", "Ascended")
+                            : t("topics.topic", "Topic")
+                        }
+                        featureColor={ascended ? "yellow" : "green"}
+                      />
                     </div>
-                  </div>
 
-                  {!unlocked && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-slate-900/40 p-4">
-                      <div className="w-full max-w-[250px] rounded-2xl border border-white/50 bg-white/90 p-4 text-center shadow-lg backdrop-blur-md dark:border-slate-600 dark:bg-slate-950/90">
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                          {t("topics.locked", "Locked Topic")}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                          {t("topics.needKey", "Use 1 key to unlock this pack.")}
-                        </p>
-                        <button
-                          type="button"
-                          disabled={state.keys < 1}
-                          onClick={() => handleUnlock(topic.id)}
-                          className="mt-3 w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
-                        >
-                          {state.keys > 0
-                            ? t("topics.unlock", "Unlock with key")
-                            : t("topics.noKeys", "No keys yet")}
-                        </button>
+                    <div className="absolute bottom-3 left-0 right-0 px-4">
+                      <div className="rounded-xl border border-slate-200/80 bg-white/90 p-3 text-xs font-medium text-slate-700 shadow dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200">
+                        <p>{topic.descriptions[language]}</p>
                       </div>
                     </div>
-                  )}
 
-                  {unlocked && (
-                    <Link
-                      href={`/topics/${topic.id}`}
-                      className="absolute inset-0 rounded-xl"
-                      aria-label={`Open ${topic.names[language]} topic`}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                    {!unlocked && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-slate-900/40 p-4">
+                        <div className="w-full max-w-[250px] rounded-2xl border border-white/50 bg-white/90 p-4 text-center shadow-lg backdrop-blur-md dark:border-slate-600 dark:bg-slate-950/90">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            {t("topics.locked", "Locked Topic")}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                            {t(
+                              "topics.needKey",
+                              "Use 1 key to unlock this pack.",
+                            )}
+                          </p>
+                          <button
+                            type="button"
+                            disabled={state.keys < 1}
+                            onClick={() => handleUnlock(topic.id)}
+                            className="mt-3 w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
+                          >
+                            {state.keys > 0
+                              ? t("topics.unlock", "Unlock with key")
+                              : t("topics.noKeys", "No keys yet")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {unlocked && (
+                      <Link
+                        href={`/topics/${topic.id}`}
+                        className="absolute inset-0 rounded-xl"
+                        aria-label={`Open ${topic.names[language]} topic`}
+                      />
+                    )}
+                  </div>
+                );
+              },
+            )}
           </section>
         </div>
       </FeatureGate>

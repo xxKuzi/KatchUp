@@ -139,10 +139,13 @@ function createDefaultState(): TopicsState {
   return {
     unlockedTopicIds: DEFAULT_UNLOCKED,
     keys: 0,
-    topicProgress: TOPIC_IDS.reduce<Record<string, TopicProgress>>((acc, id) => {
-      acc[id] = createDefaultTopicProgress();
-      return acc;
-    }, {}),
+    topicProgress: TOPIC_IDS.reduce<Record<string, TopicProgress>>(
+      (acc, id) => {
+        acc[id] = createDefaultTopicProgress();
+        return acc;
+      },
+      {},
+    ),
   };
 }
 
@@ -155,29 +158,37 @@ function normalizeState(raw: unknown): TopicsState {
   const base = createDefaultState();
 
   const unlocked = Array.isArray(safe.unlockedTopicIds)
-    ? safe.unlockedTopicIds.filter((id): id is string => TOPIC_IDS.includes(String(id)))
+    ? safe.unlockedTopicIds.filter((id): id is string =>
+        TOPIC_IDS.includes(String(id)),
+      )
     : base.unlockedTopicIds;
 
-  const progressMap = TOPIC_IDS.reduce<Record<string, TopicProgress>>((acc, topicId) => {
-    const existing = safe.topicProgress?.[topicId];
-    const completedLevels = Array.isArray(existing?.completedLevels)
-      ? existing.completedLevels
-          .filter((value): value is number => typeof value === "number")
-          .filter((value) => value >= 1 && value <= 5)
-      : [];
+  const progressMap = TOPIC_IDS.reduce<Record<string, TopicProgress>>(
+    (acc, topicId) => {
+      const existing = safe.topicProgress?.[topicId];
+      const completedLevels = Array.isArray(existing?.completedLevels)
+        ? existing.completedLevels
+            .filter((value): value is number => typeof value === "number")
+            .filter((value) => value >= 1 && value <= 5)
+        : [];
 
-    acc[topicId] = {
-      completedLevels,
-      isCompleted: Boolean(existing?.isCompleted),
-      isAscended: Boolean(existing?.isAscended),
-    };
+      acc[topicId] = {
+        completedLevels,
+        isCompleted: Boolean(existing?.isCompleted),
+        isAscended: Boolean(existing?.isAscended),
+      };
 
-    return acc;
-  }, {});
+      return acc;
+    },
+    {},
+  );
 
   return {
     unlockedTopicIds: unlocked.length > 0 ? unlocked : base.unlockedTopicIds,
-    keys: typeof safe.keys === "number" && safe.keys >= 0 ? Math.floor(safe.keys) : 0,
+    keys:
+      typeof safe.keys === "number" && safe.keys >= 0
+        ? Math.floor(safe.keys)
+        : 0,
     topicProgress: progressMap,
   };
 }
@@ -212,7 +223,10 @@ export function saveTopicsState(language: Language, state: TopicsState): void {
   window.localStorage.setItem(getStorageKey(language), JSON.stringify(state));
 }
 
-export function getLevelsForTopic(state: TopicsState, topicId: string): TopicLevel[] {
+export function getLevelsForTopic(
+  state: TopicsState,
+  topicId: string,
+): TopicLevel[] {
   const progress = state.topicProgress[topicId] ?? createDefaultTopicProgress();
 
   return Array.from({ length: 5 }, (_, index) => {
@@ -240,8 +254,11 @@ export function completeTopicLevel(
     return { nextState: state, topicJustCompleted: false };
   }
 
-  const completedLevels = [...progress.completedLevels, level].sort((a, b) => a - b);
-  const topicJustCompleted = completedLevels.length === 5 && !progress.isCompleted;
+  const completedLevels = [...progress.completedLevels, level].sort(
+    (a, b) => a - b,
+  );
+  const topicJustCompleted =
+    completedLevels.length === 5 && !progress.isCompleted;
 
   const nextState: TopicsState = {
     ...state,

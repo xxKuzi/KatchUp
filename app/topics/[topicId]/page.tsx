@@ -28,7 +28,10 @@ export default function TopicDetailPage() {
     return loadTopicsState(language);
   }, [language, refreshToken]);
 
-  const topic = useMemo(() => TOPICS.find((item) => item.id === topicId) ?? null, [topicId]);
+  const topic = useMemo(
+    () => TOPICS.find((item) => item.id === topicId) ?? null,
+    [topicId],
+  );
 
   const canUseTopics = isReady && isSignedIn;
 
@@ -54,7 +57,11 @@ export default function TopicDetailPage() {
   const ascended = Boolean(topicProgress?.isAscended);
 
   const handleCompleteLevel = (level: number) => {
-    const { nextState, topicJustCompleted } = completeTopicLevel(state, topic.id, level);
+    const { nextState, topicJustCompleted } = completeTopicLevel(
+      state,
+      topic.id,
+      level,
+    );
     saveTopicsState(language, nextState);
     setRefreshToken((value) => value + 1);
 
@@ -95,7 +102,8 @@ export default function TopicDetailPage() {
               {topic.descriptions[language]}
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-              {t("topics.progress", "Progress")}: {topicProgress?.completedLevels.length ?? 0}/5
+              {t("topics.progress", "Progress")}:{" "}
+              {topicProgress?.completedLevels.length ?? 0}/5
             </p>
           </section>
 
@@ -115,7 +123,9 @@ export default function TopicDetailPage() {
                     <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                       {t("topics.level", "Level")} {levelData.level}
                     </h2>
-                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${completedBadgeClass}`}>
+                    <span
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold ${completedBadgeClass}`}
+                    >
                       {levelData.completed
                         ? t("topics.done", "Done")
                         : t("topics.pending", "Pending")}
@@ -123,7 +133,10 @@ export default function TopicDetailPage() {
                   </div>
 
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                    {t("topics.mode", "Mode")}: {levelData.mode === "flip-cards" ? t("games.flipCards") : t("games.oneOfThree")}
+                    {t("topics.mode", "Mode")}:{" "}
+                    {levelData.mode === "flip-cards"
+                      ? t("games.flipCards")
+                      : t("games.oneOfThree")}
                   </p>
 
                   <div className="mt-4 flex gap-2">
@@ -164,7 +177,9 @@ export default function TopicDetailPage() {
                 onClick={handleAscend}
                 className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-500"
               >
-                {ascended ? t("topics.ascended", "Ascended") : t("topics.ascend", "Ascend this pack")}
+                {ascended
+                  ? t("topics.ascended", "Ascended")
+                  : t("topics.ascend", "Ascend this pack")}
               </button>
             </section>
           )}
