@@ -1,22 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
-import { useTheme } from "next-themes";
 import { useLanguage } from "../_lib/languageContext";
 import { useAuthState } from "../_lib/auth";
 
 function Navbar() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
   const { t } = useLanguage();
   const { isSignedIn, signIn, signOut } = useAuthState();
   const [menuOpen, setMenuOpen] = useState(false);
-  const activeTheme = resolvedTheme === "dark" ? "dark" : "light";
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!menuRef.current?.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, []);
 
   return (
     <div className="relative mb-32 flex w-full items-center justify-center px-3">
@@ -73,7 +87,7 @@ function Navbar() {
           </button>
         </div>
 
-        <div className="relative" role="presentation">
+        <div className="relative" role="presentation" ref={menuRef}>
           <button
             type="button"
             aria-label="Open utility menu"
