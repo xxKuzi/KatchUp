@@ -16,6 +16,21 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Environment Variables
+
+Copy [.env.example](.env.example) to `.env.local` and fill in your keys before running the app.
+
+Required values:
+
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `AUTH_URL`
+- `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` if you want Google sign-in
+- `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` if you want GitHub sign-in
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+- `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`
+- `NEXT_PUBLIC_PUSHER_KEY` and `NEXT_PUBLIC_PUSHER_CLUSTER`
+
 ## Word Deck Management
 
 ### Adding Words

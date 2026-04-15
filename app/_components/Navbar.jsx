@@ -7,14 +7,15 @@ import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
 import { useLanguage } from "../_lib/languageContext";
-import { useAuthState } from "../_lib/auth";
+import { signIn, signOut, useSession } from "@/lib/auth-client";
 
 function Navbar() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { isSignedIn, signIn, signOut } = useAuthState();
+  const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const isSignedIn = status === "authenticated";
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -118,13 +119,19 @@ function Navbar() {
 
                 <button
                   type="button"
-                  onClick={isSignedIn ? signOut : signIn}
+                  onClick={() => (isSignedIn ? signOut() : signIn())}
                   className="rounded-2xl border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   {isSignedIn
                     ? t("auth.signOut", "Sign out")
                     : t("auth.signIn", "Sign in")}
                 </button>
+
+                {session?.user?.name ? (
+                  <p className="px-1 text-xs text-slate-500 dark:text-slate-400">
+                    Signed in as {session.user.name}
+                  </p>
+                ) : null}
 
                 <ThemeToggle />
               </div>

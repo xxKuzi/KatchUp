@@ -1,0 +1,317 @@
+import { db } from "@/lib/db";
+import { redis } from "@/lib/redis";
+import { pusher } from "@/lib/realtime/pusher-server";
+import { getAllWords } from "@/app/games/_lib/learning/wordDatabase";
+import { SupportedLanguage } from "@/app/games/_lib/learning/types";
+import {
+  asyncScores,
+  matchAnswers,
+  matchPlayers,
+  matchQuestions,
+  matches,
+  users,
+} from "@/db/schema";
+import { eq, and, asc, desc } from "drizzle-orm";
+
+export interface MatchQuestionPayload {
+  id: string;
+  prompt: string;
+  options: string[];
+  correctOption: string;
+}
+
+interface PlayerSession {
+  userId: string;
+  name: string;
+  avatar: string;
+}
+
+const QUEUE_KEY_PREFIX = "flipcards:queue";
+const USER_CHANNEL_PREFIX = "user-";
+const MATCH_CHANNEL_PREFIX = "match-";
+
+function shuffleArray<T>(items: T[]): T[] {
+  const cloned = [...items];
+  for (let i = cloned.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cloned[i], cloned[j]] = [cloned[j], cloned[i]];
+  }
+  return cloned;
+}
+
+function createMatchQuestions(
+  language: SupportedLanguage,
+): MatchQuestionPayload[] {
+  const words = shuffleArray(getAllWords(language)).slice(0, 10);
+  return words.map((word) => {
+    const wrong = shuffleArray(
+      getAllWords(language)
+        .filter((candidate) => candidate.id !== word.id)
+        .map((candidate) => candidate.native),
+    ).slice(0, 3);
+
+    return {
+      id: word.id,
+      prompt: word.foreign,
+      correctOption: word.native,
+      options: shuffleArray([...wrong, word.native]),
+    };
+  });
+}
+
+export async function ensureUser(user: PlayerSession) {
+  await db
+    .insert(users)
+    .values({
+      id: user.userId as never,
+      name: user.name,
+      image: user.avatar,
+    })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: {
+        name: user.name,
+        image: user.avatar,
+      },
+    });
+}
+
+export async function tryMatch(
+  user: PlayerSession & { language: SupportedLanguage; level: string },
+) {
+  const queueKey = `${QUEUE_KEY_PREFIX}:${user.language}:${user.level}`;
+  await ensureUser(user);
+
+  await redis.rpush(queueKey, JSON.stringify(user));
+  const waitingQueue = await redis.lrange<string>(queueKey, 0, -1);
+  const waitingRaw = waitingQueue.find(
+    (entry) => entry !== JSON.stringify(user),
+  );
+  if (!waitingRaw) {
+    return null;
+  }
+
+  let waiting: PlayerSession | null = null;
+  try {
+    waiting = JSON.parse(waitingRaw) as PlayerSession;
+  } catch {
+    waiting = null;
+  }
+
+  if (!waiting || waiting.userId === user.userId) {
+    return null;
+  }
+
+  await redis.lrem(queueKey, 1, waitingRaw);
+  await redis.lrem(queueKey, 1, JSON.stringify(user));
+
+  await ensureUser(waiting);
+
+  const createdMatch = await db.transaction(async (tx) => {
+    const [match] = await tx
+      .insert(matches)
+      .values({
+        language: user.language,
+        level: user.level,
+        status: "active",
+      })
+      .returning();
+
+    const questions = createMatchQuestions(user.language);
+    await tx.insert(matchQuestions).values(
+      questions.map((question, orderIndex) => ({
+        matchId: match.id,
+        orderIndex,
+        prompt: question.prompt,
+        options: question.options,
+        correctOption: question.correctOption,
+      })),
+    );
+
+    const playerRows = [
+      { matchId: match.id, userId: user.userId, side: "player1" },
+      { matchId: match.id, userId: waiting.userId, side: "player2" },
+    ];
+    await tx.insert(matchPlayers).values(playerRows);
+
+    return { match, questions, waiting };
+  });
+
+  await pusher.trigger(`${USER_CHANNEL_PREFIX}${user.userId}`, "match-found", {
+    matchId: createdMatch.match.id,
+    opponent: waiting,
+  });
+  await pusher.trigger(
+    `${USER_CHANNEL_PREFIX}${waiting.userId}`,
+    "match-found",
+    {
+      matchId: createdMatch.match.id,
+      opponent: user,
+    },
+  );
+
+  return createdMatch;
+}
+
+export async function fetchMatchForUser(matchId: string, userId: string) {
+  const match = await db.query.matches.findFirst({
+    where: eq(matches.id, matchId),
+  });
+
+  if (!match) {
+    return null;
+  }
+
+  const players = await db.query.matchPlayers.findMany({
+    where: eq(matchPlayers.matchId, matchId),
+  });
+
+  const me = players.find((player) => player.userId === userId) ?? null;
+  const opponent = players.find((player) => player.userId !== userId) ?? null;
+
+  if (!me) {
+    return null;
+  }
+
+  const questionRows = await db
+    .select()
+    .from(matchQuestions)
+    .where(eq(matchQuestions.matchId, matchId))
+    .orderBy(asc(matchQuestions.orderIndex));
+
+  return { match, me, opponent, questions: questionRows };
+}
+
+export async function submitLiveAnswer(params: {
+  matchId: string;
+  userId: string;
+  questionId: string;
+  selectedOption: string;
+  responseMs: number;
+}) {
+  const question = await db.query.matchQuestions.findFirst({
+    where: and(
+      eq(matchQuestions.matchId, params.matchId),
+      eq(matchQuestions.id, params.questionId),
+    ),
+  });
+
+  const player = await db.query.matchPlayers.findFirst({
+    where: and(
+      eq(matchPlayers.matchId, params.matchId),
+      eq(matchPlayers.userId, params.userId),
+    ),
+  });
+
+  if (!question || !player) {
+    return { ok: false as const, error: "Match state invalid" };
+  }
+
+  const isCorrect = question.correctOption === params.selectedOption;
+  await db.insert(matchAnswers).values({
+    matchId: params.matchId,
+    userId: params.userId,
+    questionId: question.id,
+    selectedOption: params.selectedOption,
+    isCorrect,
+    responseMs: params.responseMs,
+  });
+
+  const nextProgress = player.progress + 1;
+  const nextCorrectCount = isCorrect
+    ? player.correctCount + 1
+    : player.correctCount;
+  await db
+    .update(matchPlayers)
+    .set({
+      progress: nextProgress,
+      correctCount: nextCorrectCount,
+      finishedAt: nextProgress >= 10 ? new Date() : null,
+    })
+    .where(
+      and(
+        eq(matchPlayers.matchId, params.matchId),
+        eq(matchPlayers.userId, params.userId),
+      ),
+    );
+
+  const matchRows = await db.query.matchPlayers.findMany({
+    where: eq(matchPlayers.matchId, params.matchId),
+  });
+
+  const winner = matchRows.find((row) => row.progress >= 10);
+  if (winner) {
+    await db
+      .update(matches)
+      .set({
+        status: "finished",
+        winnerUserId: winner.userId,
+        finishedAt: new Date(),
+      })
+      .where(eq(matches.id, params.matchId));
+    await pusher.trigger(
+      `${MATCH_CHANNEL_PREFIX}${params.matchId}`,
+      "match-finished",
+      {
+        winnerUserId: winner.userId,
+      },
+    );
+  } else {
+    await pusher.trigger(
+      `${MATCH_CHANNEL_PREFIX}${params.matchId}`,
+      "turn-played",
+      {
+        userId: params.userId,
+        progress: nextProgress,
+        correctCount: nextCorrectCount,
+        isCorrect,
+      },
+    );
+  }
+
+  return {
+    ok: true as const,
+    isCorrect,
+    progress: nextProgress,
+    correctCount: nextCorrectCount,
+  };
+}
+
+export async function saveAsyncScore(params: {
+  userId: string;
+  language: SupportedLanguage;
+  level: string;
+  score: number;
+  correct: number;
+  timeMs: number;
+}) {
+  await db.insert(asyncScores).values({
+    userId: params.userId,
+    language: params.language,
+    level: params.level,
+    score: params.score,
+    correct: params.correct,
+    timeMs: params.timeMs,
+  });
+}
+
+export async function getLeaderboard(
+  language: SupportedLanguage,
+  level: string,
+) {
+  return db
+    .select({
+      score: asyncScores.score,
+      correct: asyncScores.correct,
+      timeMs: asyncScores.timeMs,
+      name: users.name,
+      avatar: users.image,
+    })
+    .from(asyncScores)
+    .innerJoin(users, eq(asyncScores.userId, users.id))
+    .where(
+      and(eq(asyncScores.language, language), eq(asyncScores.level, level)),
+    )
+    .orderBy(desc(asyncScores.score), asc(asyncScores.timeMs))
+    .limit(10);
+}
