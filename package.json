@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate --dialect=postgresql --schema=./db/schema.ts --out=./drizzle",
+    "db:push": "drizzle-kit push --dialect=postgresql --schema=./db/schema.ts --url \"$(grep '^DATABASE_URL=' .env | cut -d= -f2-)\""
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
