@@ -16,7 +16,7 @@ export const translations: Record<Language, Translations> = {
       games: "Online Games",
       topics: "Topics",
       myDecks: "My Decks",
-      friends: "Friends",
+      friends: "Me & Friends",
       healthBar: "Health Bar",
     },
     auth: {
@@ -142,9 +142,25 @@ export const translations: Record<Language, Translations> = {
       ascended: "Ascended",
     },
     leaderboard: {
-      title: "Friends Leaderboard",
+      title: "Friends League",
       subtitle:
-        "Coming next: friend invites, weekly races, and shared milestones.",
+        "Recruit friends, build 4-player teams, and climb through five leagues.",
+    },
+    friendsPage: {
+      title: "Friends League",
+      subtitle:
+        "Add friends, build a squad of four, and beat rival teams to earn promotion.",
+      currentLeague: "Current league",
+      yourXp: "Your XP",
+      teamGap: "Team gap",
+      promotionProgress: "Promotion progress",
+      leagueLadder: "League ladder",
+      squadTitle: "Build your squad",
+      addFriends: "Add friends",
+      yourTeam: "Your team",
+      rivalTeam: "Rival team",
+      leaderboardTitle: "League leaderboard",
+      trainingTitle: "XP tasks",
     },
   },
   czech: {
@@ -152,7 +168,7 @@ export const translations: Record<Language, Translations> = {
       games: "Hry",
       topics: "Temata",
       myDecks: "Moje balíčky",
-      friends: "Přátelé",
+      friends: "Já a přátelé",
       healthBar: "Zdravolní stav",
     },
     auth: {
@@ -279,8 +295,25 @@ export const translations: Record<Language, Translations> = {
       ascended: "Povyseno",
     },
     leaderboard: {
-      title: "Zebricek pratel",
-      subtitle: "Brzy: pozvanky, tydenni zavody a sdilene milniky.",
+      title: "Liga přátel",
+      subtitle:
+        "Přidávejte přátele, skládejte týmy po 4 hráčích a stoupejte pěti ligami.",
+    },
+    friendsPage: {
+      title: "Liga přátel",
+      subtitle:
+        "Přidávejte přátele, stavte čtyřčlenný tým a porážejte soupeře pro postup.",
+      currentLeague: "Současná liga",
+      yourXp: "Vaše XP",
+      teamGap: "Rozdíl týmů",
+      promotionProgress: "Postup do vyšší ligy",
+      leagueLadder: "Žebříček lig",
+      squadTitle: "Sestavte tým",
+      addFriends: "Přidat přátele",
+      yourTeam: "Váš tým",
+      rivalTeam: "Soupeřův tým",
+      leaderboardTitle: "Žebříček přátel",
+      trainingTitle: "XP úkoly",
     },
   },
   deutsch: {
@@ -288,7 +321,7 @@ export const translations: Record<Language, Translations> = {
       games: "Spiele",
       topics: "Themen",
       myDecks: "Meine Decks",
-      friends: "Freunde",
+      friends: "Ich & Freunde",
       healthBar: "Gesundheitsbalken",
     },
     auth: {

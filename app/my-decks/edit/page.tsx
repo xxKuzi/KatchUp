@@ -187,7 +187,7 @@ function DeckEditorPage() {
     <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[320px_1fr]">
         <aside className="space-y-6">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <section className="first-section-static-glow rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                 Deck Editor

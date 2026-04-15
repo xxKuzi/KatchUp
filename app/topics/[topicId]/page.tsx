@@ -88,7 +88,7 @@ export default function TopicDetailPage() {
         )}
       >
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-          <section className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/70 sm:p-8">
+          <section className="first-section-static-glow rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-950/70 sm:p-8">
             <Link
               href="/topics"
               className="inline-flex text-sm font-medium text-blue-600 transition hover:text-blue-700 dark:text-blue-300"

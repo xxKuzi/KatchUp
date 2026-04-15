@@ -30,6 +30,50 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+.page-surface {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(16px);
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease,
+    transform 300ms ease;
+}
+
+.page-surface:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 35px rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.dark .page-surface {
+  border-color: rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.7);
+  box-shadow: 0 20px 45px rgba(2, 6, 23, 0.35);
+}
+
+.dark .page-surface:hover {
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 35px rgba(148, 163, 184, 0.35);
+}
+
+.first-section-static-glow {
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 35px rgba(255, 255, 255, 0.22),
+    0 16px 32px rgba(15, 23, 42, 0.1);
+}
+
+.dark .first-section-static-glow {
+  border-color: rgba(148, 163, 184, 0.55);
+  box-shadow:
+    0 0 35px rgba(148, 163, 184, 0.22),
+    0 16px 32px rgba(2, 6, 23, 0.32);
+}
+
 /*MY CUSTOM CSS*/
 /*Moves the container from left to right */
 @keyframes marquee-lr {

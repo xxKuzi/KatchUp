@@ -38,13 +38,13 @@ export default function Home() {
       </div>
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-8 sm:px-10 lg:px-16">
-        <section className="rounded-3xl border border-white/60 bg-white/75 p-8 shadow-xl backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-white hover:shadow-[0_0_35px_rgba(255,255,255,0.22)] md:p-12 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-white/90 dark:hover:shadow-[0_0_35px_rgba(148,163,184,0.35)]">
+        <section className="page-surface rounded-3xl p-8 md:p-12">
           <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
             <p className="mb-4 inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-900 dark:bg-blue-950/70 dark:text-blue-300">
               Language Learning Arena
             </p>
 
-            <h1 className="text-6xl font-black tracking-tight sm:text-7xl">
+            <h1 className="text-6xl font-black tracking-tight text-slate-900 sm:text-7xl dark:text-slate-100">
               Ready?
             </h1>
 
@@ -80,7 +80,7 @@ export default function Home() {
             return (
               <article
                 key={item.title}
-                className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-white/90 dark:hover:shadow-[0_0_30px_rgba(148,163,184,0.3)]"
+                className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-black hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] dark:border-slate-700 dark:bg-slate-800/85 dark:hover:border-white/90 dark:hover:shadow-[0_0_30px_rgba(148,163,184,0.3)]"
               >
                 <div
                   className={`mb-5 inline-flex rounded-2xl bg-linear-to-r ${item.accent} p-3 text-white shadow-lg`}
@@ -88,7 +88,7 @@ export default function Home() {
                   <Icon className="h-6 w-6" />
                 </div>
 
-                <h2 className="text-2xl font-bold tracking-tight">
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                   {item.title}
                 </h2>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">

@@ -113,17 +113,6 @@ function Navbar() {
           >
             {t("navbar.myDecks")}
           </button>
-          <button
-            className={`cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium transition sm:px-4 ${
-              isHomePage
-                ? "text-slate-100 hover:bg-slate-800/80 hover:text-white"
-                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
-            }`}
-            onClick={() => router.push("/leaderboard")}
-            type="button"
-          >
-            {t("navbar.friends")} {";)"}
-          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -136,6 +125,18 @@ function Navbar() {
               {t("auth.loginRegister", "Login / Register")}
             </button>
           ) : null}
+
+          <button
+            className={`cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium transition sm:px-4 ${
+              isHomePage
+                ? "text-slate-100 hover:bg-slate-800/80 hover:text-white"
+                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
+            }`}
+            onClick={() => router.push("/friends")}
+            type="button"
+          >
+            {t("navbar.friends")}
+          </button>
 
           <div className="relative" role="presentation" ref={menuRef}>
             <button

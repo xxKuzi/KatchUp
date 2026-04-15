@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-xl items-center px-4 py-10">
-      <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950 sm:p-8">
+      <div className="first-section-static-glow w-full rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
           Account
         </p>
@@ -32,7 +32,8 @@ export default function LoginPage() {
         {isSignedIn ? (
           <div className="mt-6 space-y-3">
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Signed in as {session?.user?.name || session?.user?.email || "user"}
+              Signed in as{" "}
+              {session?.user?.name || session?.user?.email || "user"}
             </p>
             <button
               type="button"
