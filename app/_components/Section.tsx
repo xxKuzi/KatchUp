@@ -10,7 +10,11 @@ const Section = ({ color, children }: any) => {
   const gradientColor: string = colorVariants[color] || "bg-white text-black";
 
   return (
-    <div className={`w-screen ${gradientColor} py-4 px-[70px]`}>{children}</div>
+    <div
+      className={`rounded-xl dark:border-gray-700 border-gray-200 border-8 ${gradientColor} py-4 mx-10 px-[70px]`}
+    >
+      {children}
+    </div>
   );
 };
 

@@ -7,30 +7,19 @@ import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
 import { useLanguage } from "../_lib/languageContext";
-import { signIn, signOut, useSession } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 
 function Navbar() {
   const router = useRouter();
   const { t } = useLanguage();
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showSignInOptions, setShowSignInOptions] = useState(false);
   const menuRef = useRef(null);
   const isSignedIn = status === "authenticated";
 
-  const handleGoogleSignIn = async () => {
+  const handleOpenLogin = () => {
     setMenuOpen(false);
-    await signIn("google", { callbackUrl: "/" });
-  };
-
-  const handleGithubSignIn = async () => {
-    setMenuOpen(false);
-    await signIn("github", { callbackUrl: "/" });
-  };
-
-  const handleAppleSignIn = async () => {
-    setMenuOpen(false);
-    await signIn("apple", { callbackUrl: "/" });
+    router.push("/login");
   };
 
   const handleSignOut = async () => {
@@ -42,7 +31,6 @@ function Navbar() {
     const handlePointerDown = (event) => {
       if (!menuRef.current?.contains(event.target)) {
         setMenuOpen(false);
-        setShowSignInOptions(false);
       }
     };
 
@@ -110,7 +98,18 @@ function Navbar() {
           </button>
         </div>
 
-        <div className="relative" role="presentation" ref={menuRef}>
+        <div className="flex items-center gap-2">
+          {!isSignedIn ? (
+            <button
+              type="button"
+              onClick={handleOpenLogin}
+              className="inline-flex items-center justify-center rounded-lg border border-blue-500 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
+            >
+              {t("auth.loginRegister", "Login / Register")}
+            </button>
+          ) : null}
+
+          <div className="relative" role="presentation" ref={menuRef}>
           <button
             type="button"
             aria-label="Open utility menu"
@@ -148,43 +147,13 @@ function Navbar() {
                     {t("auth.signOut", "Sign out")}
                   </button>
                 ) : (
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowSignInOptions((current) => !current)
-                      }
-                      className="rounded-2xl border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      {t("auth.signIn", "Sign in")}
-                    </button>
-
-                    {showSignInOptions ? (
-                      <div className="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-900/80">
-                        <button
-                          type="button"
-                          onClick={handleGoogleSignIn}
-                          className="w-full rounded-xl border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                        >
-                          {t("auth.signInGoogle", "Continue with Google")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleGithubSignIn}
-                          className="w-full rounded-xl border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                        >
-                          {t("auth.signInGithub", "Continue with GitHub")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleAppleSignIn}
-                          className="w-full rounded-xl border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                        >
-                          {t("auth.signInApple", "Continue with Apple")}
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenLogin}
+                    className="rounded-2xl border border-blue-500 bg-blue-600 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
+                  >
+                    {t("auth.loginRegister", "Login / Register")}
+                  </button>
                 )}
 
                 {session?.user?.name ? (
@@ -197,6 +166,7 @@ function Navbar() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
