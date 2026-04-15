@@ -14,13 +14,35 @@ function Navbar() {
   const { t } = useLanguage();
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSignInOptions, setShowSignInOptions] = useState(false);
   const menuRef = useRef(null);
   const isSignedIn = status === "authenticated";
+
+  const handleGoogleSignIn = async () => {
+    setMenuOpen(false);
+    await signIn("google", { callbackUrl: "/" });
+  };
+
+  const handleGithubSignIn = async () => {
+    setMenuOpen(false);
+    await signIn("github", { callbackUrl: "/" });
+  };
+
+  const handleAppleSignIn = async () => {
+    setMenuOpen(false);
+    await signIn("apple", { callbackUrl: "/" });
+  };
+
+  const handleSignOut = async () => {
+    setMenuOpen(false);
+    await signOut({ callbackUrl: "/" });
+  };
 
   useEffect(() => {
     const handlePointerDown = (event) => {
       if (!menuRef.current?.contains(event.target)) {
         setMenuOpen(false);
+        setShowSignInOptions(false);
       }
     };
 
@@ -117,15 +139,53 @@ function Navbar() {
 
                 <LanguageToggle />
 
-                <button
-                  type="button"
-                  onClick={() => (isSignedIn ? signOut() : signIn())}
-                  className="rounded-2xl border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  {isSignedIn
-                    ? t("auth.signOut", "Sign out")
-                    : t("auth.signIn", "Sign in")}
-                </button>
+                {isSignedIn ? (
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="rounded-2xl border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    {t("auth.signOut", "Sign out")}
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowSignInOptions((current) => !current)
+                      }
+                      className="rounded-2xl border border-slate-300 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      {t("auth.signIn", "Sign in")}
+                    </button>
+
+                    {showSignInOptions ? (
+                      <div className="space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-900/80">
+                        <button
+                          type="button"
+                          onClick={handleGoogleSignIn}
+                          className="w-full rounded-xl border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          {t("auth.signInGoogle", "Continue with Google")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleGithubSignIn}
+                          className="w-full rounded-xl border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          {t("auth.signInGithub", "Continue with GitHub")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAppleSignIn}
+                          className="w-full rounded-xl border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          {t("auth.signInApple", "Continue with Apple")}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
 
                 {session?.user?.name ? (
                   <p className="px-1 text-xs text-slate-500 dark:text-slate-400">
