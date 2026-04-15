@@ -57,6 +57,7 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     isCorrect: result.isCorrect,
-    status: result.progress >= 10 ? "finished" : "active",
+    status: result.status,
+    winnerId: result.winnerUserId,
   });
 }

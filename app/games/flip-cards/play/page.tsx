@@ -504,7 +504,7 @@ export default function FlipCardsPlayPage() {
       name={mode === "live" ? "Flip Cards Match" : "Flip Cards Score Rush"}
       description={
         mode === "live"
-          ? "Both players race through the same 10 questions in different order. First to finish takes the win."
+          ? "Both players race through a shared set of cards. First player to reach 10 correct answers wins."
           : "Answer quickly for timing bonus and push your score onto the online board."
       }
       bgImage="flip_cards.png"

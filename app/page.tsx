@@ -30,25 +30,28 @@ export default function Home() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <div className="pointer-events-none absolute inset-0 opacity-80">
-        <div className="absolute -top-16 -left-16 h-72 w-72 rounded-full bg-cyan-300/40 blur-3xl dark:bg-cyan-700/20" />
-        <div className="absolute top-20 right-0 h-80 w-80 rounded-full bg-blue-300/50 blur-3xl dark:bg-blue-800/20" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-amber-200/50 blur-3xl dark:bg-amber-700/10" />
+    <div className="relative -mt-32 min-h-screen overflow-hidden bg-[#020617] pt-32 text-slate-100">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.16),transparent_42%),radial-gradient(circle_at_85%_18%,rgba(59,130,246,0.18),transparent_38%),radial-gradient(circle_at_50%_92%,rgba(14,165,233,0.12),transparent_35%),linear-gradient(180deg,#020617_0%,#0b1128_55%,#030712_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(1px_1px_at_20px_30px,rgba(255,255,255,0.95),transparent),radial-gradient(1px_1px_at_140px_90px,rgba(191,219,254,0.9),transparent),radial-gradient(1.5px_1.5px_at_260px_170px,rgba(255,255,255,0.9),transparent),radial-gradient(1px_1px_at_380px_260px,rgba(186,230,253,0.85),transparent),radial-gradient(1.5px_1.5px_at_520px_120px,rgba(255,255,255,0.95),transparent)] bg-size-[560px_320px] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(1px_1px_at_60px_80px,rgba(255,255,255,0.7),transparent),radial-gradient(1.5px_1.5px_at_240px_140px,rgba(224,242,254,0.8),transparent),radial-gradient(1px_1px_at_420px_40px,rgba(255,255,255,0.75),transparent),radial-gradient(1px_1px_at_500px_230px,rgba(191,219,254,0.75),transparent)] bg-size-[620px_360px] opacity-45" />
       </div>
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-8 sm:px-10 lg:px-16">
-        <section className="rounded-3xl border border-white/70 bg-white/75 p-8 shadow-xl backdrop-blur md:p-12 dark:border-slate-800 dark:bg-slate-900/70">
+        <section className="rounded-3xl border border-white/60 bg-white/75 p-8 shadow-xl backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-white hover:shadow-[0_0_35px_rgba(255,255,255,0.22)] md:p-12 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-white/90 dark:hover:shadow-[0_0_35px_rgba(148,163,184,0.35)]">
           <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
             <p className="mb-4 inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-900 dark:bg-blue-950/70 dark:text-blue-300">
               Language Learning Arena
             </p>
 
-            <h1 className="text-6xl font-black tracking-tight sm:text-7xl">Ready?</h1>
+            <h1 className="text-6xl font-black tracking-tight sm:text-7xl">
+              Ready?
+            </h1>
 
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-300 sm:text-xl">
-              Train vocabulary in a modern way with <span className="font-bold">KatchUp</span>.
-              Compete, customize, and improve with game-like energy.
+              Train vocabulary in a modern way with{" "}
+              <span className="font-bold">KatchUp</span>. Compete, customize,
+              and improve with game-like energy.
             </p>
 
             <div className="mt-10 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
@@ -77,15 +80,17 @@ export default function Home() {
             return (
               <article
                 key={item.title}
-                className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900"
+                className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-white/90 dark:hover:shadow-[0_0_30px_rgba(148,163,184,0.3)]"
               >
                 <div
-                  className={`mb-5 inline-flex rounded-2xl bg-gradient-to-r ${item.accent} p-3 text-white shadow-lg`}
+                  className={`mb-5 inline-flex rounded-2xl bg-linear-to-r ${item.accent} p-3 text-white shadow-lg`}
                 >
                   <Icon className="h-6 w-6" />
                 </div>
 
-                <h2 className="text-2xl font-bold tracking-tight">{item.title}</h2>
+                <h2 className="text-2xl font-bold tracking-tight">
+                  {item.title}
+                </h2>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                   {item.description}
                 </p>
@@ -94,7 +99,7 @@ export default function Home() {
           })}
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 to-blue-950 p-8 text-white shadow-xl md:p-10">
+        <section className="rounded-3xl border border-slate-200 bg-linear-to-r from-slate-900 to-blue-950 p-8 text-white shadow-xl md:p-10">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">

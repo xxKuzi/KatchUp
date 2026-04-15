@@ -29,6 +29,8 @@ interface PlayerSession {
 const QUEUE_KEY_PREFIX = "flipcards:queue";
 const USER_CHANNEL_PREFIX = "user-";
 const MATCH_CHANNEL_PREFIX = "match-";
+const WINNING_CORRECT_ANSWERS = 10;
+const LIVE_QUESTION_COUNT = 30;
 
 function shuffleArray<T>(items: T[]): T[] {
   const cloned = [...items];
@@ -42,7 +44,10 @@ function shuffleArray<T>(items: T[]): T[] {
 function createMatchQuestions(
   language: SupportedLanguage,
 ): MatchQuestionPayload[] {
-  const words = shuffleArray(getAllWords(language)).slice(0, 10);
+  const words = shuffleArray(getAllWords(language)).slice(
+    0,
+    LIVE_QUESTION_COUNT,
+  );
   return words.map((word) => {
     const wrong = shuffleArray(
       getAllWords(language)
@@ -189,6 +194,14 @@ export async function submitLiveAnswer(params: {
   selectedOption: string;
   responseMs: number;
 }) {
+  const match = await db.query.matches.findFirst({
+    where: eq(matches.id, params.matchId),
+  });
+
+  if (!match || match.status !== "active") {
+    return { ok: false as const, error: "Match already finished" };
+  }
+
   const question = await db.query.matchQuestions.findFirst({
     where: and(
       eq(matchQuestions.matchId, params.matchId),
@@ -226,7 +239,8 @@ export async function submitLiveAnswer(params: {
     .set({
       progress: nextProgress,
       correctCount: nextCorrectCount,
-      finishedAt: nextProgress >= 10 ? new Date() : null,
+      finishedAt:
+        nextCorrectCount >= WINNING_CORRECT_ANSWERS ? new Date() : null,
     })
     .where(
       and(
@@ -239,7 +253,9 @@ export async function submitLiveAnswer(params: {
     where: eq(matchPlayers.matchId, params.matchId),
   });
 
-  const winner = matchRows.find((row) => row.progress >= 10);
+  const winner = matchRows.find(
+    (row) => row.correctCount >= WINNING_CORRECT_ANSWERS,
+  );
   if (winner) {
     await db
       .update(matches)
@@ -272,6 +288,8 @@ export async function submitLiveAnswer(params: {
   return {
     ok: true as const,
     isCorrect,
+    status: winner ? ("finished" as const) : ("active" as const),
+    winnerUserId: winner?.userId ?? null,
     progress: nextProgress,
     correctCount: nextCorrectCount,
   };
