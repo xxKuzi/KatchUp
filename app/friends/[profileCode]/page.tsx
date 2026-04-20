@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   buildProfileUrl,
   friendFromPublicProfile,
-  getProfileAvatar,
+  getAvatarBackground,
   type PublicFriendProfile,
 } from "../_lib/profile";
 import {
@@ -40,8 +40,8 @@ export default function FriendProfilePage() {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
 
   const profileCode = Array.isArray(params.profileCode)
-    ? (params.profileCode[0]?.toUpperCase() ?? "")
-    : (params.profileCode?.toUpperCase() ?? "");
+    ? (params.profileCode[0] ?? "")
+    : (params.profileCode ?? "");
 
   useEffect(() => {
     let active = true;
@@ -135,8 +135,8 @@ export default function FriendProfilePage() {
     setIsAlreadyAdded(duplicate);
   }, [isReady, isSignedIn, profile, session?.user?.name, userKey]);
 
-  const avatar = useMemo(
-    () => (profile ? getProfileAvatar(profile.avatarIndex) : null),
+  const avatarBackground = useMemo(
+    () => (profile ? getAvatarBackground(profile.avatarBackgroundId) : null),
     [profile],
   );
 
@@ -183,7 +183,7 @@ export default function FriendProfilePage() {
     );
   }
 
-  if (!profile || !avatar) {
+  if (!profile || !avatarBackground) {
     return (
       <div className="min-h-screen bg-background px-4 py-10 text-foreground sm:px-6">
         <div className="mx-auto w-full max-w-3xl rounded-4xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -201,14 +201,16 @@ export default function FriendProfilePage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_28%),linear-gradient(to_bottom,rgba(248,250,252,1),rgba(241,245,249,1))] px-4 py-8 text-foreground sm:px-6">
       <div className="mx-auto w-full max-w-5xl rounded-4xl border border-white/80 bg-white/90 p-6 shadow-2xl shadow-slate-950/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 dark:shadow-black/30 sm:p-8">
-        <div className={`rounded-4xl bg-linear-to-r ${avatar.accent} p-1`}>
+        <div
+          className={`rounded-4xl bg-linear-to-r ${avatarBackground.accent} p-1`}
+        >
           <div className="rounded-[1.7rem] bg-white/95 p-6 dark:bg-slate-950/95 sm:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
                 <div
-                  className={`flex h-20 w-20 items-center justify-center rounded-3xl bg-linear-to-r ${avatar.accent} text-3xl font-black text-white shadow-lg`}
+                  className={`flex h-20 w-20 items-center justify-center rounded-3xl bg-linear-to-r ${avatarBackground.accent} text-base font-bold text-white shadow-lg`}
                 >
-                  {avatar.glyph}
+                  {profile.avatarIcon}
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -218,7 +220,7 @@ export default function FriendProfilePage() {
                     {profile.nickname}
                   </h1>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                    {avatar.label}
+                    {avatarBackground.label}
                   </p>
                 </div>
               </div>

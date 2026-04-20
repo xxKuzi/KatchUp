@@ -4,115 +4,109 @@ import FeatureGate from "@/app/_components/FeatureGate";
 import { useAuthState } from "@/app/_lib/auth";
 import { useLanguage } from "@/app/_lib/languageContext";
 import QRCode from "qrcode";
+import { Pencil } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  LEAGUE_TIERS,
   addFriendToState,
-  awardXpToState,
-  buildTeamSnapshot,
+  buildWeeklyTeamSnapshot,
   createInitialFriendsLeagueState,
   formatTimestamp,
-  getLeagueIndex,
-  getLeagueProgress,
-  getLeagueTier,
-  getNextLeagueTier,
+  getCycleTimeRemaining,
+  getFourDayCycleKey,
+  getCurrentLeague,
   parseFriendsLeagueState,
-  resolveLeagueRound,
+  resolveWeeklyLeagueFight,
   type FriendsLeagueState,
   type TeamMember,
 } from "./_lib/league";
 import {
+  AVATAR_BACKGROUNDS,
+  CUTE_ICONS,
   buildProfileUrl,
   createInitialFriendProfileIdentity,
   createPublicFriendProfile,
-  getNextProfileAvatarIndex,
-  getProfileAvatar,
+  createReadableProfileCode,
+  friendFromPublicProfile,
+  getAvatarBackground,
+  normalizeStoredProfileCode,
+  type PublicFriendProfile,
   profileStorageKey,
+  randomCuteIcon,
   parseStoredFriendProfileIdentity,
   type FriendProfileIdentity,
 } from "./_lib/profile";
 
 const STORAGE_KEY_PREFIX = "katchup-friends-league-v1";
+const FLIP_CARDS_HISTORY_KEY = "katchup-flip-cards-history-v1";
 
-const TRAINING_TASKS = [
-  { label: "Complete a vocab sprint", xp: 40 },
-  { label: "Win a live match", xp: 70 },
-  { label: "Finish a deck review", xp: 55 },
-  { label: "Invite a friend", xp: 30 },
-] as const;
+interface FlipCardsHistoryEntry {
+  score?: number;
+}
 
 function storageKey(userKey: string): string {
   return `${STORAGE_KEY_PREFIX}:${userKey}`;
 }
 
 function formatXp(value: number): string {
-  return new Intl.NumberFormat("en-US").format(Math.round(value));
+  return new Intl.NumberFormat("en-US").format(Math.max(0, Math.round(value)));
 }
 
-function formatLeagueLabel(index: number): string {
-  return `League ${index + 1}`;
-}
+function readPracticeXp(): number {
+  try {
+    const rawValue = window.localStorage.getItem(FLIP_CARDS_HISTORY_KEY);
 
-function formatRoleLabel(role: TeamMember["role"]): string {
-  return role.charAt(0).toUpperCase() + role.slice(1);
-}
+    if (!rawValue) {
+      return 0;
+    }
 
-const AVATAR_CHOICES = Array.from({ length: 8 }, (_, index) => ({
-  index,
-  ...getProfileAvatar(index),
-}));
+    const parsed = JSON.parse(rawValue) as FlipCardsHistoryEntry[];
+    if (!Array.isArray(parsed)) {
+      return 0;
+    }
+
+    const totalScore = parsed.reduce((sum, entry) => {
+      const score = typeof entry?.score === "number" ? entry.score : 0;
+      return sum + Math.max(0, Math.round(score));
+    }, 0);
+
+    return totalScore;
+  } catch {
+    return 0;
+  }
+}
 
 function TeamCard({
   title,
-  subtitle,
   members,
-  accent,
 }: {
   title: string;
-  subtitle: string;
   members: TeamMember[];
-  accent: string;
 }) {
   const totalXp = members.reduce((sum, member) => sum + member.xp, 0);
 
   return (
-    <article className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-lg shadow-black/5 dark:border-slate-800 dark:bg-slate-950/80">
-      <div className={`mb-4 h-1.5 rounded-full bg-linear-to-r ${accent}`} />
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {title}
-          </h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {subtitle}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-slate-100 px-3 py-2 text-right dark:bg-slate-900">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-            Total XP
-          </p>
-          <p className="text-xl font-black text-slate-900 dark:text-slate-100">
-            {formatXp(totalXp)}
-          </p>
-        </div>
+    <article className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950/80">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          {title}
+        </h3>
+        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+          {formatXp(totalXp)} XP
+        </p>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-4 space-y-2">
         {members.map((member) => (
           <div
             key={member.id}
-            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70"
+            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900/70"
           >
-            <div>
-              <p className="font-semibold text-slate-900 dark:text-slate-100">
-                {member.name}
-              </p>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                {formatRoleLabel(member.role)}
-              </p>
-            </div>
-            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-              {formatXp(member.xp)} XP
+            <p className="font-medium text-slate-900 dark:text-slate-100">
+              {member.name}
+            </p>
+            <p className="text-slate-500 dark:text-slate-300">
+              {formatXp(member.xp)}
             </p>
           </div>
         ))}
@@ -122,6 +116,7 @@ function TeamCard({
 }
 
 export default function FriendsPage() {
+  const router = useRouter();
   const { isSignedIn, isReady, session } = useAuthState();
   const { t } = useLanguage();
   const userKey = session?.user?.email ?? session?.user?.name ?? "player";
@@ -130,10 +125,16 @@ export default function FriendsPage() {
     createInitialFriendsLeagueState(displayName),
   );
   const [isHydrated, setIsHydrated] = useState(false);
-  const [friendName, setFriendName] = useState("");
-  const [friendXp, setFriendXp] = useState("180");
+  const [friendSearchTag, setFriendSearchTag] = useState("");
+  const [friendSearchResults, setFriendSearchResults] = useState<
+    PublicFriendProfile[]
+  >([]);
+  const [isSearchingFriends, setIsSearchingFriends] = useState(false);
+  const [searchMessage, setSearchMessage] = useState(
+    "Type at least 2 letters of a tag to search.",
+  );
   const [statusMessage, setStatusMessage] = useState(
-    "Recruit three friends, build a 4-player squad, and beat the rival team.",
+    "4-day cycles decide promotion.",
   );
   const [profileIdentity, setProfileIdentity] = useState<FriendProfileIdentity>(
     () => createInitialFriendProfileIdentity(displayName),
@@ -141,9 +142,8 @@ export default function FriendsPage() {
   const [profileHydrated, setProfileHydrated] = useState(false);
   const [profileUrl, setProfileUrl] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
-  const [profileSyncStatus, setProfileSyncStatus] = useState(
-    "Profile will sync after sign in.",
-  );
+  const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     if (!isReady || !isSignedIn) {
@@ -196,7 +196,30 @@ export default function FriendsPage() {
   }, [isSignedIn, profileHydrated, profileIdentity, userKey]);
 
   useEffect(() => {
-    if (!profileHydrated || !profileIdentity.profileCode) {
+    if (!isHydrated) {
+      return;
+    }
+
+    const refreshPracticeXp = () => {
+      const practiceXp = readPracticeXp();
+      setState((previous) =>
+        previous.userXp === practiceXp
+          ? previous
+          : {
+              ...previous,
+              userXp: practiceXp,
+            },
+      );
+    };
+
+    refreshPracticeXp();
+    window.addEventListener("focus", refreshPracticeXp);
+
+    return () => window.removeEventListener("focus", refreshPracticeXp);
+  }, [isHydrated]);
+
+  useEffect(() => {
+    if (!profileHydrated) {
       return;
     }
 
@@ -215,7 +238,7 @@ export default function FriendsPage() {
 
     const buildQrCode = async () => {
       const dataUrl = await QRCode.toDataURL(profileUrl, {
-        width: 320,
+        width: 300,
         margin: 1,
         errorCorrectionLevel: "M",
       });
@@ -232,12 +255,37 @@ export default function FriendsPage() {
     };
   }, [profileUrl]);
 
-  const leagueIndex = getLeagueIndex(state.userXp);
-  const currentLeague = getLeagueTier(state.userXp);
-  const nextLeague = getNextLeagueTier(state.userXp);
-  const leagueProgress = getLeagueProgress(state.userXp);
-  const snapshot = useMemo(() => buildTeamSnapshot(state), [state]);
-  const currentPublicProfile = useMemo(
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(new Date());
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const currentLeague = getCurrentLeague(state);
+  const cycleKey = getFourDayCycleKey(now);
+  const cycleRemaining = getCycleTimeRemaining(now);
+  const snapshot = useMemo(
+    () => buildWeeklyTeamSnapshot(state, cycleKey, profileIdentity.profileCode),
+    [cycleKey, profileIdentity.profileCode, state],
+  );
+  const yourTeamXp = snapshot.yourTeam.reduce(
+    (sum, member) => sum + member.xp,
+    0,
+  );
+  const rivalTeamXp = snapshot.rivalTeam.reduce(
+    (sum, member) => sum + member.xp,
+    0,
+  );
+  const cyclePlayed = state.matchHistory.some(
+    (match) => match.weekKey === cycleKey,
+  );
+  const avatarBackground = getAvatarBackground(
+    profileIdentity.avatarBackgroundId,
+  );
+
+  const publicProfile = useMemo(
     () =>
       createPublicFriendProfile({
         identity: profileIdentity,
@@ -262,103 +310,122 @@ export default function FriendsPage() {
 
     const timeoutId = window.setTimeout(() => {
       const syncProfile = async () => {
-        try {
-          const response = await fetch(
-            `/api/friends/profile/${profileIdentity.profileCode}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(currentPublicProfile),
-            },
-          );
-
-          if (response.ok) {
-            setProfileSyncStatus("Profile synced and ready to share.");
-            return;
-          }
-
-          setProfileSyncStatus("Profile saved locally. Sync will retry later.");
-        } catch {
-          setProfileSyncStatus("Profile saved locally. Sync will retry later.");
-        }
+        await fetch(`/api/friends/profile/${profileIdentity.profileCode}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(publicProfile),
+        }).catch(() => undefined);
       };
 
       void syncProfile();
-    }, 400);
+    }, 350);
 
     return () => window.clearTimeout(timeoutId);
+  }, [isSignedIn, profileHydrated, profileIdentity.profileCode, publicProfile]);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      return;
+    }
+
+    const normalizedTag = normalizeStoredProfileCode(friendSearchTag);
+
+    if (normalizedTag.length < 2) {
+      setFriendSearchResults([]);
+      setSearchMessage("Type at least 2 letters of a tag to search.");
+      return;
+    }
+
+    let active = true;
+    setIsSearchingFriends(true);
+
+    const timeoutId = window.setTimeout(() => {
+      const fetchResults = async () => {
+        const response = await fetch(
+          `/api/friends/profile/search?query=${encodeURIComponent(normalizedTag)}`,
+        ).catch(() => null);
+
+        if (!active) {
+          return;
+        }
+
+        if (!response?.ok) {
+          setFriendSearchResults([]);
+          setSearchMessage("Search failed. Try again.");
+          setIsSearchingFriends(false);
+          return;
+        }
+
+        const data = (await response.json()) as {
+          results?: PublicFriendProfile[];
+        };
+
+        const results = Array.isArray(data.results) ? data.results : [];
+        const withoutSelf = results.filter(
+          (profile) =>
+            normalizeStoredProfileCode(profile.profileCode) !==
+            normalizeStoredProfileCode(profileIdentity.profileCode),
+        );
+
+        setFriendSearchResults(withoutSelf);
+        setSearchMessage(
+          withoutSelf.length === 0
+            ? "No players found for this tag yet."
+            : `Found ${withoutSelf.length} players.`,
+        );
+        setIsSearchingFriends(false);
+      };
+
+      void fetchResults();
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+      setIsSearchingFriends(false);
+    };
+  }, [friendSearchTag, isSignedIn, profileIdentity.profileCode]);
+
+  useEffect(() => {
+    if (!isHydrated || !profileHydrated) {
+      return;
+    }
+
+    if (state.matchHistory.some((match) => match.weekKey === cycleKey)) {
+      return;
+    }
+
+    const result = resolveWeeklyLeagueFight(
+      state,
+      profileIdentity.profileCode,
+      now,
+    );
+    setState(result.nextState);
+    setStatusMessage(result.message);
   }, [
-    currentPublicProfile,
-    isSignedIn,
+    cycleKey,
+    isHydrated,
+    now,
     profileHydrated,
     profileIdentity.profileCode,
+    state,
   ]);
 
-  const yourTeamXp = snapshot.yourTeam.reduce(
-    (sum, member) => sum + member.xp,
-    0,
-  );
-  const rivalTeamXp = snapshot.rivalTeam.reduce(
-    (sum, member) => sum + member.xp,
-    0,
-  );
-  const xpGap = yourTeamXp - rivalTeamXp;
-  const leaderboardEntries = useMemo(
-    () =>
-      [
-        { id: "you", name: state.userName, xp: state.userXp, badge: "You" },
-        ...state.friends.map((friend) => ({
-          id: friend.id,
-          name: friend.name,
-          xp: friend.xp,
-          badge: "Friend",
-        })),
-      ].sort((left, right) => right.xp - left.xp),
-    [state.friends, state.userName, state.userXp],
-  );
-
-  const handleSelectAvatar = (avatarIndex: number) => {
-    setProfileIdentity((previous) => ({
-      ...previous,
-      avatarIndex,
-      updatedAt: new Date().toISOString(),
-    }));
-  };
-
-  const handleRandomizeAvatar = () => {
-    setProfileIdentity((previous) => ({
-      ...previous,
-      avatarIndex: Math.floor(Math.random() * AVATAR_CHOICES.length),
-      updatedAt: new Date().toISOString(),
-    }));
-  };
-
-  const handleAddFriend = () => {
-    const parsedXp = Number(friendXp);
-
+  const handleAddFriendFromProfile = (profile: PublicFriendProfile) => {
     setState((previous) =>
-      addFriendToState(previous, {
-        name: friendName,
-        xp: Number.isFinite(parsedXp) ? parsedXp : 0,
-      }),
+      addFriendToState(previous, friendFromPublicProfile(profile)),
     );
-    setFriendName("");
-    setFriendXp("180");
-    setStatusMessage("Friend added. The squad list updated immediately.");
+    setStatusMessage(`${profile.nickname} was added to your friends.`);
   };
 
-  const handleTrainingTask = (xp: number, label: string) => {
-    setState((previous) => awardXpToState(previous, xp));
-    setStatusMessage(`${label} completed. +${xp} XP for your profile.`);
-  };
-
-  const handlePlayRound = () => {
-    const round = resolveLeagueRound(state);
-    setState(round.nextState);
-    setStatusMessage(round.message);
-  };
+  const isAlreadyFriend = (profileCode: string) =>
+    state.friends.some(
+      (friend) =>
+        normalizeStoredProfileCode(friend.profileCode ?? "") ===
+        normalizeStoredProfileCode(profileCode),
+    );
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_28%),linear-gradient(to_bottom,rgba(248,250,252,1),rgba(241,245,249,1))] px-4 py-8 text-foreground sm:px-6 dark:bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_30%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.16),transparent_26%),linear-gradient(to_bottom,rgba(15,23,42,1),rgba(2,6,23,1))]">
@@ -371,501 +438,374 @@ export default function FriendsPage() {
       >
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
           <section className="rounded-4xl border border-white/80 bg-white/90 p-6 shadow-2xl shadow-slate-950/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 dark:shadow-black/30 sm:p-8">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                  Me
-                </p>
-                <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">
-                  Your profile, code, and scan link
-                </h2>
-              </div>
-              <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                {profileSyncStatus}
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-5 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/70">
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`flex h-20 w-20 items-center justify-center rounded-3xl bg-linear-to-r ${getProfileAvatar(profileIdentity.avatarIndex).accent} text-3xl font-black text-white shadow-lg`}
-                  >
-                    {getProfileAvatar(profileIdentity.avatarIndex).glyph}
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                        Nickname
-                      </p>
-                      <input
-                        value={profileIdentity.nickname}
-                        onChange={(event) =>
-                          setProfileIdentity((previous) => ({
-                            ...previous,
-                            nickname: event.target.value,
-                            updatedAt: new Date().toISOString(),
-                          }))
-                        }
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg font-semibold text-slate-900 outline-none transition focus:border-sky-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
-                        placeholder={displayName}
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={handleRandomizeAvatar}
-                        className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
-                      >
-                        Random avatar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSelectAvatar(
-                            getNextProfileAvatarIndex(
-                              profileIdentity.avatarIndex,
-                            ),
-                          )
-                        }
-                        className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        Next combo
-                      </button>
-                    </div>
-                  </div>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div
+                  className={`flex h-20 w-20 items-center justify-center rounded-3xl bg-linear-to-r ${avatarBackground.accent} text-base font-bold text-white shadow-lg`}
+                >
+                  {profileIdentity.avatarIcon}
                 </div>
-
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  {AVATAR_CHOICES.map((avatarChoice) => {
-                    const isActive =
-                      avatarChoice.index === profileIdentity.avatarIndex;
-
-                    return (
-                      <button
-                        key={avatarChoice.index}
-                        type="button"
-                        onClick={() => handleSelectAvatar(avatarChoice.index)}
-                        className={`flex items-center gap-3 rounded-2xl border px-3 py-2 text-left transition ${
-                          isActive
-                            ? "border-sky-300 bg-sky-50 shadow-sm dark:border-sky-700 dark:bg-sky-950/70"
-                            : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/70 dark:hover:border-slate-700"
-                        }`}
-                      >
-                        <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-linear-to-r ${avatarChoice.accent} text-sm font-black text-white`}
-                        >
-                          {avatarChoice.glyph}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            {avatarChoice.label}
-                          </p>
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-                            {isActive ? "Selected" : "Choose"}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Profile code
-                    </p>
-                    <p className="mt-2 text-xl font-black tracking-[0.18em] text-slate-900 dark:text-slate-100">
-                      {profileIdentity.profileCode}
-                    </p>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Mascot
-                    </p>
-                    <p className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">
-                      {getProfileAvatar(profileIdentity.avatarIndex).label}
-                    </p>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Shared link
-                    </p>
-                    <p className="mt-2 truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {profileUrl || "Generating..."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/70">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      QR code
-                    </p>
-                    <h3 className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
-                      Scan to open your profile
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-3xl bg-white p-4 shadow-sm dark:bg-slate-950">
-                  {qrCodeDataUrl ? (
-                    <img
-                      src={qrCodeDataUrl}
-                      alt="Profile QR code"
-                      className="w-full rounded-2xl border border-slate-200 dark:border-slate-800"
-                    />
-                  ) : (
-                    <div className="flex aspect-square items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                      Generating QR code...
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      XP
-                    </p>
-                    <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-                      {formatXp(currentPublicProfile.currentXp)}
-                    </p>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      League
-                    </p>
-                    <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-                      {currentPublicProfile.leagueName}
-                    </p>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Friends
-                    </p>
-                    <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-                      {currentPublicProfile.friendsCount}
-                    </p>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Matches
-                    </p>
-                    <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-                      {currentPublicProfile.matchesPlayed}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="first-section-static-glow overflow-hidden rounded-4xl border border-white/80 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-            <div className="grid gap-0 lg:grid-cols-[1.25fr_0.85fr]">
-              <div className="p-7 sm:p-10">
-                <p className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] text-sky-700 dark:border-sky-900 dark:bg-sky-950/70 dark:text-sky-300">
-                  Friends League
-                </p>
-                <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-6xl">
-                  Recruit a squad of four, win the XP race, and climb all five
-                  leagues.
-                </h1>
-                <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg">
-                  Add friends, build your 4-player team, and keep beating the
-                  rival squad. Each win pushes your XP higher and promotes you
-                  into the next league tier.
-                </p>
-
-                <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/80">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Current league
-                    </p>
-                    <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-                      {currentLeague.name}
-                    </p>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/80">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Your XP
-                    </p>
-                    <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-                      {formatXp(state.userXp)}
-                    </p>
-                  </div>
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/80">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      Team gap
-                    </p>
-                    <p
-                      className={`mt-2 text-2xl font-black ${
-                        xpGap >= 0
-                          ? "text-emerald-600 dark:text-emerald-300"
-                          : "text-rose-600 dark:text-rose-300"
-                      }`}
-                    >
-                      {xpGap >= 0 ? "+" : ""}
-                      {formatXp(xpGap)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8 rounded-3xl border border-slate-200 bg-white/80 p-5 dark:border-slate-800 dark:bg-slate-900/70">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                        Promotion progress
-                      </p>
-                      <p className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">
-                        {currentLeague.name}
-                        {nextLeague
-                          ? ` -> ${nextLeague.name}`
-                          : " - Max league"}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handlePlayRound}
-                      className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
-                    >
-                      Run league round
-                    </button>
-                  </div>
-                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                    <div
-                      className={`h-full rounded-full bg-linear-to-r ${currentLeague.accent} transition-all duration-500`}
-                      style={{
-                        width: `${Math.round(leagueProgress.progress * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                    <span>{formatXp(leagueProgress.current)} XP</span>
-                    <span>
-                      {nextLeague
-                        ? `${formatXp(leagueProgress.next)} XP to ${nextLeague.name}`
-                        : "League capped"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-200 bg-slate-50/80 p-7 dark:border-slate-800 dark:bg-slate-900/80 sm:p-10 lg:border-l lg:border-t-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  League ladder
-                </p>
-                <div className="mt-4 space-y-3">
-                  {LEAGUE_TIERS.map((tier, index) => {
-                    const isActive = index === leagueIndex;
-                    const isDone = index < leagueIndex;
-
-                    return (
-                      <div
-                        key={tier.name}
-                        className={`rounded-3xl border p-4 transition ${
-                          isActive
-                            ? "border-sky-300 bg-sky-50 shadow-md dark:border-sky-700 dark:bg-sky-950/70"
-                            : isDone
-                              ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/60"
-                              : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/70"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                              {formatLeagueLabel(index)}
-                            </p>
-                            <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">
-                              {tier.name}
-                            </h3>
-                          </div>
-                          <div
-                            className={`h-3 w-20 rounded-full bg-linear-to-r ${tier.accent}`}
-                          />
-                        </div>
-                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                          {isActive
-                            ? "This is your current division. Beat the opposing team to move up."
-                            : isDone
-                              ? "League cleared."
-                              : `Reach ${formatXp(tier.minXp)} XP to unlock this league.`}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white/80 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300">
-                  4 players per team. Your squad uses your highest-XP friends
-                  first, then fills any empty slots with league bots.
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-            <section className="rounded-4xl border border-slate-200/80 bg-white/90 p-6 shadow-lg shadow-slate-950/5 dark:border-slate-800 dark:bg-slate-950/80">
-              <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                    Add friends
+                    Me
                   </p>
-                  <h2 className="mt-2 text-2xl font-black text-slate-950 dark:text-white">
-                    Build your squad
-                  </h2>
+                  <h1 className="mt-1 text-3xl font-black text-slate-950 dark:text-white">
+                    {profileIdentity.nickname || displayName}
+                  </h1>
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                  {state.friends.length} friends
-                </span>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
-                <input
-                  value={friendName}
-                  onChange={(event) => setFriendName(event.target.value)}
-                  placeholder="Friend name"
-                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-                />
-                <input
-                  value={friendXp}
-                  onChange={(event) => setFriendXp(event.target.value)}
-                  inputMode="numeric"
-                  placeholder="Starting XP"
-                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-                />
               </div>
 
               <button
                 type="button"
-                onClick={handleAddFriend}
-                className="mt-3 inline-flex items-center justify-center rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400"
+                onClick={() => setIsProfileEditorOpen(true)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Add friend
+                <Pencil className="h-4 w-4" />
+                Edit profile picture
               </button>
+            </div>
 
-              <div className="mt-6 space-y-3">
-                {state.friends.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                    No friends yet. Add a few names and fill the first squad.
-                  </div>
-                ) : (
-                  state.friends.map((friend, index) => (
-                    <div
-                      key={friend.id}
-                      className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70"
-                    >
-                      <div>
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">
-                          {index + 1}. {friend.name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Joined {formatTimestamp(friend.joinedAt)}
-                        </p>
-                      </div>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                        {formatXp(friend.xp)} XP
-                      </p>
-                    </div>
-                  ))
-                )}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  XP from practice
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+                  {formatXp(state.userXp)}
+                </p>
               </div>
-            </section>
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Current league
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+                  {currentLeague.name}
+                </p>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Friends
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+                  {state.friends.length}
+                </p>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Weekly fights
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+                  {state.matchHistory.length}
+                </p>
+              </div>
+            </div>
 
-            <section className="rounded-4xl border border-slate-200/80 bg-white/90 p-6 shadow-lg shadow-slate-950/5 dark:border-slate-800 dark:bg-slate-950/80">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/70">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                Add me
+              </p>
+              <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_220px]">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                    Squad showdown
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    Unique code
                   </p>
-                  <h2 className="mt-2 text-2xl font-black text-slate-950 dark:text-white">
-                    Your 4-player team versus the rival team
-                  </h2>
+                  <p className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
+                    {profileIdentity.profileCode}
+                  </p>
+                  <p className="mt-2 break-all text-xs text-slate-500 dark:text-slate-400">
+                    {profileUrl}
+                  </p>
                 </div>
-                <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                  {statusMessage}
+                <div className="rounded-2xl bg-white p-3 shadow-sm dark:bg-slate-950">
+                  {qrCodeDataUrl ? (
+                    <img
+                      src={qrCodeDataUrl}
+                      alt="Add me QR code"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800"
+                    />
+                  ) : (
+                    <div className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-slate-300 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                      Generating QR...
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
+          </section>
 
-              <div className="mt-6 grid gap-5 xl:grid-cols-2">
-                <TeamCard
-                  title="Your team"
-                  subtitle="Your XP plus your top friends"
-                  members={snapshot.yourTeam}
-                  accent="from-sky-400 to-cyan-500"
-                />
-                <TeamCard
-                  title="Rival team"
-                  subtitle="Opponents scale with your current league"
-                  members={snapshot.rivalTeam}
-                  accent="from-rose-400 to-orange-500"
-                />
-              </div>
+          <section className="rounded-4xl border border-white/80 bg-white/90 p-6 shadow-xl shadow-slate-950/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 dark:shadow-black/30 sm:p-8">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-2xl font-black text-slate-950 dark:text-white">
+                Add friends
+              </h3>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                {state.friends.length} total
+              </span>
+            </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {TRAINING_TASKS.map((task) => (
-                  <button
-                    key={task.label}
-                    type="button"
-                    onClick={() => handleTrainingTask(task.xp, task.label)}
-                    className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-slate-700 dark:hover:bg-slate-900"
+            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+              <input
+                value={friendSearchTag}
+                onChange={(event) => setFriendSearchTag(event.target.value)}
+                placeholder="Search by tag (example: kuba19, kubafox44)"
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+              />
+              <button
+                type="button"
+                onClick={() => setFriendSearchTag("")}
+                className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Clear
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+              {isSearchingFriends ? "Searching..." : searchMessage}
+            </p>
+
+            <div className="mt-4 space-y-2">
+              {friendSearchResults.map((profile) => {
+                const alreadyAdded = isAlreadyFriend(profile.profileCode);
+
+                return (
+                  <div
+                    key={profile.profileCode}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70"
                   >
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                      XP task
-                    </p>
-                    <p className="mt-2 font-semibold text-slate-900 dark:text-slate-100">
-                      {task.label}
-                    </p>
-                    <p className="mt-2 text-sm font-bold text-emerald-600 dark:text-emerald-300">
-                      +{task.xp} XP
-                    </p>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/70">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    League leaderboard
-                  </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Top XP across your circle
-                  </p>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {leaderboardEntries.map((entry, index) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm dark:bg-slate-950"
-                    >
-                      <div>
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">
-                          {index + 1}. {entry.name}
-                        </p>
-                        <p className="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-                          {entry.badge}
-                        </p>
-                      </div>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                        {formatXp(entry.xp)} XP
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                        {profile.nickname}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        tag: {profile.profileCode}
                       </p>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white/70 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300">
-                Winning a round adds XP to your profile. Once your total crosses
-                the next league threshold, you automatically move up to the next
-                tier.
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(`/friends/${profile.profileCode}`)
+                        }
+                        className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Open profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddFriendFromProfile(profile)}
+                        disabled={alreadyAdded}
+                        className="rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 dark:bg-sky-500 dark:hover:bg-sky-400 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+                      >
+                        {alreadyAdded ? "Added" : "Add friend"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-5 space-y-2">
+              {state.friends.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  No friends yet.
+                </div>
+              ) : (
+                state.friends.map((friend, index) => (
+                  <div
+                    key={friend.id}
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70"
+                  >
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">
+                        {index + 1}. {friend.name}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Joined {formatTimestamp(friend.joinedAt)}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                      {formatXp(friend.xp)} XP
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-4xl border border-white/80 bg-white/90 p-6 shadow-xl shadow-slate-950/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 dark:shadow-black/30 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">
+                  Team battle
+                </h2>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  You get 3 random teammates from your current league. Results
+                  are auto-completed every 4 days.
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Next cycle in {cycleRemaining.days}d {cycleRemaining.hours}h
+                </p>
               </div>
-            </section>
-          </div>
+              <span className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200">
+                {cyclePlayed ? "Cycle completed" : "Cycle in progress"}
+              </span>
+            </div>
+
+            <div className="mt-6 grid gap-5 xl:grid-cols-2">
+              <TeamCard title="Your team" members={snapshot.yourTeam} />
+              <TeamCard title="Opponent team" members={snapshot.rivalTeam} />
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200">
+              <p>
+                Team score: {formatXp(yourTeamXp)} vs {formatXp(rivalTeamXp)}
+              </p>
+              <p className="mt-1 text-slate-500 dark:text-slate-400">
+                {statusMessage}
+              </p>
+            </div>
+          </section>
         </div>
       </FeatureGate>
+
+      {isProfileEditorOpen ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-sm">
+          <div className="w-full max-w-3xl rounded-4xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-950 sm:p-8">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-2xl font-black text-slate-950 dark:text-white">
+                Edit profile picture
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsProfileEditorOpen(false)}
+                className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_1fr]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Background
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {AVATAR_BACKGROUNDS.map((background) => {
+                    const active =
+                      background.id === profileIdentity.avatarBackgroundId;
+
+                    return (
+                      <button
+                        key={background.id}
+                        type="button"
+                        onClick={() =>
+                          setProfileIdentity((previous) => ({
+                            ...previous,
+                            avatarBackgroundId: background.id,
+                            updatedAt: new Date().toISOString(),
+                          }))
+                        }
+                        className={`rounded-2xl border p-3 text-left transition ${
+                          active
+                            ? "border-sky-300 bg-sky-50 dark:border-sky-700 dark:bg-sky-950/60"
+                            : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
+                        }`}
+                      >
+                        <div
+                          className={`h-10 rounded-xl bg-linear-to-r ${background.accent}`}
+                        />
+                        <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {background.label}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Cute icon
+                </p>
+                <div className="mt-3 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/70">
+                  <div
+                    className={`flex h-20 w-20 items-center justify-center rounded-3xl bg-linear-to-r ${avatarBackground.accent} text-base font-bold text-white shadow-lg`}
+                  >
+                    {profileIdentity.avatarIcon}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setProfileIdentity((previous) => ({
+                        ...previous,
+                        avatarIcon: randomCuteIcon(),
+                        updatedAt: new Date().toISOString(),
+                      }))
+                    }
+                    className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                  >
+                    Generate cute icon
+                  </button>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {CUTE_ICONS.map((icon) => (
+                      <button
+                        key={icon}
+                        type="button"
+                        onClick={() =>
+                          setProfileIdentity((previous) => ({
+                            ...previous,
+                            avatarIcon: icon,
+                            updatedAt: new Date().toISOString(),
+                          }))
+                        }
+                        className="rounded-xl border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                Profile code
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <input
+                  value={profileIdentity.profileCode}
+                  onChange={(event) =>
+                    setProfileIdentity((previous) => ({
+                      ...previous,
+                      profileCode:
+                        normalizeStoredProfileCode(event.target.value) ||
+                        createReadableProfileCode(previous.nickname),
+                      updatedAt: new Date().toISOString(),
+                    }))
+                  }
+                  placeholder="yourtag19"
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setProfileIdentity((previous) => ({
+                      ...previous,
+                      profileCode: createReadableProfileCode(previous.nickname),
+                      updatedAt: new Date().toISOString(),
+                    }))
+                  }
+                  className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Refresh code
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

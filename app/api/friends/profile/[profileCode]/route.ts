@@ -26,7 +26,8 @@ async function readStoredProfile(
     if (
       typeof parsed.profileCode !== "string" ||
       typeof parsed.nickname !== "string" ||
-      typeof parsed.avatarIndex !== "number" ||
+      typeof parsed.avatarBackgroundId !== "string" ||
+      typeof parsed.avatarIcon !== "string" ||
       typeof parsed.currentXp !== "number" ||
       typeof parsed.leagueName !== "string" ||
       typeof parsed.friendsCount !== "number" ||
@@ -68,7 +69,8 @@ export async function PUT(
   if (
     !body ||
     typeof body.nickname !== "string" ||
-    typeof body.avatarIndex !== "number" ||
+    typeof body.avatarBackgroundId !== "string" ||
+    typeof body.avatarIcon !== "string" ||
     typeof body.currentXp !== "number" ||
     typeof body.leagueName !== "string" ||
     typeof body.friendsCount !== "number" ||
@@ -84,7 +86,8 @@ export async function PUT(
     identity: {
       profileCode,
       nickname: body.nickname,
-      avatarIndex: body.avatarIndex,
+      avatarBackgroundId: body.avatarBackgroundId,
+      avatarIcon: body.avatarIcon,
       updatedAt: new Date().toISOString(),
     },
     currentXp: body.currentXp,
