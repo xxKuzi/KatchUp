@@ -20,7 +20,7 @@ export default function Games() {
         )}
         className="w-full"
       >
-        <main className="flex min-h-screen w-full flex-col items-center bg-background px-6 pb-24 pt-10 sm:px-10 lg:px-16">
+        <main className="flex min-h-screen w-full flex-col items-center bg-background px-6 pb-24 pt-6 sm:px-10 lg:px-16">
           <section className="first-section-static-glow w-full max-w-6xl rounded-3xl border border-white/90 bg-white/80 p-8 backdrop-blur ring-1 ring-white/70 dark:border-slate-600 dark:bg-slate-950/70  dark:ring-white/10 md:p-10">
             <p className="inline-flex rounded-full border border-blue-300/70 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
               Online Games

@@ -51,7 +51,7 @@ export default function MyDecksOverview() {
   );
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
+    <div className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <section className="first-section-static-glow rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-950/70 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
