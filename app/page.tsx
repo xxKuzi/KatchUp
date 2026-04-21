@@ -99,7 +99,7 @@ export default function Home() {
           })}
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-linear-to-r from-slate-900 to-blue-950 p-8 text-white shadow-xl md:p-10">
+        <section className="rounded-3xl border border-slate-200 bg-linear-to-r mt-32 from-slate-900 to-blue-950 p-8 text-white shadow-xl md:p-10">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">

@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useAuthState } from "@/app/_lib/auth";
 import FeatureGate from "@/app/_components/FeatureGate";
 import {
   ascendTopic,
-  completeTopicLevel,
   getLevelsForTopic,
   loadTopicsState,
   saveTopicsState,
@@ -16,7 +15,6 @@ import {
 } from "../_lib/topicsProgress";
 
 export default function TopicDetailPage() {
-  const router = useRouter();
   const params = useParams<{ topicId: string }>();
   const topicId = params.topicId;
 
@@ -56,22 +54,6 @@ export default function TopicDetailPage() {
   const completedAll = Boolean(topicProgress?.isCompleted);
   const ascended = Boolean(topicProgress?.isAscended);
 
-  const handleCompleteLevel = (level: number) => {
-    const { nextState, topicJustCompleted } = completeTopicLevel(
-      state,
-      topic.id,
-      level,
-    );
-    saveTopicsState(language, nextState);
-    setRefreshToken((value) => value + 1);
-
-    if (topicJustCompleted) {
-      window.setTimeout(() => {
-        router.push(`/topics?completedTopic=${topic.id}`);
-      }, 350);
-    }
-  };
-
   const handleAscend = () => {
     const nextState = ascendTopic(state, topic.id);
     saveTopicsState(language, nextState);
@@ -109,7 +91,7 @@ export default function TopicDetailPage() {
 
           <section className="grid gap-4 md:grid-cols-2">
             {levels.map((levelData) => {
-              const gameHref = `/games/${levelData.mode}`;
+              const gameHref = `/games/one-of-three?topicId=${encodeURIComponent(topic.id)}&level=${levelData.level}`;
               const completedBadgeClass = levelData.completed
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                 : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";
@@ -146,14 +128,6 @@ export default function TopicDetailPage() {
                     >
                       {t("topics.play", "Play")}
                     </Link>
-                    <button
-                      type="button"
-                      disabled={levelData.completed}
-                      onClick={() => handleCompleteLevel(levelData.level)}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
-                    >
-                      {t("topics.markComplete", "Mark complete")}
-                    </button>
                   </div>
                 </article>
               );

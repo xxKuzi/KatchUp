@@ -246,7 +246,7 @@ function DeckEditorPage() {
                 type="submit"
                 className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
               >
-                Create Deck (crypto.randomUUID)
+                Create Deck
               </button>
             </form>
           </section>
@@ -327,8 +327,7 @@ function DeckEditorPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                <span>Deck id: {selectedDeck.id}</span>
+              <div className="flex items-center justify-end rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
                 <button
                   type="button"
                   onClick={handleDeleteDeck}
