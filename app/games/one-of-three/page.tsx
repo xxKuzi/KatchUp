@@ -258,7 +258,9 @@ const OneOfThreePage = () => {
                 ) : (
                   <>
                     <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-                    <span className="text-rose-700 dark:text-rose-300">Failed</span>
+                    <span className="text-rose-700 dark:text-rose-300">
+                      Failed
+                    </span>
                   </>
                 )}
               </div>

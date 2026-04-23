@@ -97,12 +97,16 @@ function TopicCardContent({
       <div className={`absolute inset-0 bg-linear-to-br ${theme.panel}`} />
       <div className={`absolute inset-0 ${theme.glow} opacity-100`} />
       <div className="absolute inset-x-0 top-0 h-px bg-white/80 dark:bg-white/10" />
-      <div className={`absolute left-0 top-0 h-full w-2 bg-linear-to-b ${theme.stripe}`} />
+      <div
+        className={`absolute left-0 top-0 h-full w-2 bg-linear-to-b ${theme.stripe}`}
+      />
 
       <div className="relative flex h-full flex-col p-6 sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] backdrop-blur ${theme.badge}`}>
+            <div
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] backdrop-blur ${theme.badge}`}
+            >
               {ascended ? <Crown size={12} /> : <Sparkles size={12} />}
               {ascended ? "Ascended" : "Topic pack"}
             </div>
@@ -114,8 +118,12 @@ function TopicCardContent({
             </p>
           </div>
 
-          <div className={`flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/70 bg-white/70 text-slate-900 shadow-sm backdrop-blur dark:border-slate-700/70 dark:bg-slate-950/65 dark:text-white ${theme.outline}`}>
-            <span className="text-lg font-black leading-none">{levelCount}</span>
+          <div
+            className={`flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/70 bg-white/70 text-slate-900 shadow-sm backdrop-blur dark:border-slate-700/70 dark:bg-slate-950/65 dark:text-white ${theme.outline}`}
+          >
+            <span className="text-lg font-black leading-none">
+              {levelCount}
+            </span>
             <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
               /5
             </span>
@@ -179,11 +187,17 @@ function TopicCardContent({
 export default function TopicCard(props: TopicCardProps) {
   const { unlocked, justCompleted, topic, href, title } = props;
   const baseClass = `group relative overflow-hidden rounded-[2rem] border border-white/70 shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-1 ${themeVariants[topic.color].outline} transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.18)] dark:border-slate-800/70 dark:shadow-black/30`;
-  const animatedClass = justCompleted ? "animate-[topicPulse_1.1s_ease-in-out_3]" : "";
+  const animatedClass = justCompleted
+    ? "animate-[topicPulse_1.1s_ease-in-out_3]"
+    : "";
 
   if (unlocked) {
     return (
-      <Link href={href} className={`${baseClass} ${animatedClass}`} aria-label={`Open ${title}`}>
+      <Link
+        href={href}
+        className={`${baseClass} ${animatedClass}`}
+        aria-label={`Open ${title}`}
+      >
         <TopicCardContent {...props} />
       </Link>
     );
