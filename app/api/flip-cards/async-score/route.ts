@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { searchParams } = request.nextUrl;
   const language = searchParams.get("language");
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const body = (await request.json()) as {
     language?: SupportedLanguage;
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
   }
 
   await saveAsyncScore({
-    userId: session.user.id,
+    userId,
     language: body.language,
     level: body.level,
     score: body.score,

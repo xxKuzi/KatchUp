@@ -45,9 +45,9 @@ async function readStoredProfile(
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { profileCode: string } },
+  context: { params: Promise<{ profileCode: string }> },
 ) {
-  const { profileCode } = params;
+  const { profileCode } = await context.params;
   const storedProfile = await readStoredProfile(profileCode);
 
   if (!storedProfile) {
@@ -59,9 +59,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { profileCode: string } },
+  context: { params: Promise<{ profileCode: string }> },
 ) {
-  const { profileCode } = params;
+  const { profileCode } = await context.params;
   const body = (await request
     .json()
     .catch(() => null)) as Partial<PublicFriendProfile> | null;

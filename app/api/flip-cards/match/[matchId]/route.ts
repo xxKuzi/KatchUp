@@ -12,6 +12,7 @@ export async function GET(
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { matchId } = await context.params;
   const match = await db.query.matches.findFirst({
@@ -25,7 +26,7 @@ export async function GET(
   const me = await db.query.matchPlayers.findFirst({
     where: and(
       eq(matchPlayers.matchId, matchId),
-      eq(matchPlayers.userId, session.user.id),
+      eq(matchPlayers.userId, userId),
     ),
   });
 
@@ -53,8 +54,7 @@ export async function GET(
     .orderBy(asc(matchQuestions.orderIndex));
 
   const nextQuestion = questions[me.progress] ?? null;
-  const opponent =
-    players.find((player) => player.id !== session.user.id) ?? null;
+  const opponent = players.find((player) => player.id !== userId) ?? null;
 
   return NextResponse.json({
     match: {

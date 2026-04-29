@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { searchParams } = request.nextUrl;
   const language = searchParams.get("language");
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   const playerMatch = await db.query.matchPlayers.findFirst({
-    where: eq(matchPlayers.userId, session.user.id),
+    where: eq(matchPlayers.userId, userId),
   });
 
   if (!playerMatch) {
@@ -49,6 +50,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     status: "matched",
     matchId: match.id,
-    opponent: opponent.find((player) => player.id !== session.user.id) ?? null,
+    opponent: opponent.find((player) => player.id !== userId) ?? null,
   });
 }

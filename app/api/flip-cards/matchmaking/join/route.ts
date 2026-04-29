@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const body = (await request.json()) as {
     language?: SupportedLanguage;
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   const user = {
-    userId: session.user.id,
+    userId,
     name: session.user.name ?? "Player",
     avatar: session.user.image ?? "https://i.pravatar.cc/100?img=12",
     language: body.language,

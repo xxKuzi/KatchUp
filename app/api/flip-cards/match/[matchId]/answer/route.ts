@@ -13,6 +13,7 @@ export async function POST(
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { matchId } = await context.params;
   const body = (await request.json()) as {
@@ -28,7 +29,7 @@ export async function POST(
   const player = await db.query.matchPlayers.findFirst({
     where: and(
       eq(matchPlayers.matchId, matchId),
-      eq(matchPlayers.userId, session.user.id),
+      eq(matchPlayers.userId, userId),
     ),
   });
   const question = await db.query.matchQuestions.findFirst({
@@ -44,7 +45,7 @@ export async function POST(
 
   const result = await submitLiveAnswer({
     matchId,
-    userId: session.user.id,
+    userId,
     questionId: body.questionId,
     selectedOption: body.selectedOption,
     responseMs: body.responseMs ?? 0,

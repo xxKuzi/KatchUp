@@ -472,7 +472,7 @@ export function resolveWeeklyLeagueFight(
         leagueName: currentLeague.name,
         promoted,
         playedAt: new Date().toISOString(),
-      },
+      } satisfies LeagueMatchRecord,
       ...state.matchHistory,
     ].slice(0, 8),
   };
