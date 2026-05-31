@@ -1,9 +1,40 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { BookPlus, Swords, Trophy } from "lucide-react";
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export default function Home() {
   const router = useRouter();
+  const container = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    gsap.from(".hero-item", {
+      y: 40,
+      opacity: 0,
+      duration: 1,
+      stagger: 0.15,
+      ease: "power4.out",
+      clearProps: "opacity,transform",
+    });
+    
+    gsap.from(".feature-card", {
+      y: 40,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: "power3.out",
+      clearProps: "opacity,transform",
+      scrollTrigger: {
+        trigger: ".feature-container",
+        start: "top 90%", // Trigger slightly earlier on mobile
+      }
+    });
+  }, { scope: container });
 
   const highlights = [
     {
@@ -30,7 +61,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="relative -mt-32 min-h-screen overflow-hidden bg-[#020617] pt-32 text-slate-100">
+    <div className="relative -mt-32 min-h-screen overflow-hidden bg-[#020617] pt-32 text-slate-100" ref={container}>
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.16),transparent_42%),radial-gradient(circle_at_85%_18%,rgba(59,130,246,0.18),transparent_38%),radial-gradient(circle_at_50%_92%,rgba(14,165,233,0.12),transparent_35%),linear-gradient(180deg,#020617_0%,#0b1128_55%,#030712_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(1px_1px_at_20px_30px,rgba(255,255,255,0.95),transparent),radial-gradient(1px_1px_at_140px_90px,rgba(191,219,254,0.9),transparent),radial-gradient(1.5px_1.5px_at_260px_170px,rgba(255,255,255,0.9),transparent),radial-gradient(1px_1px_at_380px_260px,rgba(186,230,253,0.85),transparent),radial-gradient(1.5px_1.5px_at_520px_120px,rgba(255,255,255,0.95),transparent)] bg-size-[560px_320px] opacity-70" />
@@ -40,32 +71,32 @@ export default function Home() {
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-8 sm:px-10 lg:px-16">
         <section className="page-surface rounded-3xl p-8 md:p-12">
           <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-            <p className="mb-4 inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-900 dark:bg-blue-950/70 dark:text-blue-300">
+            <p className="hero-item mb-4 inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-900 dark:bg-blue-950/70 dark:text-blue-300">
               Language Learning Arena
             </p>
 
-            <h1 className="text-6xl font-black tracking-tight text-slate-900 sm:text-7xl dark:text-slate-100">
+            <h1 className="hero-item text-6xl font-black tracking-tight text-slate-900 sm:text-7xl dark:text-slate-100">
               Ready?
             </h1>
 
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-300 sm:text-xl">
+            <p className="hero-item mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-300 sm:text-xl">
               Train vocabulary in a modern way with{" "}
               <span className="font-bold">KatchUp</span>. Compete, customize,
               and improve with game-like energy.
             </p>
 
-            <div className="mt-10 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+            <div className="hero-item mt-10 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 type="button"
                 onClick={() => router.push("/login")}
-                className="inline-flex items-center justify-center rounded-xl border border-blue-500 bg-blue-600 px-6 py-3 font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
+                className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-blue-500 bg-blue-600 px-6 py-3 font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5 hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
               >
                 Login / Register
               </button>
               <button
                 type="button"
                 onClick={() => router.push("/games")}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-800 transition hover:-translate-y-0.5 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
               >
                 Start Playing
               </button>
@@ -73,14 +104,14 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <section className="feature-container grid grid-cols-1 gap-6 md:grid-cols-3">
           {highlights.map((item) => {
             const Icon = item.icon;
 
             return (
               <article
                 key={item.title}
-                className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-black hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] dark:border-slate-700 dark:bg-slate-800/85 dark:hover:border-white/90 dark:hover:shadow-[0_0_30px_rgba(148,163,184,0.3)]"
+                className="feature-card group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-black hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] dark:border-slate-700 dark:bg-slate-800/85 dark:hover:border-white/90 dark:hover:shadow-[0_0_30px_rgba(148,163,184,0.3)]"
               >
                 <div
                   className={`mb-5 inline-flex rounded-2xl bg-linear-to-r ${item.accent} p-3 text-white shadow-lg`}
