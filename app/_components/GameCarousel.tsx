@@ -1,103 +1,100 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef } from "react";
 import GameCard from "./GameCard";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function GameCarousel() {
-  const [currentCardIndex, setCurrentCardIndex] = useState(0); //last seenable card on left (card index)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const cards = [
     {
       name: "Flip Cards",
-      url: "games/flip-cards",
+      url: "/games/flip-cards",
       img: "flip_cards.png",
       color: "yellow",
-      description: "hello",
+      description: "Match translations fast",
       feature: "favorite",
       featureColor: "green",
     },
     {
       name: "One of Three",
-      url: "games/one-of-three",
+      url: "/games/one-of-three",
       img: "one_of_three.png",
       color: "red",
-      description: "hello",
+      description: "Quick choice rounds",
       feature: "popular",
       featureColor: "blue",
     },
     {
-      name: "Flip Cards",
-      url: "games/flip-cards",
+      name: "Speed Spelling",
+      url: "#",
       img: "flip_cards.png",
-      color: "yellow",
-      description: "hello",
-      feature: "favorite",
-      featureColor: "green",
+      color: "blue",
+      description: "Type it before time runs out",
+      feature: "new",
+      featureColor: "yellow",
     },
     {
-      name: "One of Three",
-      url: "games/one-of-three",
+      name: "Word Pairing",
+      url: "#",
       img: "one_of_three.png",
-      color: "red",
-      description: "hello",
-      feature: "popular",
-      featureColor: "blue",
-    },
-    {
-      name: "Flip Cards",
-      url: "games/flip-cards",
-      img: "flip_cards.png",
-      color: "yellow",
-      description: "hello",
-      feature: "favorite",
-      featureColor: "green",
+      color: "green",
+      description: "Connect the synonyms",
+      feature: "classic",
+      featureColor: "red",
     },
   ];
 
-  useEffect(() => {
-    setCurrentCardIndex(0);
-    console.log(cards.length);
-  }, []);
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 300; // approximate card width + gap
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   return (
-    <div className="relative h-[450px] w-full">
+    <div className="group relative w-full">
+      {/* Scroll Buttons - Hidden on very small screens, visible on hover for desktop */}
       <button
-        className="absolute bottom-[194px] px-4 py-4  hover:bg-blue-600/90 bg-blue-600/70 border border-gray-400 transition duration-200 text-white hover:border-white disabled:bg-gray-300 dark:disabled:bg-gray-700 dark:disabled:border-gray-700 dark:hover:disabled:border-gray-700 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full  left-10 z-10 text-xl"
-        onClick={() => setCurrentCardIndex((prev) => prev - 1)}
-        disabled={currentCardIndex === 0}
+        type="button"
+        className="absolute -left-4 top-1/2 z-20 hidden md:flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white/90 text-slate-700 shadow-md backdrop-blur transition-all disabled:opacity-0 sm:-left-6 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-200 hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700"
+        onClick={() => scroll("left")}
+        aria-label="Scroll left"
       >
-        {"<"}
+        <ChevronLeft className="h-6 w-6" />
       </button>
 
       <button
-        className="absolute bottom-[194px] px-4 py-4 hover:bg-blue-600/90 bg-blue-600/70  border border-gray-400 transition duration-200 text-white hover:border-white disabled:bg-gray-300 dark:disabled:bg-gray-700 dark:disabled:border-gray-700 dark:hover:disabled:border-gray-700 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed disabled:hover:border-gray-300 rounded-full right-10 z-10 text-xl"
-        onClick={() => setCurrentCardIndex((prev) => prev + 1)}
-        disabled={cards.length <= currentCardIndex + 4}
+        type="button"
+        className="absolute -right-4 top-1/2 z-20 hidden md:flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white/90 text-slate-700 shadow-md backdrop-blur transition-all disabled:opacity-0 sm:-right-6 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-200 hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700"
+        onClick={() => scroll("right")}
+        aria-label="Scroll right"
       >
-        {">"}
+        <ChevronRight className="h-6 w-6" />
       </button>
-      <div className="relative width-[320*4+160*3-200] overflow-hidden">
-        <div
-          style={{
-            transform: `translateX(${(cards.length - 4) * 160 + -currentCardIndex * 320}px)`,
-            transition: "transform 0.5s ease",
-          }}
-          className="relative flex items-center justify-center gap-10"
-        >
-          {cards.map((card, index) => {
-            return (
-              <GameCard
-                key={index}
-                name={card.name}
-                url={card.url}
-                img={card.img}
-                color={card.color}
-                description={card.description}
-                feature={card.feature}
-                featureColor={card.featureColor}
-              />
-            );
-          })}
-        </div>
+
+      {/* Overflow Container */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex w-full snap-x snap-mandatory gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {cards.map((card, index) => (
+          <div key={index} className="snap-center xl:snap-start shrink-0">
+            <GameCard
+              name={card.name}
+              url={card.url}
+              img={card.img}
+              color={card.color}
+              description={card.description}
+              feature={card.feature}
+              featureColor={card.featureColor}
+            />
+          </div>
+        ))}
       </div>
-      <div className="flex items-center justify-center gap-10"></div>
     </div>
   );
 }

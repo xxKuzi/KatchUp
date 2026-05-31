@@ -12,17 +12,17 @@ interface GameCardProps {
 }
 
 const colorVariants: Record<string, string> = {
-  yellow: "from-yellow-600",
-  red: "from-red-500",
-  blue: "from-blue-500",
-  green: "from-green-500",
+  yellow: "from-amber-600/95 via-amber-600/50",
+  red: "from-rose-600/95 via-rose-600/50",
+  blue: "from-blue-600/95 via-blue-600/50",
+  green: "from-emerald-600/95 via-emerald-600/50",
 };
 
 const featureColorVariants: Record<string, string> = {
-  yellow: "bg-yellow-500/60 text-yellow-100",
-  red: "bg-red-500/60 text-red-100",
-  blue: "bg-blue-500/70 text-blue-100",
-  green: "bg-green-500/60 text-green-100",
+  yellow: "bg-amber-500/80 text-white",
+  red: "bg-rose-500/80 text-white",
+  blue: "bg-blue-500/80 text-white",
+  green: "bg-emerald-500/80 text-white",
 };
 
 const GameCard = (props: GameCardProps) => {
@@ -43,7 +43,7 @@ const GameCard = (props: GameCardProps) => {
 
   return (
     <button
-      className={`relative group overflow-hidden border-gray-200 dark:border-gray-400 transition duration-300 hover:border-gray-700 dark:hover:border-white xl:min-w-[280px] xl:max-w-[280px] xl:min-h-[450px] border-2 rounded-lg flex flex-col items-center justify-end ${
+      className={`relative group overflow-hidden border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-300 hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 hover:shadow-xl w-[260px] h-[350px] sm:w-[280px] sm:h-[420px] shrink-0 border-2 rounded-2xl flex flex-col items-center justify-end ${
         isClickable ? "cursor-pointer" : "cursor-default"
       }`}
       onClick={() => {
@@ -55,21 +55,22 @@ const GameCard = (props: GameCardProps) => {
     >
       <div
         style={img ? { backgroundImage: `url('/${img}')` } : undefined}
-        className={`absolute top-0 left-0 group-hover:scale-105 bg-cover transition duration-300 bg-center w-full h-full flex-col flex items-center justify-end rounded-lg`}
+        className={`absolute top-0 left-0 group-hover:scale-105 bg-cover transition duration-500 bg-center w-full h-full rounded-2xl`}
       />
-      {/*<div className=" h-8 w-full"></div>*/}
+      {feature && (
+        <div
+          className={`${featureColorConst} absolute top-3 right-3 shadow-sm text-xs font-bold uppercase tracking-wider rounded-lg px-2.5 py-1 z-10 backdrop-blur-sm`}
+        >
+          {feature}
+        </div>
+      )}
       <div
-        className={` ${featureColorConst} absolute top-2 right-2 bg-blue-500/60 text-green-100 rounded-sm px-2 py-1`}
+        className={`relative bg-gradient-to-t ${gradientColor} to-transparent w-full h-3/5 rounded-b-2xl p-5 flex-col flex items-start justify-end z-0`}
       >
-        <p className="">{feature}</p>
-      </div>
-      <div
-        className={`relative bg-gradient-to-t ${gradientColor} to-blue-500/[0%] w-full h-[200px] rounded-md p-4 flex-col flex items-center justify-center`}
-      >
-        <h2 className="absolute dark:text-white text-white font- bottom-8 text-4xl font-bold">
+        <h2 className="text-white text-2xl sm:text-3xl font-black tracking-tight leading-tight drop-shadow-md">
           {name}
         </h2>
-        <p className="absolute text-white bottom-2">{description}</p>
+        <p className="text-white/90 text-sm sm:text-base font-medium mt-1.5 drop-shadow-sm">{description}</p>
       </div>
     </button>
   );
