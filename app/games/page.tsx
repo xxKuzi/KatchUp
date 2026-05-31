@@ -2,25 +2,14 @@
 import GameCard from "./../_components/GameCard";
 import Carousel from "./../_components/GameCarousel";
 import { TrendingUpDown, Star } from "lucide-react";
-import FeatureGate from "@/app/_components/FeatureGate";
-import { useAuthState } from "@/app/_lib/auth";
 import { useLanguage } from "@/app/_lib/languageContext";
 
 export default function Games() {
-  const { isSignedIn, isReady } = useAuthState();
   const { t } = useLanguage();
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background font-sans text-foreground">
-      <FeatureGate
-        isAllowed={isReady && isSignedIn}
-        message={t(
-          "authGate.games",
-          "Your game streak and wins are saved for friends. Sign in to unlock game arena.",
-        )}
-        className="w-full"
-      >
-        <main className="flex min-h-screen w-full flex-col items-center bg-background px-6 pb-24 pt-6 sm:px-10 lg:px-16">
+      <main className="flex min-h-screen w-full flex-col items-center bg-background px-6 pb-24 pt-6 sm:px-10 lg:px-16">
           <section className="first-section-static-glow w-full max-w-6xl rounded-3xl border border-white/90 bg-white/80 p-8 backdrop-blur ring-1 ring-white/70 dark:border-slate-600 dark:bg-slate-950/70  dark:ring-white/10 md:p-10">
             <p className="inline-flex rounded-full border border-blue-300/70 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
               Online Games
@@ -76,7 +65,6 @@ export default function Games() {
             </div>
           </section>
         </main>
-      </FeatureGate>
     </div>
   );
 }
