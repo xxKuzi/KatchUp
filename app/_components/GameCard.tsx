@@ -70,7 +70,9 @@ const GameCard = (props: GameCardProps) => {
         <h2 className="text-white text-2xl sm:text-3xl font-black tracking-tight leading-tight drop-shadow-md">
           {name}
         </h2>
-        <p className="text-white/90 text-sm sm:text-base font-medium mt-1.5 drop-shadow-sm">{description}</p>
+        <p className="text-white/90 text-sm sm:text-base font-medium mt-1.5 drop-shadow-sm">
+          {description}
+        </p>
       </div>
     </button>
   );

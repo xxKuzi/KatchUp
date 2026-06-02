@@ -76,10 +76,10 @@ function GameCarousel() {
       </button>
 
       {/* Overflow Container */}
-      <div 
+      <div
         ref={scrollContainerRef}
         className="flex w-full snap-x snap-mandatory gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {cards.map((card, index) => (
           <div key={index} className="snap-center xl:snap-start shrink-0">

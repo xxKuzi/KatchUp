@@ -12,29 +12,32 @@ export default function Home() {
   const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
 
-  useGSAP(() => {
-    gsap.from(".hero-item", {
-      y: 40,
-      opacity: 0,
-      duration: 1,
-      stagger: 0.15,
-      ease: "power4.out",
-      clearProps: "opacity,transform",
-    });
-    
-    gsap.from(".feature-card", {
-      y: 40,
-      opacity: 0,
-      duration: 0.8,
-      stagger: 0.1,
-      ease: "power3.out",
-      clearProps: "opacity,transform",
-      scrollTrigger: {
-        trigger: ".feature-container",
-        start: "top 90%", // Trigger slightly earlier on mobile
-      }
-    });
-  }, { scope: container });
+  useGSAP(
+    () => {
+      gsap.from(".hero-item", {
+        y: 40,
+        opacity: 0,
+        duration: 1,
+        stagger: 0.15,
+        ease: "power4.out",
+        clearProps: "opacity,transform",
+      });
+
+      gsap.from(".feature-card", {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: "power3.out",
+        clearProps: "opacity,transform",
+        scrollTrigger: {
+          trigger: ".feature-container",
+          start: "top 90%", // Trigger slightly earlier on mobile
+        },
+      });
+    },
+    { scope: container },
+  );
 
   const highlights = [
     {
@@ -61,7 +64,10 @@ export default function Home() {
   ];
 
   return (
-    <div className="relative -mt-32 min-h-screen overflow-hidden bg-[#020617] pt-32 text-slate-100" ref={container}>
+    <div
+      className="relative -mt-32 min-h-screen overflow-hidden bg-[#020617] pt-32 text-slate-100"
+      ref={container}
+    >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.16),transparent_42%),radial-gradient(circle_at_85%_18%,rgba(59,130,246,0.18),transparent_38%),radial-gradient(circle_at_50%_92%,rgba(14,165,233,0.12),transparent_35%),linear-gradient(180deg,#020617_0%,#0b1128_55%,#030712_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(1px_1px_at_20px_30px,rgba(255,255,255,0.95),transparent),radial-gradient(1px_1px_at_140px_90px,rgba(191,219,254,0.9),transparent),radial-gradient(1.5px_1.5px_at_260px_170px,rgba(255,255,255,0.9),transparent),radial-gradient(1px_1px_at_380px_260px,rgba(186,230,253,0.85),transparent),radial-gradient(1.5px_1.5px_at_520px_120px,rgba(255,255,255,0.95),transparent)] bg-size-[560px_320px] opacity-70" />

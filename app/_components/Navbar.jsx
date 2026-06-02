@@ -170,28 +170,40 @@ function Navbar() {
                   <div className="flex flex-col space-y-1 lg:hidden">
                     <button
                       type="button"
-                      onClick={() => { setMenuOpen(false); router.push("/games"); }}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/games");
+                      }}
                       className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
                     >
                       {t("navbar.games")}
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setMenuOpen(false); router.push("/topics"); }}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/topics");
+                      }}
                       className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
                     >
                       {t("navbar.topics", "Topics")}
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setMenuOpen(false); router.push("/my-decks"); }}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/my-decks");
+                      }}
                       className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
                     >
                       {t("navbar.myDecks")}
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setMenuOpen(false); router.push("/friends"); }}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/friends");
+                      }}
                       className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
                     >
                       {t("navbar.friends")}
@@ -218,8 +230,13 @@ function Navbar() {
                   {/* Auth specific items */}
                   {isSignedIn ? (
                     <div className="space-y-3 pt-2">
-                       <p className="px-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                        Signed in as <span className="font-bold text-slate-700 dark:text-slate-200">{session?.user?.name || session?.user?.email || "User"}</span>
+                      <p className="px-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        Signed in as{" "}
+                        <span className="font-bold text-slate-700 dark:text-slate-200">
+                          {session?.user?.name ||
+                            session?.user?.email ||
+                            "User"}
+                        </span>
                       </p>
                       <button
                         type="button"
@@ -240,7 +257,6 @@ function Navbar() {
                       </button>
                     </div>
                   )}
-
                 </div>
               </div>
             )}
