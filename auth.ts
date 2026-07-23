@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
-import Apple from "next-auth/providers/apple";
+import Discord from "next-auth/providers/discord";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
@@ -18,11 +18,11 @@ const providers: NextAuthConfig["providers"] = [
   }),
 ];
 
-if (process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET) {
+if (process.env.AUTH_DISCORD_ID && process.env.AUTH_DISCORD_SECRET) {
   providers.push(
-    Apple({
-      clientId: process.env.AUTH_APPLE_ID,
-      clientSecret: process.env.AUTH_APPLE_SECRET,
+    Discord({
+      clientId: process.env.AUTH_DISCORD_ID,
+      clientSecret: process.env.AUTH_DISCORD_SECRET,
     }),
   );
 }

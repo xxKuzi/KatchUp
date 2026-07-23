@@ -2,22 +2,47 @@
 # See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 runConfig:
   minInstances: 0
-  # maxInstances: 100
-  # concurrency: 80
-  # cpu: 1
-  # memoryMiB: 512
 
 # Environment variables and secrets.
-# env:
-  # Configure environment variables.
-  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  # - variable: MESSAGE
-  #   value: Hello world!
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
+env:
+  # Database
+  - variable: DATABASE_URL
+    secret: db-url
 
-  # Grant access to secrets in Cloud Secret Manager.
-  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
-  # - variable: MY_SECRET
-  #   secret: mySecretRef
+  # Auth.js / NextAuth
+  - variable: AUTH_SECRET
+    secret: auth-secret
+  - variable: AUTH_URL
+    value: "https://katchup.jakubkuzel.com"
+  - variable: AUTH_GOOGLE_ID
+    value: "713537066564-muh9k9k9grlnni8jj7aodtu91tocbp1s.apps.googleusercontent.com"
+  - variable: AUTH_GOOGLE_SECRET
+    secret: auth-google-secret
+  - variable: AUTH_GITHUB_ID
+    value: "Ov23lidmByY3P2NvPeEb"
+  - variable: AUTH_GITHUB_SECRET
+    secret: auth-github-secret
+  - variable: AUTH_DISCORD_ID
+    secret: auth-discord-id
+  - variable: AUTH_DISCORD_SECRET
+    secret: auth-discord-secret
+
+  # Redis
+  - variable: UPSTASH_REDIS_REST_URL
+    value: "https://equipped-gator-89101.upstash.io"
+  - variable: UPSTASH_REDIS_REST_TOKEN
+    secret: redis-token
+
+  # Pusher
+  - variable: PUSHER_APP_ID
+    value: "2141801"
+  - variable: PUSHER_KEY
+    value: "0b5660d31dd1251c80df"
+  - variable: PUSHER_SECRET
+    secret: pusher-secret
+  - variable: PUSHER_CLUSTER
+    value: "eu"
+  - variable: NEXT_PUBLIC_PUSHER_KEY
+    value: "0b5660d31dd1251c80df"
+  - variable: NEXT_PUBLIC_PUSHER_CLUSTER
+    value: "eu"

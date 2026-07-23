@@ -30,7 +30,7 @@ export default function LoginPage() {
     { scope: container },
   );
 
-  const loginWithProvider = async (provider: "google" | "github" | "apple") => {
+  const loginWithProvider = async (provider: "google" | "github" | "discord") => {
     await signIn(provider, { callbackUrl: "/" });
   };
 
@@ -128,17 +128,17 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => loginWithProvider("apple")}
-              className="animate-item flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-4 font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              onClick={() => loginWithProvider("discord")}
+              className="animate-item flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-[#5865F2] px-5 py-4 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#4752C4]"
             >
               <svg
                 className="h-5 w-5"
                 fill="currentColor"
-                viewBox="0 0 384 512"
+                viewBox="0 0 24 24"
               >
-                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 22.1 184 6.7 241A384 384 0 000 379.7c1 19.3 5.4 39.7 13 60 17.2 44.9 50.2 88.3 89.3 90 22.3 1 37.8-13 62.7-13 24.3 0 38.3 13.5 61.6 13.5 39.9-1.5 73.1-46.7 89.6-91.8 19-54 19.6-58.8 20.6-61.9-25.1-13-40.2-39.6-40.2-67.9zM245.8 91.5c17.1-23.4 27.6-53.7 24.5-84.5-24.7 1.3-53 14.8-71.1 35.5-16.1 18-28.5 45.1-25.1 76.9 27.2 2.3 52.6-11.4 71.7-27.9z" />
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.103 18.055a.07.07 0 0 0 .026.046 19.89 19.89 0 0 0 5.982 3.023.076.076 0 0 0 .083-.027 14.65 14.65 0 0 0 1.26-2.03.076.076 0 0 0-.041-.106 13.25 13.25 0 0 1-1.872-.897.076.076 0 0 1-.008-.126c.126-.093.252-.19.372-.287a.076.076 0 0 1 .079-.009 13.905 13.905 0 0 0 11.68 0 .077.077 0 0 1 .079.008c.12.098.246.195.372.288a.076.076 0 0 1-.008.127 12.27 12.27 0 0 1-1.872.897.076.076 0 0 0-.041.106 14.506 14.506 0 0 0 1.26 2.03.077.077 0 0 0 .083.027 19.903 19.903 0 0 0 5.982-3.023.076.076 0 0 0 .026-.046c.507-5.27-.852-9.768-3.655-13.658a.066.066 0 0 0-.032-.027zM8.02 15.332c-1.18 0-2.156-1.085-2.156-2.419 0-1.333.955-2.418 2.156-2.418 1.21 0 2.176 1.095 2.156 2.418 0 1.334-.946 2.419-2.156 2.419zm7.974 0c-1.18 0-2.156-1.085-2.156-2.419 0-1.333.955-2.418 2.156-2.418 1.21 0 2.176 1.095 2.156 2.418 0 1.334-.946 2.419-2.156 2.419z" />
               </svg>
-              Continue with Apple
+              Continue with Discord
             </button>
 
             <div className="animate-item relative py-4">
