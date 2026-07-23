@@ -16,7 +16,7 @@
 }
 
 .dark {
-  --background: #14181c;
+  --background: #000000;
   --foreground: #ededed;
 }
 
@@ -167,6 +167,24 @@ body {
 
 .animate-sparkline {
   animation: sparkline-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes mascot-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(30px);
+  }
+  70% {
+    transform: scale(1.05) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-mascot-appear {
+  animation: mascot-appear 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 

@@ -43,7 +43,7 @@ const GameCard = (props: GameCardProps) => {
 
   return (
     <button
-      className={`relative group overflow-hidden border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-300 hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 hover:shadow-xl w-[260px] h-[350px] sm:w-[280px] sm:h-[420px] shrink-0 border-2 rounded-2xl flex flex-col items-center justify-end ${
+      className={`relative group/card overflow-hidden border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-300 hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 hover:shadow-xl w-[260px] h-[350px] sm:w-[280px] sm:h-[420px] shrink-0 border-2 rounded-2xl flex flex-col items-center justify-end ${
         isClickable ? "cursor-pointer" : "cursor-default"
       }`}
       onClick={() => {
@@ -55,7 +55,7 @@ const GameCard = (props: GameCardProps) => {
     >
       <div
         style={img ? { backgroundImage: `url('/${img}')` } : undefined}
-        className={`absolute top-0 left-0 group-hover:scale-105 bg-cover transition duration-500 bg-center w-full h-full rounded-2xl`}
+        className={`absolute top-0 left-0 group-hover/card:scale-105 bg-cover transition duration-500 bg-center w-full h-full rounded-2xl`}
       />
       {feature && (
         <div
