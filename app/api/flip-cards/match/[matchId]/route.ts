@@ -68,5 +68,11 @@ export async function GET(
     me,
     opponent,
     nextQuestion,
+    questions: questions.map((q) => ({
+      id: q.id,
+      prompt: q.prompt,
+      options: q.options,
+      correctOption: q.correctOption,
+    })),
   });
 }

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/purity */
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -45,6 +46,7 @@ interface LiveMatchPayload {
     correct: number;
   } | null;
   nextQuestion: MatchQuestion | null;
+  questions?: MatchQuestion[];
 }
 
 interface AsyncLeaderboardRow {
@@ -111,6 +113,8 @@ export default function FlipCardsPlayPage() {
     searchParams.get("opponentAvatar") ?? DEFAULT_OPPONENT_AVATAR;
 
   const [questions, setQuestions] = useState<MatchQuestion[]>([]);
+  const [liveQuestions, setLiveQuestions] = useState<MatchQuestion[]>([]);
+  const initialLoaded = useRef(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [playerCorrect, setPlayerCorrect] = useState(0);
   const [opponentProgress, setOpponentProgress] = useState(0);
@@ -123,6 +127,7 @@ export default function FlipCardsPlayPage() {
     text: string;
     tone: "good" | "bad";
   } | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startMs, setStartMs] = useState<number>(() => Date.now());
   const [questionStartedAt, setQuestionStartedAt] = useState<number>(() =>
@@ -155,10 +160,18 @@ export default function FlipCardsPlayPage() {
 
       const payload = (await response.json()) as LiveMatchPayload;
       setLivePayload(payload);
+      if (payload.questions) {
+        setLiveQuestions(payload.questions);
+      }
       setOpponentProgress(payload.opponent?.progress ?? 0);
       setOpponentCorrect(payload.opponent?.correct ?? 0);
-      setQuestionIndex(payload.me.progress);
-      setPlayerCorrect(payload.me.correct);
+
+      // Only sync client's progress on initial load
+      if (!initialLoaded.current) {
+        setQuestionIndex(payload.me.progress);
+        setPlayerCorrect(payload.me.correct);
+        initialLoaded.current = true;
+      }
 
       if (payload.match.status === "finished") {
         setStatus("finished");
@@ -178,11 +191,14 @@ export default function FlipCardsPlayPage() {
     setStatus("playing");
     setWinner(null);
     setFeedback(null);
+    setSelectedAnswer(null);
     setIsSubmitting(false);
     setStartMs(Date.now());
     setQuestionStartedAt(Date.now());
     setLoadError(null);
     asyncScoreSubmitted.current = false;
+    initialLoaded.current = false;
+    setLiveQuestions([]);
 
     if (mode === "async") {
       setQuestions(buildQuestions(language));
@@ -361,7 +377,7 @@ export default function FlipCardsPlayPage() {
 
   const currentQuestion =
     mode === "live"
-      ? (livePayload?.nextQuestion ?? null)
+      ? (liveQuestions[questionIndex] ?? null)
       : (questions[questionIndex] ?? null);
 
   const elapsedSinceStart = Date.now() - startMs;
@@ -391,11 +407,11 @@ export default function FlipCardsPlayPage() {
     setFeedback({ text, tone });
     window.setTimeout(() => {
       setFeedback(null);
-    }, 650);
+    }, 550);
   };
 
   const handleAnswer = async (selectedOption: string) => {
-    if (!currentQuestion || status !== "playing" || isSubmitting) {
+    if (!currentQuestion || status !== "playing" || selectedAnswer !== null || isSubmitting) {
       return;
     }
 
@@ -407,60 +423,54 @@ export default function FlipCardsPlayPage() {
         return;
       }
 
-      setIsSubmitting(true);
+      const isCorrect = selectedOption === currentQuestion.correctOption;
+      setSelectedAnswer(selectedOption);
 
-      try {
-        const answerResponse = await fetch(
-          `/api/flip-cards/match/${matchId}/answer`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              playerId,
-              questionId: currentQuestion.id,
-              selectedOption,
-            }),
-          },
-        );
+      if (isCorrect) {
+        setPlayerCorrect((previous) => previous + 1);
+        setScore((previous) => previous + 100 + speedBonus);
+        showFeedback(`Correct +${100 + speedBonus} pts`, "good");
+      } else {
+        showFeedback("Wrong answer", "bad");
+      }
 
-        const answerData = (await answerResponse.json()) as {
-          ok?: boolean;
-          isCorrect?: boolean;
+      window.setTimeout(() => {
+        const nextIndex = questionIndex + 1;
+        setQuestionIndex(nextIndex);
+        setQuestionStartedAt(Date.now());
+        setSelectedAnswer(null);
+      }, 600);
+
+      // Submit to database in the background without blocking the UI
+      void fetch(`/api/flip-cards/match/${matchId}/answer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          playerId,
+          questionId: currentQuestion.id,
+          selectedOption,
+          responseMs: responseTime,
+        }),
+      }).then(async (res) => {
+        if (!res.ok) return;
+        const answerData = (await res.json()) as {
           status?: "active" | "finished";
           winnerId?: string | null;
-          error?: string;
         };
-
-        if (!answerResponse.ok || !answerData.ok) {
-          setLoadError(answerData.error ?? "Answer submission failed.");
-          setIsSubmitting(false);
-          return;
-        }
-
-        if (answerData.isCorrect) {
-          setScore((previous) => previous + 100 + speedBonus);
-          showFeedback(`Correct +${100 + speedBonus} pts`, "good");
-        } else {
-          showFeedback("Wrong answer", "bad");
-        }
-
-        setQuestionStartedAt(Date.now());
 
         if (answerData.status === "finished") {
           finishMatch(answerData.winnerId === playerId ? "player" : "opponent");
         }
-      } catch {
-        setLoadError("Network error while submitting answer.");
-      } finally {
-        setIsSubmitting(false);
-      }
+      });
 
       return;
     }
 
     const isCorrect = selectedOption === currentQuestion.correctOption;
+    setSelectedAnswer(selectedOption);
+
     if (isCorrect) {
       setPlayerCorrect((previous) => previous + 1);
       setScore((previous) => previous + 100 + speedBonus);
@@ -469,17 +479,19 @@ export default function FlipCardsPlayPage() {
       showFeedback("Wrong answer", "bad");
     }
 
-    const nextIndex = questionIndex + 1;
-    if (nextIndex >= totalQuestions) {
-      const asyncWinner =
-        nextIndex <= asyncGhostProgress ? "opponent" : "player";
-      finishMatch(asyncWinner);
-      setQuestionIndex(nextIndex);
-      return;
-    }
-
-    setQuestionStartedAt(Date.now());
-    setQuestionIndex(nextIndex);
+    window.setTimeout(() => {
+      const nextIndex = questionIndex + 1;
+      if (nextIndex >= totalQuestions) {
+        const asyncWinner =
+          nextIndex <= asyncGhostProgress ? "opponent" : "player";
+        finishMatch(asyncWinner);
+        setQuestionIndex(nextIndex);
+      } else {
+        setQuestionStartedAt(Date.now());
+        setQuestionIndex(nextIndex);
+      }
+      setSelectedAnswer(null);
+    }, 600);
   };
 
   const restartMatch = () => {

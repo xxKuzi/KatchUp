@@ -282,6 +282,22 @@ export async function submitLiveAnswer(params: {
     );
   }
 
+  const nextQuestionRow = await db.query.matchQuestions.findFirst({
+    where: and(
+      eq(matchQuestions.matchId, params.matchId),
+      eq(matchQuestions.orderIndex, nextProgress),
+    ),
+  });
+
+  const nextQuestion = nextQuestionRow
+    ? {
+        id: nextQuestionRow.id,
+        prompt: nextQuestionRow.prompt,
+        options: nextQuestionRow.options as string[],
+        correctOption: nextQuestionRow.correctOption,
+      }
+    : null;
+
   return {
     ok: true as const,
     isCorrect,
@@ -289,6 +305,7 @@ export async function submitLiveAnswer(params: {
     winnerUserId: winner?.userId ?? null,
     progress: nextProgress,
     correctCount: nextCorrectCount,
+    nextQuestion,
   };
 }
 

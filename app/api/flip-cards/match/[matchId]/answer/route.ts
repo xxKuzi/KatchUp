@@ -60,5 +60,8 @@ export async function POST(
     isCorrect: result.isCorrect,
     status: result.status,
     winnerId: result.winnerUserId,
+    progress: result.progress,
+    correctCount: result.correctCount,
+    nextQuestion: result.nextQuestion,
   });
 }
