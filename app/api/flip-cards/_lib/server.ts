@@ -87,60 +87,57 @@ export async function tryMatch(
   const queueKey = `${QUEUE_KEY_PREFIX}:${user.language}:${user.level}`;
   await ensureUser(user);
 
-  await redis.rpush(queueKey, JSON.stringify(user));
-  const waitingQueue = await redis.lrange<string>(queueKey, 0, -1);
-  const waitingRaw = waitingQueue.find(
-    (entry) => entry !== JSON.stringify(user),
+  const playerObj: PlayerSession = {
+    userId: user.userId,
+    name: user.name,
+    avatar: user.avatar,
+  };
+
+  // Remove existing entries for this user to avoid duplicates in the queue
+  await redis.lrem(queueKey, 0, playerObj);
+  await redis.rpush(queueKey, playerObj);
+
+  const waitingQueue = await redis.lrange<PlayerSession>(queueKey, 0, -1);
+  const waiting = waitingQueue.find(
+    (entry) => entry.userId !== user.userId,
   );
-  if (!waitingRaw) {
+
+  if (!waiting) {
     return null;
   }
 
-  let waiting: PlayerSession | null = null;
-  try {
-    waiting = JSON.parse(waitingRaw) as PlayerSession;
-  } catch {
-    waiting = null;
-  }
-
-  if (!waiting || waiting.userId === user.userId) {
-    return null;
-  }
-
-  await redis.lrem(queueKey, 1, waitingRaw);
-  await redis.lrem(queueKey, 1, JSON.stringify(user));
+  await redis.lrem(queueKey, 1, waiting);
+  await redis.lrem(queueKey, 1, playerObj);
 
   await ensureUser(waiting);
 
-  const createdMatch = await db.transaction(async (tx) => {
-    const [match] = await tx
-      .insert(matches)
-      .values({
-        language: user.language,
-        level: user.level,
-        status: "active",
-      })
-      .returning();
+  const [match] = await db
+    .insert(matches)
+    .values({
+      language: user.language,
+      level: user.level,
+      status: "active",
+    })
+    .returning();
 
-    const questions = createMatchQuestions(user.language);
-    await tx.insert(matchQuestions).values(
-      questions.map((question, orderIndex) => ({
-        matchId: match.id,
-        orderIndex,
-        prompt: question.prompt,
-        options: question.options,
-        correctOption: question.correctOption,
-      })),
-    );
+  const questions = createMatchQuestions(user.language);
+  await db.insert(matchQuestions).values(
+    questions.map((question, orderIndex) => ({
+      matchId: match.id,
+      orderIndex,
+      prompt: question.prompt,
+      options: question.options,
+      correctOption: question.correctOption,
+    })),
+  );
 
-    const playerRows = [
-      { matchId: match.id, userId: user.userId, side: "player1" },
-      { matchId: match.id, userId: waiting.userId, side: "player2" },
-    ];
-    await tx.insert(matchPlayers).values(playerRows);
+  const playerRows = [
+    { matchId: match.id, userId: user.userId, side: "player1" },
+    { matchId: match.id, userId: waiting.userId, side: "player2" },
+  ];
+  await db.insert(matchPlayers).values(playerRows);
 
-    return { match, questions, waiting };
-  });
+  const createdMatch = { match, questions, waiting };
 
   await pusher.trigger(`${USER_CHANNEL_PREFIX}${user.userId}`, "match-found", {
     matchId: createdMatch.match.id,

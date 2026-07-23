@@ -23,7 +23,7 @@ env:
   - variable: AUTH_GITHUB_SECRET
     secret: auth-github-secret
   - variable: AUTH_DISCORD_ID
-    secret: auth-discord-id
+    value: "1529928224535089402"
   - variable: AUTH_DISCORD_SECRET
     secret: auth-discord-secret
 
