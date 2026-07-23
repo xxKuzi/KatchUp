@@ -127,7 +127,7 @@ export default function FlipCardsPlayPage() {
     text: string;
     tone: "good" | "bad";
   } | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startMs, setStartMs] = useState<number>(() => Date.now());
   const [questionStartedAt, setQuestionStartedAt] = useState<number>(() =>
@@ -191,7 +191,7 @@ export default function FlipCardsPlayPage() {
     setStatus("playing");
     setWinner(null);
     setFeedback(null);
-    setSelectedAnswer(null);
+
     setIsSubmitting(false);
     setStartMs(Date.now());
     setQuestionStartedAt(Date.now());
@@ -411,7 +411,7 @@ export default function FlipCardsPlayPage() {
   };
 
   const handleAnswer = async (selectedOption: string) => {
-    if (!currentQuestion || status !== "playing" || selectedAnswer !== null || isSubmitting) {
+    if (!currentQuestion || status !== "playing" || isSubmitting) {
       return;
     }
 
@@ -424,7 +424,6 @@ export default function FlipCardsPlayPage() {
       }
 
       const isCorrect = selectedOption === currentQuestion.correctOption;
-      setSelectedAnswer(selectedOption);
 
       if (isCorrect) {
         setPlayerCorrect((previous) => previous + 1);
@@ -434,12 +433,9 @@ export default function FlipCardsPlayPage() {
         showFeedback("Wrong answer", "bad");
       }
 
-      window.setTimeout(() => {
-        const nextIndex = questionIndex + 1;
-        setQuestionIndex(nextIndex);
-        setQuestionStartedAt(Date.now());
-        setSelectedAnswer(null);
-      }, 600);
+      const nextIndex = questionIndex + 1;
+      setQuestionIndex(nextIndex);
+      setQuestionStartedAt(Date.now());
 
       // Submit to database in the background without blocking the UI
       void fetch(`/api/flip-cards/match/${matchId}/answer`, {
@@ -469,8 +465,6 @@ export default function FlipCardsPlayPage() {
     }
 
     const isCorrect = selectedOption === currentQuestion.correctOption;
-    setSelectedAnswer(selectedOption);
-
     if (isCorrect) {
       setPlayerCorrect((previous) => previous + 1);
       setScore((previous) => previous + 100 + speedBonus);
@@ -479,19 +473,16 @@ export default function FlipCardsPlayPage() {
       showFeedback("Wrong answer", "bad");
     }
 
-    window.setTimeout(() => {
-      const nextIndex = questionIndex + 1;
-      if (nextIndex >= totalQuestions) {
-        const asyncWinner =
-          nextIndex <= asyncGhostProgress ? "opponent" : "player";
-        finishMatch(asyncWinner);
-        setQuestionIndex(nextIndex);
-      } else {
-        setQuestionStartedAt(Date.now());
-        setQuestionIndex(nextIndex);
-      }
-      setSelectedAnswer(null);
-    }, 600);
+    const nextIndex = questionIndex + 1;
+    if (nextIndex >= totalQuestions) {
+      const asyncWinner =
+        nextIndex <= asyncGhostProgress ? "opponent" : "player";
+      finishMatch(asyncWinner);
+      setQuestionIndex(nextIndex);
+    } else {
+      setQuestionStartedAt(Date.now());
+      setQuestionIndex(nextIndex);
+    }
   };
 
   const restartMatch = () => {
@@ -576,16 +567,9 @@ export default function FlipCardsPlayPage() {
       </div>
 
       {status === "playing" && currentQuestion ? (
-        <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-          <div className="flex items-center justify-between gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-            <p>
-              Question {questionIndex + 1}/{totalQuestions}
-            </p>
-            <p>
-              {mode === "live"
-                ? `${rivalName} is solving now`
-                : "Ghost pace updates every second"}
-            </p>
+        <div className="relative w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="text-sm text-zinc-600 dark:text-zinc-300 pr-24">
+            Question {questionIndex + 1}/{totalQuestions}
           </div>
 
           <h2 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
@@ -609,13 +593,15 @@ export default function FlipCardsPlayPage() {
           </div>
 
           {feedback && (
-            <p
-              className={`mt-4 text-sm font-semibold ${
-                feedback.tone === "good" ? "text-emerald-600" : "text-red-500"
+            <div
+              className={`absolute right-6 top-5 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all duration-300 ${
+                feedback.tone === "good"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
               }`}
             >
               {feedback.text}
-            </p>
+            </div>
           )}
 
           {loadError && (
