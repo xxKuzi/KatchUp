@@ -102,3 +102,71 @@ body {
     filter: saturate(1);
   }
 }
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px) rotate(4deg);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+}
+
+@keyframes float-reverse {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-16px) translateX(-8px) rotate(-3deg);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+}
+
+@keyframes mesh-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-float-slow {
+  animation: float 9s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-reverse 7s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-mesh {
+  background-size: 200% 200%;
+  animation: mesh-gradient 12s ease infinite;
+}
+
+@keyframes sparkline-draw {
+  0% {
+    stroke-dashoffset: 300;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-sparkline {
+  animation: sparkline-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+
