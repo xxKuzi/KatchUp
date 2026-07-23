@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useSession } from "@/lib/auth-client";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -381,6 +382,7 @@ export default function Home() {
   const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const { data: session } = useSession();
 
   useGSAP(
     () => {
@@ -724,18 +726,33 @@ export default function Home() {
             </p>
 
             <div className="hero-item mt-10 flex w-full max-w-md flex-col gap-4 sm:flex-row sm:justify-center">
-              <button
-                type="button"
-                onClick={() => router.push("/login")}
-                className="relative overflow-hidden group inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 px-7 py-3.5 font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 dark:from-blue-500 dark:to-indigo-500"
-              >
-                {/* Shimmer line */}
-                <div
-                  className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full group-hover:animate-[shimmer_0.75s_ease-out]"
-                  style={{ content: '""' }}
-                />
-                Login / Register
-              </button>
+              {session ? (
+                <button
+                  type="button"
+                  onClick={() => router.push("/my-decks")}
+                  className="relative overflow-hidden group inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 px-7 py-3.5 font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 dark:from-blue-500 dark:to-indigo-500"
+                >
+                  {/* Shimmer line */}
+                  <div
+                    className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full group-hover:animate-[shimmer_0.75s_ease-out]"
+                    style={{ content: '""' }}
+                  />
+                  Go to Decks
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => router.push("/login")}
+                  className="relative overflow-hidden group inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 px-7 py-3.5 font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 dark:from-blue-500 dark:to-indigo-500"
+                >
+                  {/* Shimmer line */}
+                  <div
+                    className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full group-hover:animate-[shimmer_0.75s_ease-out]"
+                    style={{ content: '""' }}
+                  />
+                  Login / Register
+                </button>
+              )}
 
               <button
                 type="button"
