@@ -10,6 +10,12 @@ export const LANGUAGES: Record<Language, string> = {
   deutsch: "Deutsch",
 };
 
+export const LANGUAGE_FLAGS: Record<Language, string> = {
+  english: "🇬🇧",
+  czech: "🇨🇿",
+  deutsch: "🇩🇪",
+};
+
 export const translations: Record<Language, Translations> = {
   english: {
     navbar: {

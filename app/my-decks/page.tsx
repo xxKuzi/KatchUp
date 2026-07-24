@@ -20,7 +20,7 @@ function formatDate(value: string, t: (key: string) => string): string {
 }
 
 export default function MyDecksOverview() {
-  const { t, nativeLanguage, learningLanguage } = useLanguage();
+  const { t, language, learningLanguage } = useLanguage();
   const [decks, setDecks] = useState<CustomDeck[]>([]);
 
   useEffect(() => {
@@ -35,10 +35,10 @@ export default function MyDecksOverview() {
     () =>
       decks.filter(
         (deck) =>
-          deck.nativeLang.trim().toLowerCase() === nativeLanguage &&
+          deck.nativeLang.trim().toLowerCase() === language &&
           deck.foreignLang.trim().toLowerCase() === learningLanguage,
       ),
-    [decks, nativeLanguage, learningLanguage],
+    [decks, language, learningLanguage],
   );
 
   const groupedDecks = useMemo(

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../_lib/languageContext";
+import { useAuthState } from "../../_lib/auth";
 import { LANGUAGES, Language } from "../../_lib/translations";
 import {
   CustomDeck,
@@ -16,16 +17,24 @@ import {
 } from "../_lib/customDecks";
 
 function DeckEditorPage() {
-  const { nativeLanguage, learningLanguage } = useLanguage();
+  const { language, learningLanguage } = useLanguage();
+  const { isSignedIn, isReady } = useAuthState();
   const searchParams = useSearchParams();
   const [decks, setDecks] = useState<CustomDeck[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [newDeckName, setNewDeckName] = useState("New Custom Deck");
-  const [newDeckNativeLang, setNewDeckNativeLang] = useState(nativeLanguage);
+  const [newDeckNativeLang, setNewDeckNativeLang] = useState(language);
   const [newDeckForeignLang, setNewDeckForeignLang] =
     useState(learningLanguage);
   const [newNativeWord, setNewNativeWord] = useState("");
   const [newForeignWord, setNewForeignWord] = useState("");
+
+  // AI deck generation state.
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiCount, setAiCount] = useState(10);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiRemaining, setAiRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -34,7 +43,7 @@ function DeckEditorPage() {
 
       const pairDecks = storedDecks.filter(
         (deck) =>
-          deck.nativeLang.trim().toLowerCase() === nativeLanguage &&
+          deck.nativeLang.trim().toLowerCase() === language &&
           deck.foreignLang.trim().toLowerCase() === learningLanguage,
       );
 
@@ -53,21 +62,21 @@ function DeckEditorPage() {
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [searchParams, nativeLanguage, learningLanguage]);
+  }, [searchParams, language, learningLanguage]);
 
   useEffect(() => {
-    setNewDeckNativeLang(nativeLanguage);
+    setNewDeckNativeLang(language);
     setNewDeckForeignLang(learningLanguage);
-  }, [nativeLanguage, learningLanguage]);
+  }, [language, learningLanguage]);
 
   const filteredDecks = useMemo(
     () =>
       decks.filter(
         (deck) =>
-          deck.nativeLang.trim().toLowerCase() === nativeLanguage &&
+          deck.nativeLang.trim().toLowerCase() === language &&
           deck.foreignLang.trim().toLowerCase() === learningLanguage,
       ),
-    [decks, nativeLanguage, learningLanguage],
+    [decks, language, learningLanguage],
   );
 
   const selectedDeck = useMemo(
@@ -94,13 +103,93 @@ function DeckEditorPage() {
 
     const deck = createDeck({
       name: newDeckName.trim() || "New Custom Deck",
-      nativeLang: newDeckNativeLang.trim() || nativeLanguage,
+      nativeLang: newDeckNativeLang.trim() || language,
       foreignLang: newDeckForeignLang.trim() || learningLanguage,
     });
 
     const nextDecks = [deck, ...decks];
     persistDecks(nextDecks);
     setSelectedDeckId(deck.id);
+  };
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      return;
+    }
+
+    let cancelled = false;
+    fetch("/api/decks/generate")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.remaining === "number") {
+          setAiRemaining(data.remaining);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn]);
+
+  const handleGenerateDeck = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAiError("");
+
+    const topic = aiTopic.trim();
+    if (!topic) {
+      setAiError("Enter a topic first.");
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/decks/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          nativeLang: newDeckNativeLang,
+          foreignLang: newDeckForeignLang,
+          count: aiCount,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setAiError(data?.error ?? "Failed to generate deck.");
+        if (typeof data?.remaining === "number") {
+          setAiRemaining(data.remaining);
+        }
+        return;
+      }
+
+      const words: DeckWord[] = Array.isArray(data?.words)
+        ? data.words.map((word: { native?: string; foreign?: string }) =>
+            createWord(word.native ?? "", word.foreign ?? ""),
+          )
+        : [];
+
+      const deck = createDeck({
+        name: topic,
+        nativeLang: newDeckNativeLang.trim() || language,
+        foreignLang: newDeckForeignLang.trim() || learningLanguage,
+      });
+      deck.words = words;
+
+      const nextDecks = [deck, ...decks];
+      persistDecks(nextDecks);
+      setSelectedDeckId(deck.id);
+      setAiTopic("");
+      if (typeof data?.remaining === "number") {
+        setAiRemaining(data.remaining);
+      }
+    } catch {
+      setAiError("Something went wrong. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const updateSelectedDeck = (updater: (deck: CustomDeck) => CustomDeck) => {
@@ -136,7 +225,7 @@ function DeckEditorPage() {
     setSelectedDeckId(
       nextDecks.filter(
         (deck) =>
-          deck.nativeLang.trim().toLowerCase() === nativeLanguage &&
+          deck.nativeLang.trim().toLowerCase() === language &&
           deck.foreignLang.trim().toLowerCase() === learningLanguage,
       )[0]?.id ?? "",
     );
@@ -249,6 +338,73 @@ function DeckEditorPage() {
                 Create Deck
               </button>
             </form>
+          </section>
+
+          <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm dark:border-violet-900/60 dark:from-violet-950/40 dark:to-slate-950">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                ✨ Generate with AI
+              </h2>
+              {isSignedIn && aiRemaining !== null && (
+                <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-900/60 dark:text-violet-200">
+                  {aiRemaining}/2 left today
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              Describe a topic and let AI build a deck for{" "}
+              {LANGUAGES[newDeckNativeLang as Language]} →{" "}
+              {LANGUAGES[newDeckForeignLang as Language]}.
+            </p>
+
+            {!isReady ? null : !isSignedIn ? (
+              <p className="mt-4 rounded-lg border border-dashed border-violet-300 bg-white/60 px-3 py-3 text-sm text-slate-600 dark:border-violet-800 dark:bg-slate-900/60 dark:text-slate-300">
+                Sign in to generate decks with AI.
+              </p>
+            ) : (
+              <form className="mt-4 space-y-3" onSubmit={handleGenerateDeck}>
+                <input
+                  type="text"
+                  value={aiTopic}
+                  onChange={(event) => setAiTopic(event.target.value)}
+                  placeholder="e.g. Ordering food at a café"
+                  maxLength={100}
+                  disabled={aiLoading}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+                <label className="flex items-center justify-between gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Words
+                  <select
+                    value={aiCount}
+                    onChange={(event) => setAiCount(Number(event.target.value))}
+                    disabled={aiLoading}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    {[20, 35, 50].map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {aiError && (
+                  <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300">
+                    {aiError}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={aiLoading || aiRemaining === 0}
+                  className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-violet-500 dark:hover:bg-violet-400"
+                >
+                  {aiLoading
+                    ? "Generating…"
+                    : aiRemaining === 0
+                      ? "Daily limit reached"
+                      : "Generate Deck"}
+                </button>
+              </form>
+            )}
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">

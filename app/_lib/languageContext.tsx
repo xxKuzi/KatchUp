@@ -4,10 +4,9 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Language, translations, Translations } from "./translations";
 
 interface LanguageContextType {
+  // The UI language is also the user's native language ("from").
   language: Language;
   setLanguage: (lang: Language) => void;
-  nativeLanguage: Language;
-  setNativeLanguage: (lang: Language) => void;
   learningLanguage: Language;
   setLearningLanguage: (lang: Language) => void;
   t: (key: string, defaultValue?: string) => string;
@@ -19,10 +18,8 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 const LANGUAGE_STORAGE_KEY = "katchup-language";
-const NATIVE_LANGUAGE_STORAGE_KEY = "katchup-native-language";
 const LEARNING_LANGUAGE_STORAGE_KEY = "katchup-learning-language";
 const DEFAULT_LANGUAGE: Language = "english";
-const DEFAULT_NATIVE_LANGUAGE: Language = "english";
 const DEFAULT_LEARNING_LANGUAGE: Language = "deutsch";
 
 function parseLanguage(value: string | null, fallback: Language): Language {
@@ -39,8 +36,6 @@ export function LanguageProvider({
   children: React.ReactNode;
 }) {
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
-  const [nativeLanguage, setNativeLanguageState] =
-    useState<Language>(DEFAULT_NATIVE_LANGUAGE);
   const [learningLanguage, setLearningLanguageState] =
     useState<Language>(DEFAULT_LEARNING_LANGUAGE);
 
@@ -48,17 +43,11 @@ export function LanguageProvider({
     const storedLanguage = window.localStorage.getItem(
       LANGUAGE_STORAGE_KEY,
     );
-    const storedNativeLanguage = window.localStorage.getItem(
-      NATIVE_LANGUAGE_STORAGE_KEY,
-    );
     const storedLearningLanguage = window.localStorage.getItem(
       LEARNING_LANGUAGE_STORAGE_KEY,
     );
 
     setLanguageState(parseLanguage(storedLanguage, DEFAULT_LANGUAGE));
-    setNativeLanguageState(
-      parseLanguage(storedNativeLanguage, DEFAULT_NATIVE_LANGUAGE),
-    );
     setLearningLanguageState(
       parseLanguage(storedLearningLanguage, DEFAULT_LEARNING_LANGUAGE),
     );
@@ -68,13 +57,6 @@ export function LanguageProvider({
     setLanguageState(lang);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
-    }
-  };
-
-  const setNativeLanguage = (lang: Language) => {
-    setNativeLanguageState(lang);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(NATIVE_LANGUAGE_STORAGE_KEY, lang);
     }
   };
 
@@ -105,8 +87,6 @@ export function LanguageProvider({
       value={{
         language,
         setLanguage,
-        nativeLanguage,
-        setNativeLanguage,
         learningLanguage,
         setLearningLanguage,
         t,

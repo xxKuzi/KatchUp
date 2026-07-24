@@ -38,7 +38,7 @@ const GAME_MODE_IDS = [
 ];
 
 function PracticeModeSelector() {
-  const { t, nativeLanguage, learningLanguage } = useLanguage();
+  const { t, language, learningLanguage } = useLanguage();
   const searchParams = useSearchParams();
   const [deck, setDeck] = useState<CustomDeck | null>(null);
 
@@ -55,7 +55,7 @@ function PracticeModeSelector() {
         decks.find(
           (d) =>
             d.id === deckId &&
-            d.nativeLang.trim().toLowerCase() === nativeLanguage &&
+            d.nativeLang.trim().toLowerCase() === language &&
             d.foreignLang.trim().toLowerCase() === learningLanguage,
         ) ?? null;
 
@@ -72,7 +72,7 @@ function PracticeModeSelector() {
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [searchParams, nativeLanguage, learningLanguage]);
+  }, [searchParams, language, learningLanguage]);
 
   if (!deck) {
     return (
