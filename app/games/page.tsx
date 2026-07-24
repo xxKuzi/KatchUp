@@ -1,6 +1,6 @@
 "use client";
-import GameCard from "./../_components/GameCard";
 import Carousel from "./../_components/GameCarousel";
+import HeroGameCarousel from "./../_components/HeroGameCarousel";
 import { TrendingUpDown, Star } from "lucide-react";
 import { useLanguage } from "@/app/_lib/languageContext";
 
@@ -54,28 +54,7 @@ export default function Games() {
             <Star className="h-7 w-7" />
           </h2>
 
-          <div className="rounded-3xl border border-white/90 bg-white/85 p-6 shadow-lg shadow-black/15 ring-1 ring-white/70 dark:border-slate-600 dark:bg-slate-900/70 dark:shadow-slate-950/25 dark:ring-white/10 sm:p-8">
-            <div className="flex w-full flex-wrap items-center justify-center gap-6 lg:gap-16">
-              <GameCard
-                name="Flip Cards"
-                url="/games/flip-cards"
-                img="flip_cards.png"
-                color="yellow"
-                description="Race to 10 correct"
-                feature="live"
-                featureColor="green"
-              />
-              <GameCard
-                name="One of Three"
-                url="/games/one-of-three"
-                img="one_of_three.png"
-                color="red"
-                description="Quick choice rounds"
-                feature="popular"
-                featureColor="blue"
-              />
-            </div>
-          </div>
+          <HeroGameCarousel />
         </section>
 
         <section className="mt-14 w-full max-w-6xl">

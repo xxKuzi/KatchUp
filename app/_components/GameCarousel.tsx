@@ -7,33 +7,6 @@ function GameCarousel() {
 
   const cards = [
     {
-      name: "Flip Cards",
-      url: "/games/flip-cards",
-      img: "flip_cards.png",
-      color: "yellow",
-      description: "Match translations fast",
-      feature: "favorite",
-      featureColor: "green",
-    },
-    {
-      name: "One of Three",
-      url: "/games/one-of-three",
-      img: "one_of_three.png",
-      color: "red",
-      description: "Quick choice rounds",
-      feature: "popular",
-      featureColor: "blue",
-    },
-    {
-      name: "Speed Spelling",
-      url: "#",
-      img: "flip_cards.png",
-      color: "blue",
-      description: "Type it before time runs out",
-      feature: "new",
-      featureColor: "yellow",
-    },
-    {
       name: "Word Pairing",
       url: "#",
       img: "one_of_three.png",
@@ -42,11 +15,38 @@ function GameCarousel() {
       feature: "classic",
       featureColor: "red",
     },
+    {
+      name: "One of Three",
+      url: "/games/one-of-three",
+      img: "one_of_three.png",
+      color: "blue",
+      description: "Quick choice rounds",
+      feature: "popular",
+      featureColor: "blue",
+    },
+    {
+      name: "Speed Spelling",
+      url: "#",
+      img: "flip_cards.png",
+      color: "yellow",
+      description: "Type it before time runs out",
+      feature: "new",
+      featureColor: "yellow",
+    },
+    {
+      name: "Flip Cards",
+      url: "/games/flip-cards",
+      img: "flip_cards.png",
+      color: "red",
+      description: "Match translations fast",
+      feature: "favorite",
+      featureColor: "green",
+    },
   ];
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 300; // approximate card width + gap
+      const scrollAmount = 380; // approximate card width + gap
       scrollContainerRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -91,6 +91,7 @@ function GameCarousel() {
               description={card.description}
               feature={card.feature}
               featureColor={card.featureColor}
+              wide
             />
           </div>
         ))}

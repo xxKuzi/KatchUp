@@ -114,7 +114,7 @@ export default function LanguageSwitcher({
               />
 
               <div className="flex justify-center text-slate-400 dark:text-slate-500">
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-5 w-5 rotate-90" />
               </div>
 
               <LanguagePicker

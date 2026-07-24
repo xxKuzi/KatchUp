@@ -390,7 +390,7 @@ export default function FriendsPage() {
     );
 
   return (
-    <div className="relative min-h-screen px-4 sm:py-8 pt-0 pb-4 text-foreground sm:px-6">
+    <div className="relative min-h-screen px-4 py-6 text-foreground sm:px-6">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(251,146,120,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_bottom,rgba(253,224,71,0.12),transparent_40%),linear-gradient(to_bottom,rgba(255,248,243,1),rgba(255,241,238,1))] dark:bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.07),transparent_45%),linear-gradient(to_bottom,rgba(11,12,16,1),rgba(8,9,12,1))]" />
       <FeatureGate
         isAllowed={isReady && isSignedIn}

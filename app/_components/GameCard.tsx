@@ -9,6 +9,7 @@ interface GameCardProps {
   url?: string;
   feature?: string;
   featureColor?: string;
+  wide?: boolean;
 }
 
 const colorVariants: Record<string, string> = {
@@ -35,15 +36,19 @@ const GameCard = (props: GameCardProps) => {
     color = "blue",
     feature = "",
     featureColor = "green",
+    wide = false,
   } = props;
   const gradientColor: string = colorVariants[color] || "from-gray-500";
   const featureColorConst: string =
     featureColorVariants[featureColor] || "from-gray-500";
   const isClickable = Boolean(url);
+  const sizeClasses = wide
+    ? "w-[320px] h-[350px] sm:w-[360px] sm:h-[420px]"
+    : "w-[260px] h-[350px] sm:w-[280px] sm:h-[420px]";
 
   return (
     <button
-      className={`relative group/card overflow-hidden border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-300 hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 hover:shadow-xl w-[260px] h-[350px] sm:w-[280px] sm:h-[420px] shrink-0 border-2 rounded-2xl flex flex-col items-center justify-end ${
+      className={`relative group/card overflow-hidden border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-300 hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1 hover:shadow-xl ${sizeClasses} shrink-0 border-2 rounded-2xl flex flex-col items-center justify-end ${
         isClickable ? "cursor-pointer" : "cursor-default"
       }`}
       onClick={() => {
