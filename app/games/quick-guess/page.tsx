@@ -14,11 +14,7 @@ import {
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
 import { getAllWords } from "../_lib/learning/wordDatabase";
-import {
-  recordMistake,
-  MISTAKES_PRACTICE_ENERGY_REWARD,
-} from "@/app/my-decks/_lib/customDecks";
-import { gainEnergy, spendEnergy } from "@/app/_lib/energy";
+import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
 
@@ -85,8 +81,24 @@ const QuickGuessPage = () => {
     searchParams.get("mode") === "finish" ? "finish" : "practice";
 
   const [attempt, setAttempt] = useState(0);
+  const [knownWords, setKnownWords] = useState<PracticeWord[]>([]);
 
   const deckSession = useDeckSession(deckId || null, sessionMode);
+
+  // Fetch the user's known words from the DB for energy-practice.
+  useEffect(() => {
+    if (!isEnergyReview || deckId) return;
+    let cancelled = false;
+    fetch("/api/decks/energy-practice")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { words: PracticeWord[] } | null) => {
+        if (!cancelled && data?.words) {
+          setKnownWords(data.words);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isEnergyReview, deckId, attempt]);
 
   const allWords = useMemo(() => getAllWords("german"), []);
   const roundSeed = `${topicId || "default"}:${safeLevel}:quick-guess:${attempt}`;
@@ -99,8 +111,12 @@ const QuickGuessPage = () => {
         foreign: word.foreign,
       }));
     }
+    // Energy review: use the user's known words from DB.
+    if (isEnergyReview && knownWords.length > 0) {
+      return knownWords;
+    }
     return buildRoundWords(allWords, roundSeed);
-  }, [deckId, deckSession.session, allWords, roundSeed]);
+  }, [deckId, deckSession.session, isEnergyReview, knownWords, allWords, roundSeed]);
 
   // Deck path: gate on auth/session status before rendering the round.
   if (deckId) {
@@ -229,7 +245,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
       const passed = finalScore >= 70;
 
       if (isEnergyReview) {
-        gainEnergy(MISTAKES_PRACTICE_ENERGY_REWARD);
+        gainEnergy(ENERGY_PRACTICE_REWARD);
       } else {
         spendEnergy(1);
       }
@@ -268,15 +284,8 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
 
     const nextCorrect = correctCount + (wasCorrect ? 1 : 0);
 
-    if (currentWord) {
-      if (deckId) {
-        onResult?.(currentWord.id, wasCorrect);
-      } else if (!wasCorrect) {
-        recordMistake(
-          { native: currentWord.native, foreign: currentWord.foreign },
-          { nativeLang: "english", foreignLang: "deutsch" },
-        );
-      }
+    if (currentWord && deckId) {
+      onResult?.(currentWord.id, wasCorrect);
     }
 
     setBanner(

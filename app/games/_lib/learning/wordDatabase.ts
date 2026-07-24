@@ -111,6 +111,59 @@ const spanishLectureSeeds: Array<Array<[string, string]>> = [
   ],
 ];
 
+const czechLectureSeeds: Array<Array<[string, string]>> = [
+  [
+    ["Ahoj", "Hello"],
+    ["Nazdar", "Bye"],
+    ["Dekuji", "Thanks"],
+  ],
+  [
+    ["Prosim", "Please"],
+    ["Ano", "Yes"],
+    ["Ne", "No"],
+  ],
+  [
+    ["Rano", "Morning"],
+    ["Vecer", "Evening"],
+    ["Kamarad", "Friend"],
+  ],
+  [
+    ["Voda", "Water"],
+    ["Chleb", "Bread"],
+    ["Mleko", "Milk"],
+  ],
+  [
+    ["Dum", "House"],
+    ["Skola", "School"],
+    ["Prace", "Work"],
+  ],
+  [
+    ["Mesto", "City"],
+    ["Zeme", "Country"],
+    ["Ulice", "Street"],
+  ],
+  [
+    ["Rodina", "Family"],
+    ["Dite", "Child"],
+    ["Rodice", "Parents"],
+  ],
+  [
+    ["Rychly", "Fast"],
+    ["Pomaly", "Slow"],
+    ["Snadny", "Easy"],
+  ],
+  [
+    ["Cestovat", "Travel"],
+    ["Ucit se", "Learn"],
+    ["Mluvit", "Speak"],
+  ],
+  [
+    ["Rozumet", "Understand"],
+    ["Vysvetlit", "Explain"],
+    ["Zlepsit", "Improve"],
+  ],
+];
+
 function buildLectures(
   language: SupportedLanguage,
   lectureSeeds: Array<Array<[string, string]>>,
@@ -134,6 +187,7 @@ function buildLectures(
 export const WORDS_DATABASE: WordsDatabase = {
   german: buildLectures("german", germanLectureSeeds),
   spanish: buildLectures("spanish", spanishLectureSeeds),
+  czech: buildLectures("czech", czechLectureSeeds),
 };
 
 export const TOTAL_LECTURES = 10;

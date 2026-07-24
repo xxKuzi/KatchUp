@@ -7,6 +7,24 @@ function GameCarousel() {
 
   const cards = [
     {
+      name: "Live Online Duel",
+      url: "/games/choose-one-multiplayer?mode=live",
+      img: "flip_cards.png",
+      color: "green",
+      description: "Match with an online opponent live",
+      feature: "online",
+      featureColor: "emerald",
+    },
+    {
+      name: "Score Rush",
+      url: "/games/choose-one-multiplayer?mode=async",
+      img: "one_of_three.png",
+      color: "blue",
+      description: "Climb rankings in speed trials",
+      feature: "ranks",
+      featureColor: "blue",
+    },
+    {
       name: "Word Pairing",
       url: "/games/guess-match",
       img: "guess_match.png",

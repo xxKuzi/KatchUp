@@ -15,7 +15,6 @@ import {
 import { getAllWords } from "../_lib/learning/wordDatabase";
 import type { LectureWord } from "../_lib/learning/types";
 import { spendEnergy } from "@/app/_lib/energy";
-import { recordMistake } from "@/app/my-decks/_lib/customDecks";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
 
@@ -286,14 +285,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
 
     if (deckId) {
       onResult?.(currentQuestion.wordId, isCorrect);
-    } else if (!isCorrect) {
-      recordMistake(
-        {
-          native: currentQuestion.prompt,
-          foreign: currentQuestion.correctOption,
-        },
-        { nativeLang: "english", foreignLang: "deutsch" },
-      );
     }
 
     window.setTimeout(() => {

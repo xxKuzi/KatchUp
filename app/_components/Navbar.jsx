@@ -16,12 +16,8 @@ import {
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useLanguage } from "../_lib/languageContext";
-import { useEnergy, useResetCountdown, MAX_ENERGY } from "../_lib/energy";
+import { useEnergy, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
-import {
-  getMistakesDeck,
-  MISTAKES_PRACTICE_ENERGY_REWARD,
-} from "@/app/my-decks/_lib/customDecks";
 
 function getInitials(value) {
   const trimmed = (value || "").trim();
@@ -48,7 +44,6 @@ function Navbar() {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [energyPopoverOpen, setEnergyPopoverOpen] = useState(false);
-  const [mistakesDeck, setMistakesDeck] = useState(null);
   const [langModalOpen, setLangModalOpen] = useState(false);
   const menuRef = useRef(null);
   const energyRef = useRef(null);
@@ -207,11 +202,7 @@ function Navbar() {
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
-                  const next = !energyPopoverOpen;
-                  if (next) {
-                    setMistakesDeck(getMistakesDeck("english", "deutsch"));
-                  }
-                  setEnergyPopoverOpen(next);
+                  setEnergyPopoverOpen((prev) => !prev);
                 }}
                 aria-label={`${t("navbar.energy")}: ${energy}/${MAX_ENERGY}`}
                 aria-expanded={energyPopoverOpen}
@@ -257,7 +248,7 @@ function Navbar() {
                       {t("navbar.earnEnergy")}
                     </p>
                     <div className="flex flex-col gap-2">
-                      {/* Repetition drill over all your words — always available. */}
+                      {/* Repetition drill over your known words — always available. */}
                       <button
                         type="button"
                         disabled={energy >= MAX_ENERGY}
@@ -270,34 +261,9 @@ function Navbar() {
                         {t("navbar.speedSpellingDrill")}
                         <span className="inline-flex items-center gap-0.5">
                           <Zap className="h-3.5 w-3.5 fill-current" />+
-                          {MISTAKES_PRACTICE_ENERGY_REWARD}
+                          {ENERGY_PRACTICE_REWARD}
                         </span>
                       </button>
-
-                      {/* Targeted review of words you've missed. */}
-                      {mistakesDeck && mistakesDeck.words.length > 0 ? (
-                        <button
-                          type="button"
-                          disabled={energy >= MAX_ENERGY}
-                          onClick={() => {
-                            setEnergyPopoverOpen(false);
-                            router.push(
-                              `/games/quick-guess?deck=${mistakesDeck.id}&energyReview=1`,
-                            );
-                          }}
-                          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500 bg-transparent px-3 py-2 text-xs font-bold text-amber-600 transition hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:text-amber-400"
-                        >
-                          {t("navbar.reviewMistakes")}
-                          <span className="inline-flex items-center gap-0.5">
-                            <Zap className="h-3.5 w-3.5 fill-current" />+
-                            {MISTAKES_PRACTICE_ENERGY_REWARD}
-                          </span>
-                        </button>
-                      ) : (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {t("navbar.buildReviewList")}
-                        </p>
-                      )}
 
                       {energy >= MAX_ENERGY && (
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">

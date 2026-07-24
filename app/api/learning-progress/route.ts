@@ -8,7 +8,7 @@ import {
 } from "./_lib/server";
 
 function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish";
+  return value === "german" || value === "spanish" || value === "czech";
 }
 
 function isValidUpdate(value: unknown): value is WordProgressUpdate {

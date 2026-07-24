@@ -67,6 +67,7 @@ export const matches = pgTable("matches", {
   id: uuid("id").defaultRandom().primaryKey(),
   language: text("language").notNull(),
   level: text("level").notNull(),
+  mode: text("mode").default("fair").notNull(),
   status: text("status").notNull(),
   winnerUserId: uuid("winner_user_id"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
@@ -92,6 +93,7 @@ export const matchQuestions = pgTable("match_questions", {
   matchId: uuid("match_id")
     .notNull()
     .references(() => matches.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
   orderIndex: integer("order_index").notNull(),
   prompt: text("prompt").notNull(),
   options: json("options").notNull(),
@@ -139,6 +141,7 @@ export const userWordProgress = pgTable(
     language: text("language").notNull(),
     isUnlocked: boolean("is_unlocked").default(true).notNull(),
     isMastered: boolean("is_mastered").default(false).notNull(),
+    streak: integer("streak").default(0).notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
       .notNull(),
@@ -228,5 +231,24 @@ export const userWordStats = pgTable(
       "user_word_stats_user_id_deck_word_id_key",
     ).on(table.userId, table.deckWordId),
     userIdx: index("user_word_stats_user_id_idx").on(table.userId),
+  }),
+);
+
+export const globalWords = pgTable(
+  "global_words",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    language: text("language").notNull(), // "german" | "spanish"
+    level: text("level").notNull(), // "A1" | "A2" | "B1" | "B2" | "C1"
+    category: text("category").notNull().default("general"),
+    native: text("native").notNull(),
+    foreign: text("foreign").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    langLevelIdx: index("global_words_lang_level_idx").on(
+      table.language,
+      table.level,
+    ),
   }),
 );

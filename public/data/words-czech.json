@@ -1,0 +1,6362 @@
+[
+  {
+    "native": "hello",
+    "foreign": "ahoj",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "goodbye",
+    "foreign": "na shledanou",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "yes",
+    "foreign": "ano",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "no",
+    "foreign": "ne",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "please",
+    "foreign": "prosím",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "thank you",
+    "foreign": "děkuji",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "sorry",
+    "foreign": "promiňte",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "good morning",
+    "foreign": "dobré ráno",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "good afternoon",
+    "foreign": "dobré odpoledne",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "good evening",
+    "foreign": "dobrý večer",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "water",
+    "foreign": "voda",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "milk",
+    "foreign": "mléko",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "coffee",
+    "foreign": "káva",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "tea",
+    "foreign": "čaj",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "beer",
+    "foreign": "pivo",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "wine",
+    "foreign": "víno",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "bread",
+    "foreign": "chléb",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "butter",
+    "foreign": "máslo",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "cheese",
+    "foreign": "sýr",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "meat",
+    "foreign": "maso",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "apple",
+    "foreign": "jablko",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "banana",
+    "foreign": "banán",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "orange",
+    "foreign": "pomeranč",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "potato",
+    "foreign": "brambora",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "tomato",
+    "foreign": "rajče",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "egg",
+    "foreign": "vejce",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "fish",
+    "foreign": "ryba",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "soup",
+    "foreign": "polévka",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "sugar",
+    "foreign": "cukr",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "salt",
+    "foreign": "sůl",
+    "category": "food",
+    "level": "A1"
+  },
+  {
+    "native": "house",
+    "foreign": "dům",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "apartment",
+    "foreign": "byt",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "room",
+    "foreign": "pokoj",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "kitchen",
+    "foreign": "kuchyně",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "bathroom",
+    "foreign": "koupelna",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "bedroom",
+    "foreign": "ložnice",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "door",
+    "foreign": "dveře",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "window",
+    "foreign": "okno",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "table",
+    "foreign": "stůl",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "chair",
+    "foreign": "židle",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "bed",
+    "foreign": "postel",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "lamp",
+    "foreign": "lampa",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "phone",
+    "foreign": "telefon",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "television",
+    "foreign": "televize",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "computer",
+    "foreign": "počítač",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "book",
+    "foreign": "kniha",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "pen",
+    "foreign": "pero",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "paper",
+    "foreign": "papír",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "clock",
+    "foreign": "hodiny",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "key",
+    "foreign": "klíč",
+    "category": "home",
+    "level": "A1"
+  },
+  {
+    "native": "father",
+    "foreign": "otec",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "mother",
+    "foreign": "matka",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "son",
+    "foreign": "syn",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "daughter",
+    "foreign": "dcera",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "brother",
+    "foreign": "bratr",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "sister",
+    "foreign": "sestra",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "grandfather",
+    "foreign": "dědeček",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "grandmother",
+    "foreign": "babička",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "man",
+    "foreign": "muž",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "woman",
+    "foreign": "žena",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "child",
+    "foreign": "dítě",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "boy",
+    "foreign": "chlapec",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "girl",
+    "foreign": "dívka",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "friend",
+    "foreign": "přítel",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "family",
+    "foreign": "rodina",
+    "category": "family",
+    "level": "A1"
+  },
+  {
+    "native": "dog",
+    "foreign": "pes",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "cat",
+    "foreign": "kočka",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "horse",
+    "foreign": "kůň",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "cow",
+    "foreign": "kráva",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "pig",
+    "foreign": "prase",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "sheep",
+    "foreign": "ovce",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "chicken",
+    "foreign": "slepice",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "bird",
+    "foreign": "pták",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "mouse",
+    "foreign": "myš",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "rabbit",
+    "foreign": "králík",
+    "category": "animals",
+    "level": "A1"
+  },
+  {
+    "native": "shirt",
+    "foreign": "košile",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "pants",
+    "foreign": "kalhoty",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "dress",
+    "foreign": "šaty",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "shoes",
+    "foreign": "boty",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "jacket",
+    "foreign": "bunda",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "coat",
+    "foreign": "kabát",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "hat",
+    "foreign": "klobouk",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "scarf",
+    "foreign": "šála",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "gloves",
+    "foreign": "rukavice",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "skirt",
+    "foreign": "sukně",
+    "category": "clothing",
+    "level": "A1"
+  },
+  {
+    "native": "sun",
+    "foreign": "slunce",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "moon",
+    "foreign": "měsíc",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "star",
+    "foreign": "hvězda",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "sky",
+    "foreign": "nebe",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "rain",
+    "foreign": "déšť",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "snow",
+    "foreign": "sníh",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "wind",
+    "foreign": "vítr",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "tree",
+    "foreign": "strom",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "flower",
+    "foreign": "květina",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "grass",
+    "foreign": "tráva",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "water",
+    "foreign": "voda",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "fire",
+    "foreign": "oheň",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "earth",
+    "foreign": "země",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "stone",
+    "foreign": "kámen",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "river",
+    "foreign": "řeka",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "sea",
+    "foreign": "moře",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "mountain",
+    "foreign": "hora",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "forest",
+    "foreign": "les",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "animal",
+    "foreign": "zvíře",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "world",
+    "foreign": "svět",
+    "category": "nature",
+    "level": "A1"
+  },
+  {
+    "native": "car",
+    "foreign": "auto",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "bus",
+    "foreign": "autobus",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "train",
+    "foreign": "vlak",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "plane",
+    "foreign": "letadlo",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "bicycle",
+    "foreign": "kolo",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "street",
+    "foreign": "ulice",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "city",
+    "foreign": "město",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "country",
+    "foreign": "země",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "hotel",
+    "foreign": "hotel",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "ticket",
+    "foreign": "jízdenka",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "station",
+    "foreign": "nádraží",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "airport",
+    "foreign": "letiště",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "map",
+    "foreign": "mapa",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "passport",
+    "foreign": "pas",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "bag",
+    "foreign": "taška",
+    "category": "travel",
+    "level": "A1"
+  },
+  {
+    "native": "big",
+    "foreign": "velký",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "small",
+    "foreign": "malý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "good",
+    "foreign": "dobrý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "bad",
+    "foreign": "špatný",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "hot",
+    "foreign": "teplý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "cold",
+    "foreign": "studený",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "new",
+    "foreign": "nový",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "old",
+    "foreign": "starý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "young",
+    "foreign": "mladý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "happy",
+    "foreign": "šťastný",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "sad",
+    "foreign": "smutný",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "fast",
+    "foreign": "rychlý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "slow",
+    "foreign": "pomalý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "long",
+    "foreign": "dlouhý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "short",
+    "foreign": "krátký",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "clean",
+    "foreign": "čistý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "dirty",
+    "foreign": "špinavý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "easy",
+    "foreign": "lehký",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "difficult",
+    "foreign": "těžký",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "expensive",
+    "foreign": "drahý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "cheap",
+    "foreign": "levný",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "beautiful",
+    "foreign": "krásný",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "ugly",
+    "foreign": "ošklivý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "tall",
+    "foreign": "vysoký",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "short",
+    "foreign": "nízký",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "to be",
+    "foreign": "být",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to have",
+    "foreign": "mít",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to do",
+    "foreign": "dělat",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to go",
+    "foreign": "jít",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to come",
+    "foreign": "přijít",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to see",
+    "foreign": "vidět",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to hear",
+    "foreign": "slyšet",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to speak",
+    "foreign": "mluvit",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to eat",
+    "foreign": "jíst",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to drink",
+    "foreign": "pít",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to sleep",
+    "foreign": "spát",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to read",
+    "foreign": "číst",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to write",
+    "foreign": "psát",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to work",
+    "foreign": "pracovat",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to study",
+    "foreign": "studovat",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to buy",
+    "foreign": "koupit",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to want",
+    "foreign": "chtít",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to know",
+    "foreign": "vědět",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to live",
+    "foreign": "žít",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "to love",
+    "foreign": "milovat",
+    "category": "verbs",
+    "level": "A1"
+  },
+  {
+    "native": "one",
+    "foreign": "jeden",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "two",
+    "foreign": "dva",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "three",
+    "foreign": "tři",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "four",
+    "foreign": "čtyři",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "five",
+    "foreign": "pět",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "six",
+    "foreign": "šest",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "seven",
+    "foreign": "sedm",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "eight",
+    "foreign": "osm",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "nine",
+    "foreign": "devět",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "ten",
+    "foreign": "deset",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "monday",
+    "foreign": "pondělí",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "tuesday",
+    "foreign": "úterý",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "wednesday",
+    "foreign": "středa",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "thursday",
+    "foreign": "čtvrtek",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "friday",
+    "foreign": "pátek",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "saturday",
+    "foreign": "sobota",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "sunday",
+    "foreign": "neděle",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "january",
+    "foreign": "leden",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "february",
+    "foreign": "únor",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "march",
+    "foreign": "březen",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "april",
+    "foreign": "duben",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "may",
+    "foreign": "květen",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "june",
+    "foreign": "červen",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "july",
+    "foreign": "červenec",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "august",
+    "foreign": "srpen",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "september",
+    "foreign": "září",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "october",
+    "foreign": "říjen",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "november",
+    "foreign": "listopad",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "december",
+    "foreign": "prosinec",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "red",
+    "foreign": "červený",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "blue",
+    "foreign": "modrý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "green",
+    "foreign": "zelený",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "yellow",
+    "foreign": "žlutý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "white",
+    "foreign": "bílý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "black",
+    "foreign": "černý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "brown",
+    "foreign": "hnědý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "gray",
+    "foreign": "šedý",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "orange",
+    "foreign": "oranžový",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "pink",
+    "foreign": "růžový",
+    "category": "adjectives",
+    "level": "A1"
+  },
+  {
+    "native": "head",
+    "foreign": "hlava",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "eye",
+    "foreign": "oko",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "ear",
+    "foreign": "uho",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "nose",
+    "foreign": "nos",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "mouth",
+    "foreign": "ústa",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "hand",
+    "foreign": "ruka",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "leg",
+    "foreign": "noha",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "heart",
+    "foreign": "srdce",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "hair",
+    "foreign": "vlasy",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "tooth",
+    "foreign": "zub",
+    "category": "body",
+    "level": "A1"
+  },
+  {
+    "native": "today",
+    "foreign": "dnes",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "tomorrow",
+    "foreign": "zítra",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "yesterday",
+    "foreign": "včera",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "now",
+    "foreign": "teď",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "always",
+    "foreign": "vždy",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "never",
+    "foreign": "nikdy",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "here",
+    "foreign": "tady",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "there",
+    "foreign": "tam",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "who",
+    "foreign": "kdo",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "what",
+    "foreign": "co",
+    "category": "general",
+    "level": "A1"
+  },
+  {
+    "native": "address",
+    "foreign": "adresa",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "apartment",
+    "foreign": "byt",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "apple",
+    "foreign": "jablko",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "april",
+    "foreign": "duben",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "arm",
+    "foreign": "paže",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "august",
+    "foreign": "srpen",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "autumn",
+    "foreign": "podzim",
+    "category": "nature",
+    "level": "A2"
+  },
+  {
+    "native": "baby",
+    "foreign": "miminko",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "bag",
+    "foreign": "taška",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "bakery",
+    "foreign": "pekařství",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "banana",
+    "foreign": "banán",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "bank",
+    "foreign": "banka",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "bathroom",
+    "foreign": "koupelna",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "be",
+    "foreign": "být",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "beach",
+    "foreign": "pláž",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "beautiful",
+    "foreign": "krásný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "bed",
+    "foreign": "postel",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "bedroom",
+    "foreign": "ložnice",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "beef",
+    "foreign": "hovězí",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "beer",
+    "foreign": "pivo",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "begin",
+    "foreign": "začít",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "behind",
+    "foreign": "za",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "bicycle",
+    "foreign": "kolo",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "big",
+    "foreign": "velký",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "bill",
+    "foreign": "účet",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "bird",
+    "foreign": "pták",
+    "category": "animals",
+    "level": "A2"
+  },
+  {
+    "native": "birthday",
+    "foreign": "narozeniny",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "black",
+    "foreign": "černý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "blouse",
+    "foreign": "halenka",
+    "category": "clothing",
+    "level": "A2"
+  },
+  {
+    "native": "blue",
+    "foreign": "modrý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "boat",
+    "foreign": "loď",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "body",
+    "foreign": "tělo",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "book",
+    "foreign": "kniha",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "bookstore",
+    "foreign": "knihkupectví",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "boring",
+    "foreign": "nudný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "bottle",
+    "foreign": "láhev",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "bowl",
+    "foreign": "mísa",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "box",
+    "foreign": "krabice",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "boy",
+    "foreign": "chlapec",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "bread",
+    "foreign": "chléb",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "break",
+    "foreign": "přestávka",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "breakfast",
+    "foreign": "snídaně",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "bridge",
+    "foreign": "most",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "bring",
+    "foreign": "přinést",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "brother",
+    "foreign": "bratr",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "brown",
+    "foreign": "hnědý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "brush",
+    "foreign": "kartáč",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "build",
+    "foreign": "stavět",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "building",
+    "foreign": "budova",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "bus",
+    "foreign": "autobus",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "business",
+    "foreign": "obchod",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "butter",
+    "foreign": "máslo",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "buy",
+    "foreign": "koupit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "cafe",
+    "foreign": "kavárna",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "cake",
+    "foreign": "dort",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "calendar",
+    "foreign": "kalendář",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "call",
+    "foreign": "volat",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "camera",
+    "foreign": "fotoaparát",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "car",
+    "foreign": "auto",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "card",
+    "foreign": "karta",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "carrot",
+    "foreign": "mrkev",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "cat",
+    "foreign": "kočka",
+    "category": "animals",
+    "level": "A2"
+  },
+  {
+    "native": "catch",
+    "foreign": "chytit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "center",
+    "foreign": "centrum",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "chair",
+    "foreign": "židle",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "change",
+    "foreign": "změnit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "cheap",
+    "foreign": "levný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "cheese",
+    "foreign": "sýr",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "chicken",
+    "foreign": "kuře",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "child",
+    "foreign": "dítě",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "chocolate",
+    "foreign": "čokoláda",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "church",
+    "foreign": "kostel",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "cinema",
+    "foreign": "kino",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "city",
+    "foreign": "město",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "class",
+    "foreign": "třída",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "clean",
+    "foreign": "čistý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "clock",
+    "foreign": "hodiny",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "close",
+    "foreign": "zavřít",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "clothes",
+    "foreign": "oblečení",
+    "category": "clothing",
+    "level": "A2"
+  },
+  {
+    "native": "coat",
+    "foreign": "kabát",
+    "category": "clothing",
+    "level": "A2"
+  },
+  {
+    "native": "coffee",
+    "foreign": "káva",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "cold",
+    "foreign": "studený",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "college",
+    "foreign": "kolej",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "color",
+    "foreign": "barva",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "comb",
+    "foreign": "hřeben",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "come",
+    "foreign": "přijít",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "computer",
+    "foreign": "počítač",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "cook",
+    "foreign": "vařit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "corner",
+    "foreign": "roh",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "cost",
+    "foreign": "stát",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "couch",
+    "foreign": "pohovka",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "country",
+    "foreign": "země",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "cousin",
+    "foreign": "bratranec",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "cow",
+    "foreign": "kráva",
+    "category": "animals",
+    "level": "A2"
+  },
+  {
+    "native": "cream",
+    "foreign": "smetana",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "credit",
+    "foreign": "kredit",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "cry",
+    "foreign": "plakat",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "cup",
+    "foreign": "šálek",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "curtain",
+    "foreign": "závěs",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "customer",
+    "foreign": "zákazník",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "cut",
+    "foreign": "řezat",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "dad",
+    "foreign": "táta",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "dance",
+    "foreign": "tančit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "dangerous",
+    "foreign": "nebezpečný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "dark",
+    "foreign": "tmavý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "daughter",
+    "foreign": "dcera",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "day",
+    "foreign": "den",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "december",
+    "foreign": "prosinec",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "decide",
+    "foreign": "rozhodnout",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "deep",
+    "foreign": "hluboký",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "desk",
+    "foreign": "psací stůl",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "dessert",
+    "foreign": "dezert",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "dictionary",
+    "foreign": "slovník",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "diesel",
+    "foreign": "nafta",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "different",
+    "foreign": "jiný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "difficult",
+    "foreign": "obtížný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "dining",
+    "foreign": "jdelna",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "dinner",
+    "foreign": "večeře",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "dirty",
+    "foreign": "špinavý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "dish",
+    "foreign": "jídlo",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "doctor",
+    "foreign": "lékař",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "dog",
+    "foreign": "pes",
+    "category": "animals",
+    "level": "A2"
+  },
+  {
+    "native": "door",
+    "foreign": "dveře",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "down",
+    "foreign": "dolů",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "draw",
+    "foreign": "kreslit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "dress",
+    "foreign": "šaty",
+    "category": "clothing",
+    "level": "A2"
+  },
+  {
+    "native": "drink",
+    "foreign": "pít",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "drive",
+    "foreign": "řídit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "driver",
+    "foreign": "řidič",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "dry",
+    "foreign": "suchý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "duck",
+    "foreign": "kachna",
+    "category": "animals",
+    "level": "A2"
+  },
+  {
+    "native": "ear",
+    "foreign": "ucho",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "early",
+    "foreign": "brzy",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "east",
+    "foreign": "východ",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "easy",
+    "foreign": "snadný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "eat",
+    "foreign": "jíst",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "egg",
+    "foreign": "vejce",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "eight",
+    "foreign": "osm",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "eighteen",
+    "foreign": "osmnáct",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "eighty",
+    "foreign": "osmdesát",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "electricity",
+    "foreign": "elektřina",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "elephant",
+    "foreign": "slon",
+    "category": "animals",
+    "level": "A2"
+  },
+  {
+    "native": "eleven",
+    "foreign": "jedenáct",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "email",
+    "foreign": "e-mail",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "empty",
+    "foreign": "prázdný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "end",
+    "foreign": "konec",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "engine",
+    "foreign": "motor",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "english",
+    "foreign": "angličtina",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "enjoy",
+    "foreign": "uštětnit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "enter",
+    "foreign": "vstoupit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "envelope",
+    "foreign": "obálka",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "euro",
+    "foreign": "euro",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "evening",
+    "foreign": "večer",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "every",
+    "foreign": "každý",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "exam",
+    "foreign": "zkouška",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "expensive",
+    "foreign": "drahý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "explain",
+    "foreign": "vysvětlit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "eye",
+    "foreign": "oko",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "face",
+    "foreign": "tvář",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "factory",
+    "foreign": "továrna",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fall",
+    "foreign": "padat",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "family",
+    "foreign": "rodina",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "famous",
+    "foreign": "slavný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "farm",
+    "foreign": "farma",
+    "category": "nature",
+    "level": "A2"
+  },
+  {
+    "native": "farmer",
+    "foreign": "farmář",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fast",
+    "foreign": "rychlý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "fat",
+    "foreign": "tlustý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "father",
+    "foreign": "otec",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "february",
+    "foreign": "únor",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "feel",
+    "foreign": "cítit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "festival",
+    "foreign": "festival",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "few",
+    "foreign": "málo",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "field",
+    "foreign": "pole",
+    "category": "nature",
+    "level": "A2"
+  },
+  {
+    "native": "fifteen",
+    "foreign": "patnáct",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fifty",
+    "foreign": "padesát",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fight",
+    "foreign": "bojovat",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "fill",
+    "foreign": "naplnit",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "film",
+    "foreign": "film",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "final",
+    "foreign": "konečný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "find",
+    "foreign": "najít",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "fine",
+    "foreign": "dobrý",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "fingers",
+    "foreign": "prsty",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fire",
+    "foreign": "oheň",
+    "category": "nature",
+    "level": "A2"
+  },
+  {
+    "native": "first",
+    "foreign": "první",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fish",
+    "foreign": "ryba",
+    "category": "animals",
+    "level": "A2"
+  },
+  {
+    "native": "five",
+    "foreign": "pět",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "flat",
+    "foreign": "byt",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "flight",
+    "foreign": "let",
+    "category": "travel",
+    "level": "A2"
+  },
+  {
+    "native": "floor",
+    "foreign": "podlaha",
+    "category": "home",
+    "level": "A2"
+  },
+  {
+    "native": "flower",
+    "foreign": "květina",
+    "category": "nature",
+    "level": "A2"
+  },
+  {
+    "native": "fly",
+    "foreign": "létat",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "fog",
+    "foreign": "mlha",
+    "category": "nature",
+    "level": "A2"
+  },
+  {
+    "native": "follow",
+    "foreign": "sledovat",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "food",
+    "foreign": "jídlo",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "foot",
+    "foreign": "noha",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "football",
+    "foreign": "fotbal",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "forest",
+    "foreign": "les",
+    "category": "nature",
+    "level": "A2"
+  },
+  {
+    "native": "forget",
+    "foreign": "zapomenout",
+    "category": "verbs",
+    "level": "A2"
+  },
+  {
+    "native": "fork",
+    "foreign": "vidlička",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "form",
+    "foreign": "formulář",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "forty",
+    "foreign": "čtyřicet",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "four",
+    "foreign": "čtyři",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fourteen",
+    "foreign": "čtrnáct",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "free",
+    "foreign": "volný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "fresh",
+    "foreign": "čerstvý",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "friday",
+    "foreign": "pátek",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "friend",
+    "foreign": "přítel",
+    "category": "family",
+    "level": "A2"
+  },
+  {
+    "native": "from",
+    "foreign": "z",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "fruit",
+    "foreign": "ovoce",
+    "category": "food",
+    "level": "A2"
+  },
+  {
+    "native": "full",
+    "foreign": "plný",
+    "category": "adjectives",
+    "level": "A2"
+  },
+  {
+    "native": "fun",
+    "foreign": "zábava",
+    "category": "general",
+    "level": "A2"
+  },
+  {
+    "native": "environment",
+    "foreign": "životní prostředí",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "pollution",
+    "foreign": "znečištění",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "recycling",
+    "foreign": "recyklace",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "climate",
+    "foreign": "klima",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "nature",
+    "foreign": "příroda",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "forest",
+    "foreign": "les",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "river",
+    "foreign": "řeka",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "mountain",
+    "foreign": "hora",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "sea",
+    "foreign": "moře",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "island",
+    "foreign": "ostrov",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "weather",
+    "foreign": "počasí",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "storm",
+    "foreign": "bouře",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "wind",
+    "foreign": "vítr",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "sunshine",
+    "foreign": "sluneční svit",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "temperature",
+    "foreign": "teplota",
+    "category": "nature",
+    "level": "B1"
+  },
+  {
+    "native": "airport",
+    "foreign": "letiště",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "luggage",
+    "foreign": "zavazadlo",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "ticket",
+    "foreign": "jízdenka",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "passport",
+    "foreign": "cestovní pas",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "journey",
+    "foreign": "cesta",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "hotel",
+    "foreign": "hotel",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "reservation",
+    "foreign": "rezervace",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "sightseeing",
+    "foreign": "prohlídka památek",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "guide",
+    "foreign": "průvodce",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "map",
+    "foreign": "mapa",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "station",
+    "foreign": "stanice",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "delay",
+    "foreign": "zpoždění",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "departure",
+    "foreign": "odjezd",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "arrival",
+    "foreign": "příjezd",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "tourism",
+    "foreign": "turistika",
+    "category": "travel",
+    "level": "B1"
+  },
+  {
+    "native": "education",
+    "foreign": "vzdělání",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "university",
+    "foreign": "univerzita",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "exam",
+    "foreign": "zkouška",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "student",
+    "foreign": "student",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "teacher",
+    "foreign": "učitel",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "subject",
+    "foreign": "předmět",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "knowledge",
+    "foreign": "znalost",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "lesson",
+    "foreign": "lekce",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "homework",
+    "foreign": "domácí úkol",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "library",
+    "foreign": "knihovna",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "grade",
+    "foreign": "známka",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "course",
+    "foreign": "kurs",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "degree",
+    "foreign": "titul",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "scholarship",
+    "foreign": "stipendium",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "research",
+    "foreign": "výzkum",
+    "category": "school",
+    "level": "B1"
+  },
+  {
+    "native": "profession",
+    "foreign": "povolání",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "salary",
+    "foreign": "plat",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "colleague",
+    "foreign": "kolega",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "boss",
+    "foreign": "šéf",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "meeting",
+    "foreign": "schůzka",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "interview",
+    "foreign": "pohovor",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "contract",
+    "foreign": "smlouva",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "company",
+    "foreign": "společnost",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "office",
+    "foreign": "kancelář",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "project",
+    "foreign": "projekt",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "experience",
+    "foreign": "zkušenost",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "retirement",
+    "foreign": "důchod",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "unemployment",
+    "foreign": "nezaměstnanost",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "resume",
+    "foreign": "životopis",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "colleague",
+    "foreign": "spolupracovník",
+    "category": "work",
+    "level": "B1"
+  },
+  {
+    "native": "health",
+    "foreign": "zdraví",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "disease",
+    "foreign": "nemoc",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "medicine",
+    "foreign": "lék",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "doctor",
+    "foreign": "lékař",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "hospital",
+    "foreign": "nemocnice",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "pain",
+    "foreign": "bolest",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "pharmacy",
+    "foreign": "lékárna",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "symptom",
+    "foreign": "příznak",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "treatment",
+    "foreign": "léčba",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "injury",
+    "foreign": "zranění",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "fever",
+    "foreign": "horečka",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "cough",
+    "foreign": "kašel",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "allergy",
+    "foreign": "alergie",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "operation",
+    "foreign": "operace",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "recovery",
+    "foreign": "uzdravení",
+    "category": "health",
+    "level": "B1"
+  },
+  {
+    "native": "technology",
+    "foreign": "technologie",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "computer",
+    "foreign": "počítač",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "smartphone",
+    "foreign": "chytrý telefon",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "internet",
+    "foreign": "internet",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "software",
+    "foreign": "software",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "password",
+    "foreign": "heslo",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "website",
+    "foreign": "webová stránka",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "screen",
+    "foreign": "obrazovka",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "keyboard",
+    "foreign": "klávesnice",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "printer",
+    "foreign": "tiskárna",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "network",
+    "foreign": "síť",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "download",
+    "foreign": "stáhnout",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "upload",
+    "foreign": "nahrát",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "file",
+    "foreign": "soubor",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "device",
+    "foreign": "zařízení",
+    "category": "tech",
+    "level": "B1"
+  },
+  {
+    "native": "culture",
+    "foreign": "kultura",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "art",
+    "foreign": "umění",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "music",
+    "foreign": "hudba",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "painting",
+    "foreign": "malba",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "museum",
+    "foreign": "muzeum",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "theater",
+    "foreign": "divadlo",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "movie",
+    "foreign": "film",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "literature",
+    "foreign": "literatura",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "history",
+    "foreign": "historie",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "tradition",
+    "foreign": "tradice",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "festival",
+    "foreign": "festival",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "exhibition",
+    "foreign": "výstava",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "concert",
+    "foreign": "koncert",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "author",
+    "foreign": "autor",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "poetry",
+    "foreign": "poezie",
+    "category": "culture",
+    "level": "B1"
+  },
+  {
+    "native": "economy",
+    "foreign": "ekonomika",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "politics",
+    "foreign": "politika",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "government",
+    "foreign": "vláda",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "law",
+    "foreign": "zákon",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "crime",
+    "foreign": "zločin",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "police",
+    "foreign": "policie",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "society",
+    "foreign": "společnost",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "citizen",
+    "foreign": "občan",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "election",
+    "foreign": "volby",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "tax",
+    "foreign": "daň",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "poverty",
+    "foreign": "chudoba",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "wealth",
+    "foreign": "bohatství",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "freedom",
+    "foreign": "svoboda",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "justice",
+    "foreign": "spravedlnost",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "news",
+    "foreign": "zprávy",
+    "category": "society",
+    "level": "B1"
+  },
+  {
+    "native": "to achieve",
+    "foreign": "dosáhnout",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to influence",
+    "foreign": "ovlivnit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to compare",
+    "foreign": "porovnat",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to develop",
+    "foreign": "vyvinout",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to decide",
+    "foreign": "rozhodnout",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to explain",
+    "foreign": "vysvětlit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to suggest",
+    "foreign": "navrhnout",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to refuse",
+    "foreign": "odmítnout",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to accept",
+    "foreign": "přijmout",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to improve",
+    "foreign": "zlepšit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to increase",
+    "foreign": "zvýšit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to decrease",
+    "foreign": "snížit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to prevent",
+    "foreign": "zabránit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to solve",
+    "foreign": "vyřešit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to support",
+    "foreign": "podporovat",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "important",
+    "foreign": "důležitý",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "necessary",
+    "foreign": "nutný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "possible",
+    "foreign": "možný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "impossible",
+    "foreign": "nemožný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "similar",
+    "foreign": "podobný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "different",
+    "foreign": "odlišný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "successful",
+    "foreign": "úspěšný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "responsible",
+    "foreign": "odpovědný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "independent",
+    "foreign": "nezávislý",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "dangerous",
+    "foreign": "nebezpečný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "safe",
+    "foreign": "bezpečný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "positive",
+    "foreign": "pozitivní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "negative",
+    "foreign": "negativní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "natural",
+    "foreign": "přirozený",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "artificial",
+    "foreign": "umělý",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "although",
+    "foreign": "ačkoliv",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "therefore",
+    "foreign": "proto",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "however",
+    "foreign": "avšak",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "meanwhile",
+    "foreign": "zatímco",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "besides",
+    "foreign": "kromě",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "especially",
+    "foreign": "zejména",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "probably",
+    "foreign": "pravděpodobně",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "certainly",
+    "foreign": "jistě",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "perhaps",
+    "foreign": "možná",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "actually",
+    "foreign": "vlastně",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "finally",
+    "foreign": "konečně",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "suddenly",
+    "foreign": "náhle",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "usually",
+    "foreign": "obvykle",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "recently",
+    "foreign": "nedávno",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "immediately",
+    "foreign": "okamžitě",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "opinion",
+    "foreign": "názor",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "advantage",
+    "foreign": "výhoda",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "disadvantage",
+    "foreign": "nevýhoda",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "opportunity",
+    "foreign": "příležitost",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "solution",
+    "foreign": "řešení",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "result",
+    "foreign": "výsledek",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "cause",
+    "foreign": "příčina",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "effect",
+    "foreign": "účinek",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "goal",
+    "foreign": "cíl",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "success",
+    "foreign": "úspěch",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "failure",
+    "foreign": "neúspěch",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "attitude",
+    "foreign": "postoj",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "behavior",
+    "foreign": "chování",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "relationship",
+    "foreign": "vztah",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "situation",
+    "foreign": "situace",
+    "category": "general",
+    "level": "B1"
+  },
+  {
+    "native": "to accept",
+    "foreign": "akceptovat",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to analyze",
+    "foreign": "analyzovat",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to argue",
+    "foreign": "hádat se",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to arrange",
+    "foreign": "zařídit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to arrive",
+    "foreign": "dorazit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to attack",
+    "foreign": "zaútočit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to avoid",
+    "foreign": "vyhnout se",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to blame",
+    "foreign": "vinit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to borrow",
+    "foreign": "půjčit si",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to breathe",
+    "foreign": "dýchat",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to celebrate",
+    "foreign": "slavit",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to choose",
+    "foreign": "vybrat",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to collect",
+    "foreign": "sbírat",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to complain",
+    "foreign": "stěžovat si",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "to concentrate",
+    "foreign": "soustředit se",
+    "category": "verbs",
+    "level": "B1"
+  },
+  {
+    "native": "complex",
+    "foreign": "komplexní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "constant",
+    "foreign": "stálý",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "current",
+    "foreign": "aktuální",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "efficient",
+    "foreign": "efektivní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "familiar",
+    "foreign": "známý",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "frequent",
+    "foreign": "častý",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "general",
+    "foreign": "obecný",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "global",
+    "foreign": "globální",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "historical",
+    "foreign": "historický",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "ideal",
+    "foreign": "ideální",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "local",
+    "foreign": "místní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "main",
+    "foreign": "hlavní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "mental",
+    "foreign": "duševní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "official",
+    "foreign": "oficiální",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "original",
+    "foreign": "původní",
+    "category": "adjectives",
+    "level": "B1"
+  },
+  {
+    "native": "achievement",
+    "foreign": "úspěch",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "advantage",
+    "foreign": "výhoda",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "advertising",
+    "foreign": "reklama",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "ambition",
+    "foreign": "ambice",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "appearance",
+    "foreign": "vzhled",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "application",
+    "foreign": "žádost",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "argument",
+    "foreign": "argument",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "arrangement",
+    "foreign": "uspořádání",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "assistance",
+    "foreign": "asistence",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "atmosphere",
+    "foreign": "atmosféra",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "attitude",
+    "foreign": "postoj",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "awareness",
+    "foreign": "povědomí",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "behaviour",
+    "foreign": "chování",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "belief",
+    "foreign": "víra",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "benefit",
+    "foreign": "přínos",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "border",
+    "foreign": "hranice",
+    "category": "travel",
+    "level": "B2"
+  },
+  {
+    "native": "budget",
+    "foreign": "rozpočet",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "candidate",
+    "foreign": "kandidát",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "capacity",
+    "foreign": "kapacita",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "category",
+    "foreign": "kategorie",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "challenge",
+    "foreign": "výzva",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "circumstance",
+    "foreign": "okolnost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "climate",
+    "foreign": "klima",
+    "category": "nature",
+    "level": "B2"
+  },
+  {
+    "native": "colleague",
+    "foreign": "kolega",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "combination",
+    "foreign": "kombinace",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "comfort",
+    "foreign": "pohodlí",
+    "category": "home",
+    "level": "B2"
+  },
+  {
+    "native": "commercial",
+    "foreign": "komerční",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "commitment",
+    "foreign": "závazek",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "community",
+    "foreign": "komunita",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "comparison",
+    "foreign": "srovnání",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "compensation",
+    "foreign": "kompenzace",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "competition",
+    "foreign": "konkurence",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "complaint",
+    "foreign": "stížnost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "complexity",
+    "foreign": "složitost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "component",
+    "foreign": "součást",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "concept",
+    "foreign": "koncept",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "conclusion",
+    "foreign": "závěr",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "condition",
+    "foreign": "podmínka",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "confidence",
+    "foreign": "sebedůvěra",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "consequence",
+    "foreign": "následek",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "consideration",
+    "foreign": "úvaha",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "contribution",
+    "foreign": "příspěvek",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "convenience",
+    "foreign": "pohodlnost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "corporation",
+    "foreign": "korporace",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "courage",
+    "foreign": "odvaha",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "criticism",
+    "foreign": "kritika",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "curiosity",
+    "foreign": "zvědavost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "damage",
+    "foreign": "škoda",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "debate",
+    "foreign": "debata",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "decision",
+    "foreign": "rozhodnutí",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "definition",
+    "foreign": "definice",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "delivery",
+    "foreign": "doručení",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "demand",
+    "foreign": "poptávka",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "department",
+    "foreign": "oddělení",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "departure",
+    "foreign": "odjezd",
+    "category": "travel",
+    "level": "B2"
+  },
+  {
+    "native": "description",
+    "foreign": "popis",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "destination",
+    "foreign": "destinace",
+    "category": "travel",
+    "level": "B2"
+  },
+  {
+    "native": "development",
+    "foreign": "vývoj",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "difference",
+    "foreign": "rozdíl",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "difficulty",
+    "foreign": "obtíž",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "direction",
+    "foreign": "směr",
+    "category": "travel",
+    "level": "B2"
+  },
+  {
+    "native": "disadvantage",
+    "foreign": "nevýhoda",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "disaster",
+    "foreign": "katastrofa",
+    "category": "nature",
+    "level": "B2"
+  },
+  {
+    "native": "discipline",
+    "foreign": "disciplína",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "discovery",
+    "foreign": "objjev",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "discussion",
+    "foreign": "diskuse",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "disease",
+    "foreign": "nemoc",
+    "category": "health",
+    "level": "B2"
+  },
+  {
+    "native": "diversity",
+    "foreign": "rozmanitost",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "document",
+    "foreign": "dokument",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "donation",
+    "foreign": "dar",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "economy",
+    "foreign": "ekonomika",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "edition",
+    "foreign": "vydání",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "education",
+    "foreign": "vzdělání",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "effect",
+    "foreign": "efekt",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "efficiency",
+    "foreign": "efektivita",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "effort",
+    "foreign": "snaha",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "element",
+    "foreign": "prvek",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "emergency",
+    "foreign": "pohotovost",
+    "category": "health",
+    "level": "B2"
+  },
+  {
+    "native": "emotion",
+    "foreign": "emoce",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "emphasis",
+    "foreign": "důraz",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "employee",
+    "foreign": "zaměstnanec",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "employer",
+    "foreign": "zaměstnavatel",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "encouragement",
+    "foreign": "povzbuzení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "endurance",
+    "foreign": "výdrž",
+    "category": "sport",
+    "level": "B2"
+  },
+  {
+    "native": "energy",
+    "foreign": "energie",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "engagement",
+    "foreign": "angažovanost",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "environment",
+    "foreign": "prostředí",
+    "category": "nature",
+    "level": "B2"
+  },
+  {
+    "native": "equipment",
+    "foreign": "vybavení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "error",
+    "foreign": "chyba",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "establishment",
+    "foreign": "zřízení",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "evaluation",
+    "foreign": "hodnocení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "evidence",
+    "foreign": "důkaz",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "evolution",
+    "foreign": "evoluce",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "examination",
+    "foreign": "vyšetření",
+    "category": "health",
+    "level": "B2"
+  },
+  {
+    "native": "exception",
+    "foreign": "výjimka",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "excitement",
+    "foreign": "vzrušení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "expansion",
+    "foreign": "expanze",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "expectation",
+    "foreign": "očekávání",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "expenditure",
+    "foreign": "výdaj",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "experience",
+    "foreign": "zkušenost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "experiment",
+    "foreign": "experiment",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "expert",
+    "foreign": "odborník",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "explanation",
+    "foreign": "vysvětlení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "expression",
+    "foreign": "výraz",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "facility",
+    "foreign": "zařízení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "factor",
+    "foreign": "faktor",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "failure",
+    "foreign": "selhání",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "familiarity",
+    "foreign": "znalost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "fascination",
+    "foreign": "fascinace",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "fashion",
+    "foreign": "móda",
+    "category": "clothing",
+    "level": "B2"
+  },
+  {
+    "native": "feature",
+    "foreign": "vlastnost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "feedback",
+    "foreign": "zpětná vazba",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "fiction",
+    "foreign": "beletrie",
+    "category": "art",
+    "level": "B2"
+  },
+  {
+    "native": "fluency",
+    "foreign": "plynulost",
+    "category": "education",
+    "level": "B2"
+  },
+  {
+    "native": "focus",
+    "foreign": "zaměření",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "forecast",
+    "foreign": "předpověď",
+    "category": "nature",
+    "level": "B2"
+  },
+  {
+    "native": "formation",
+    "foreign": "formace",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "formula",
+    "foreign": "vzorec",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "fortune",
+    "foreign": "jmění",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "foundation",
+    "foreign": "nadace",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "frequency",
+    "foreign": "frekvence",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "frustration",
+    "foreign": "frustrace",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "function",
+    "foreign": "funkce",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "generation",
+    "foreign": "generace",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "gesture",
+    "foreign": "gesto",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "goal",
+    "foreign": "cíl",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "government",
+    "foreign": "vláda",
+    "category": "politics",
+    "level": "B2"
+  },
+  {
+    "native": "growth",
+    "foreign": "růst",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "guarantee",
+    "foreign": "záruka",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "guideline",
+    "foreign": "směrnice",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "habitat",
+    "foreign": "přirozené prostředí",
+    "category": "nature",
+    "level": "B2"
+  },
+  {
+    "native": "harmony",
+    "foreign": "harmonie",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "hazard",
+    "foreign": "nebezpečí",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "heritage",
+    "foreign": "dědictví",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "hesitation",
+    "foreign": "váhání",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "highlight",
+    "foreign": "zlatý hřeb",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "hypothesis",
+    "foreign": "hypotéza",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "identity",
+    "foreign": "identita",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "ignorance",
+    "foreign": "nevědomost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "illusion",
+    "foreign": "iluze",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "impact",
+    "foreign": "dopad",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "implementation",
+    "foreign": "implementace",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "impression",
+    "foreign": "dojem",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "improvement",
+    "foreign": "zlepšení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "incentive",
+    "foreign": "motivace",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "independence",
+    "foreign": "nezávislost",
+    "category": "politics",
+    "level": "B2"
+  },
+  {
+    "native": "indication",
+    "foreign": "náznak",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "inequality",
+    "foreign": "nerovnost",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "inflation",
+    "foreign": "inflace",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "influence",
+    "foreign": "vliv",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "ingredient",
+    "foreign": "přísada",
+    "category": "food",
+    "level": "B2"
+  },
+  {
+    "native": "initiative",
+    "foreign": "iniciativa",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "inquiry",
+    "foreign": "vyšetřování",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "insight",
+    "foreign": "vhled",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "inspection",
+    "foreign": "kontrola",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "inspiration",
+    "foreign": "inspirace",
+    "category": "art",
+    "level": "B2"
+  },
+  {
+    "native": "installment",
+    "foreign": "splátka",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "instance",
+    "foreign": "příklad",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "instinct",
+    "foreign": "instinkt",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "institution",
+    "foreign": "instituce",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "instruction",
+    "foreign": "instrukce",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "insurance",
+    "foreign": "pojištění",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "intention",
+    "foreign": "záměr",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "interaction",
+    "foreign": "interakce",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "interest",
+    "foreign": "zájem",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "interference",
+    "foreign": "zasahování",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "interpretation",
+    "foreign": "interpretace",
+    "category": "art",
+    "level": "B2"
+  },
+  {
+    "native": "intervention",
+    "foreign": "intervence",
+    "category": "politics",
+    "level": "B2"
+  },
+  {
+    "native": "interview",
+    "foreign": "rozhovor",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "introduction",
+    "foreign": "úvod",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "investigation",
+    "foreign": "vyšetřování",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "investment",
+    "foreign": "investice",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "involvement",
+    "foreign": "angažovanost",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "isolation",
+    "foreign": "izolace",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "issue",
+    "foreign": "problém",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "item",
+    "foreign": "položka",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "journey",
+    "foreign": "cesta",
+    "category": "travel",
+    "level": "B2"
+  },
+  {
+    "native": "judgment",
+    "foreign": "úsudek",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "justice",
+    "foreign": "spravedlnost",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "justification",
+    "foreign": "odůvodnění",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "knowledge",
+    "foreign": "znalost",
+    "category": "education",
+    "level": "B2"
+  },
+  {
+    "native": "labor",
+    "foreign": "práce",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "landscape",
+    "foreign": "krajina",
+    "category": "nature",
+    "level": "B2"
+  },
+  {
+    "native": "language",
+    "foreign": "jazyk",
+    "category": "education",
+    "level": "B2"
+  },
+  {
+    "native": "laughter",
+    "foreign": "smích",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "leadership",
+    "foreign": "vedení",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "lecture",
+    "foreign": "přednáška",
+    "category": "education",
+    "level": "B2"
+  },
+  {
+    "native": "legacy",
+    "foreign": "odkaz",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "legislation",
+    "foreign": "legislativa",
+    "category": "politics",
+    "level": "B2"
+  },
+  {
+    "native": "leisure",
+    "foreign": "volný čas",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "liability",
+    "foreign": "zodpovědnost",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "liberty",
+    "foreign": "svoboda",
+    "category": "politics",
+    "level": "B2"
+  },
+  {
+    "native": "limitation",
+    "foreign": "omezení",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "literature",
+    "foreign": "literatura",
+    "category": "art",
+    "level": "B2"
+  },
+  {
+    "native": "livelihood",
+    "foreign": "obživa",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "location",
+    "foreign": "lokalita",
+    "category": "travel",
+    "level": "B2"
+  },
+  {
+    "native": "loyalty",
+    "foreign": "loajalita",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "luxury",
+    "foreign": "luxus",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "machinery",
+    "foreign": "strojní zařízení",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "magnitude",
+    "foreign": "velikost",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "maintenance",
+    "foreign": "údržba",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "majority",
+    "foreign": "většina",
+    "category": "society",
+    "level": "B2"
+  },
+  {
+    "native": "management",
+    "foreign": "management",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "mandate",
+    "foreign": "mandát",
+    "category": "politics",
+    "level": "B2"
+  },
+  {
+    "native": "manifestation",
+    "foreign": "manifestace",
+    "category": "politics",
+    "level": "B2"
+  },
+  {
+    "native": "manipulation",
+    "foreign": "manipulace",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "manufacture",
+    "foreign": "výroba",
+    "category": "business",
+    "level": "B2"
+  },
+  {
+    "native": "margin",
+    "foreign": "okraj",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "maturity",
+    "foreign": "zralost",
+    "category": "general",
+    "level": "B2"
+  },
+  {
+    "native": "mechanism",
+    "foreign": "mechanismus",
+    "category": "science",
+    "level": "B2"
+  },
+  {
+    "native": "ambiguity",
+    "foreign": "nejednoznačnost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "to corroborate",
+    "foreign": "podpořit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "comprehensive",
+    "foreign": "vyčerpávající",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "conundrum",
+    "foreign": "hlolam",
+    "category": "general",
+    "level": "C1"
+  },
+  {
+    "native": "detrimental",
+    "foreign": "škodlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "dichotomy",
+    "foreign": "dichotomie",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "ebullient",
+    "foreign": "překypující",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "to elucidate",
+    "foreign": "objasnit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "ephemeral",
+    "foreign": "pominutelný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "exacerbate",
+    "foreign": "zhoršit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "fastidious",
+    "foreign": "úzkostlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "fluctuation",
+    "foreign": "kolísání",
+    "category": "general",
+    "level": "C1"
+  },
+  {
+    "native": "gargantuan",
+    "foreign": "obrovský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "ubiquitous",
+    "foreign": "všudypřítomný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "hypothesis",
+    "foreign": "hypotéza",
+    "category": "science",
+    "level": "C1"
+  },
+  {
+    "native": "idiosyncrasy",
+    "foreign": "idiosynkrazie",
+    "category": "psychology",
+    "level": "C1"
+  },
+  {
+    "native": "impeccable",
+    "foreign": "bezvadný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "inadvertent",
+    "foreign": "neúmyslný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "incessant",
+    "foreign": "neustálý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "juxtaposition",
+    "foreign": "jistapozice",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "laconism",
+    "foreign": "stručnost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "lucid",
+    "foreign": "srozumitelný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "mellifluous",
+    "foreign": "libozvučný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "nadir",
+    "foreign": "dno",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "nefarious",
+    "foreign": "zločinný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "obfuscate",
+    "foreign": "zamlžit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "paradigm",
+    "foreign": "paradigma",
+    "category": "science",
+    "level": "C1"
+  },
+  {
+    "native": "penchant",
+    "foreign": "Záliba",
+    "category": "general",
+    "level": "C1"
+  },
+  {
+    "native": "plethora",
+    "foreign": "přemíra",
+    "category": "general",
+    "level": "C1"
+  },
+  {
+    "native": "pragmatic",
+    "foreign": "pragmatický",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "quagmire",
+    "foreign": "bažina",
+    "category": "nature",
+    "level": "C1"
+  },
+  {
+    "native": "recalcitrant",
+    "foreign": "vzdorovitý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "repertoire",
+    "foreign": "repertoár",
+    "category": "art",
+    "level": "C1"
+  },
+  {
+    "native": "sagacious",
+    "foreign": "moudrý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "scintillating",
+    "foreign": "jiskřivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "superfluous",
+    "foreign": "zbytečný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "sycophant",
+    "foreign": "podlézavec",
+    "category": "people",
+    "level": "C1"
+  },
+  {
+    "native": "taciturn",
+    "foreign": "mlčenlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "trepidation",
+    "foreign": "strach",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "vacillate",
+    "foreign": "kolísat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "veracity",
+    "foreign": "pravdivost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "verbose",
+    "foreign": "upovídaný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "vicarious",
+    "foreign": "zprostředkovaný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "vociferous",
+    "foreign": "hlučný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "zenith",
+    "foreign": "vrchol",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "acquiesce",
+    "foreign": "přikyvovat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "acerbity",
+    "foreign": "kyselost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "alacrity",
+    "foreign": "ochota",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "amiable",
+    "foreign": "laskavý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "anathema",
+    "foreign": "kletba",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "apocryphal",
+    "foreign": "apokryfní",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "audacious",
+    "foreign": "odvážný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "avarice",
+    "foreign": "lakota",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "banal",
+    "foreign": "banální",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "belligerent",
+    "foreign": "bojovný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "benevolent",
+    "foreign": "dobrotivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "cacophony",
+    "foreign": "kakofonie",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "candor",
+    "foreign": "upřímnost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "capricious",
+    "foreign": "náladový",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "castigate",
+    "foreign": "potrestat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "chicanery",
+    "foreign": "šikana",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "cogent",
+    "foreign": "přesvědčivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "connive",
+    "foreign": "spiknout",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "convoluted",
+    "foreign": "složitý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "cursory",
+    "foreign": "zběžný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "dauntless",
+    "foreign": "neohrožený",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "earthbound",
+    "foreign": "prizemní",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "efficacious",
+    "foreign": "účinný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "effrontery",
+    "foreign": "drzost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "egregious",
+    "foreign": "křiklavý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "elegy",
+    "foreign": "elegie",
+    "category": "art",
+    "level": "C1"
+  },
+  {
+    "native": "enervate",
+    "foreign": "vyčerpat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "enigmatic",
+    "foreign": "záhadný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "equanimity",
+    "foreign": "vyrovnanost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "esoteric",
+    "foreign": "esoterický",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "evanescent",
+    "foreign": "pomíjivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "exculpate",
+    "foreign": "osvobodit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "exigent",
+    "foreign": "naléhavý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "facetious",
+    "foreign": "vtipkující",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "fallacious",
+    "foreign": "klamný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "fatuous",
+    "foreign": "hloupý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "fetter",
+    "foreign": "pouto",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "flagrant",
+    "foreign": "flagrantní",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "Furtive",
+    "foreign": "tajnůstkářský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "gainsay",
+    "foreign": "popřít",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "garetric",
+    "foreign": "křiklavý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "gossamer",
+    "foreign": "pavučina",
+    "category": "nature",
+    "level": "C1"
+  },
+  {
+    "native": "gregarious",
+    "foreign": "společenský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "halcyon",
+    "foreign": "klidný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "hedonism",
+    "foreign": "hedonismus",
+    "category": "philosophy",
+    "level": "C1"
+  },
+  {
+    "native": "iconoclast",
+    "foreign": "ikonoklast",
+    "category": "people",
+    "level": "C1"
+  },
+  {
+    "native": "ignoble",
+    "foreign": "nesvatý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "immutable",
+    "foreign": "neměnný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "impassive",
+    "foreign": "chladnokrevný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "imperious",
+    "foreign": "panovačný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "impertinent",
+    "foreign": "drzý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "implacable",
+    "foreign": "neúprosný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "importune",
+    "foreign": "naléhat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "impudent",
+    "foreign": "drzý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "inchoate",
+    "foreign": "počáteční",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "inimical",
+    "foreign": "nepřátelský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "innocuous",
+    "foreign": "neškodný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "insipid",
+    "foreign": "nudný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "intransigent",
+    "foreign": "neústupný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "inundate",
+    "foreign": "zaplavit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "invective",
+    "foreign": "urážka",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "irascible",
+    "foreign": "vznětlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "itinerant",
+    "foreign": "cestující",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "jocular",
+    "foreign": "žertovný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "judicious",
+    "foreign": "rozumný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "kinetic",
+    "foreign": "kinetický",
+    "category": "science",
+    "level": "C1"
+  },
+  {
+    "native": "lament",
+    "foreign": "narozky",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "lassitude",
+    "foreign": "malátnost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "latent",
+    "foreign": "skrytý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "laud",
+    "foreign": "chválit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "lethargic",
+    "foreign": "letargický",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "levity",
+    "foreign": "lehkomyslnost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "libertine",
+    "foreign": "libertin",
+    "category": "people",
+    "level": "C1"
+  },
+  {
+    "native": "limpid",
+    "foreign": "průzračný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "loquacious",
+    "foreign": "upovídaný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "lugubrious",
+    "foreign": "truchlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "magnanimous",
+    "foreign": "velkodušný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "malediction",
+    "foreign": "kletba",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "malevolent",
+    "foreign": "zlomyslný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "malleable",
+    "foreign": "tvárný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "maverick",
+    "foreign": "individualista",
+    "category": "people",
+    "level": "C1"
+  },
+  {
+    "native": "mendacious",
+    "foreign": "lhářský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "mercurial",
+    "foreign": "proměnlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "meticulous",
+    "foreign": "pečlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "misanthrope",
+    "foreign": "misanthrop",
+    "category": "people",
+    "level": "C1"
+  },
+  {
+    "native": "mitigate",
+    "foreign": "zmírnit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "mollify",
+    "foreign": "uklidnit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "morose",
+    "foreign": "mrzoutský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "mundane",
+    "foreign": "světský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "munificent",
+    "foreign": "štědrý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "nascent",
+    "foreign": "vznikající",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "neophyte",
+    "foreign": "novic",
+    "category": "people",
+    "level": "C1"
+  },
+  {
+    "native": "obdurate",
+    "foreign": "zatvrzelý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "obsequious",
+    "foreign": "podlézavý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "obstinate",
+    "foreign": "zatvrzelý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "occlude",
+    "foreign": "uzavřít",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "officious",
+    "foreign": "vrtkavý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "onerous",
+    "foreign": "tíživý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "opprobrium",
+    "foreign": "hanba",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "oscillate",
+    "foreign": "oscilovat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "ostentatious",
+    "foreign": "okázalý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "palliate",
+    "foreign": "zmírnit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "paragon",
+    "foreign": "vzor",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "parsimonious",
+    "foreign": "šetřivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "partisan",
+    "foreign": "stranický",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "paucity",
+    "foreign": "nedostatek",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "pedantic",
+    "foreign": "pedantský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "pejorative",
+    "foreign": "pejorativní",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "pellucid",
+    "foreign": "průzračný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "perfidious",
+    "foreign": "zrádný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "perfunctory",
+    "foreign": "povrchní",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "permeate",
+    "foreign": "proniknout",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "pernicious",
+    "foreign": "zhoubný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "perspicacious",
+    "foreign": "bystrý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "pertain",
+    "foreign": "týkat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "peruse",
+    "foreign": "prostudovat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "phlegmatic",
+    "foreign": "flegmatický",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "pious",
+    "foreign": "zbožný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "placate",
+    "foreign": "upokojit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "plasticity",
+    "foreign": "plasticita",
+    "category": "science",
+    "level": "C1"
+  },
+  {
+    "native": "platitude",
+    "foreign": "fráze",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "polemic",
+    "foreign": "polemika",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "pragmatism",
+    "foreign": "pragmatismus",
+    "category": "philosophy",
+    "level": "C1"
+  },
+  {
+    "native": "precarious",
+    "foreign": "nejistý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "precipitate",
+    "foreign": "urychlit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "precursor",
+    "foreign": "předchůdce",
+    "category": "general",
+    "level": "C1"
+  },
+  {
+    "native": "presumptuous",
+    "foreign": "drzý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "prevaricate",
+    "foreign": "lhát",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "probity",
+    "foreign": "poctivost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "proclivity",
+    "foreign": "sklon",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "prodigal",
+    "foreign": "marnotratný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "prodigious",
+    "foreign": "obrovský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "proliferate",
+    "foreign": "množit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "propitiate",
+    "foreign": "naklonit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "propriety",
+    "foreign": "slušnost",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "prosaic",
+    "foreign": "přízemní",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "proscribe",
+    "foreign": "zakázat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "pungent",
+    "foreign": "štiplavý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "pusillanimous",
+    "foreign": "bázlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "qualify",
+    "foreign": "kvalifikovat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "quell",
+    "foreign": "potlačit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "querulous",
+    "foreign": "stěžující",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "quixotic",
+    "foreign": "donkichotský",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "rancor",
+    "foreign": "zášť",
+    "category": "abstract",
+    "level": "C1"
+  },
+  {
+    "native": "recondite",
+    "foreign": "utajený",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "refractory",
+    "foreign": "vzdorovitý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "refute",
+    "foreign": "vyvrátit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "relegate",
+    "foreign": "odsunout",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "reproach",
+    "foreign": "vyčítat",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "repudiate",
+    "foreign": "odmítnout",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "rescind",
+    "foreign": "zrušit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "resilient",
+    "foreign": "odolný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "reticent",
+    "foreign": "zdrženlivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "reverent",
+    "foreign": "uctivý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "rife",
+    "foreign": "hojný",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "salubrious",
+    "foreign": "zdravý",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "sanguine",
+    "foreign": "optimistický",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "sartorial",
+    "foreign": "oděvní",
+    "category": "adjectives",
+    "level": "C1"
+  },
+  {
+    "native": "satiate",
+    "foreign": "nasytit",
+    "category": "verbs",
+    "level": "C1"
+  },
+  {
+    "native": "secular",
+    "foreign": "sekulární",
+    "category": "adjectives",
+    "level": "C1"
+  }
+]

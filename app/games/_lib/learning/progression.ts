@@ -28,6 +28,7 @@ export function createInitialProgress(
     language,
     unlockedWordIds: initialWordIds,
     masteredWordIds: [],
+    wordStreaks: {},
     currentLecture: 1,
   };
 }
@@ -86,6 +87,14 @@ export function markWordAsCorrect(
   progress: LearningProgress,
   wordId: string,
 ): LearningProgress {
+  return markWordCorrectWithStreak(progress, wordId, 1);
+}
+
+export function markWordCorrectWithStreak(
+  progress: LearningProgress,
+  wordId: string,
+  requiredStreak = 3,
+): LearningProgress {
   if (!progress.unlockedWordIds.includes(wordId)) {
     return progress;
   }
@@ -94,9 +103,28 @@ export function markWordAsCorrect(
     return progress;
   }
 
+  const currentStreaks = progress.wordStreaks || {};
+  const currentStreak = currentStreaks[wordId] || 0;
+  const nextStreak = currentStreak + 1;
+
+  const nextStreaks = {
+    ...currentStreaks,
+    [wordId]: nextStreak,
+  };
+
+  const isMastered = nextStreak >= requiredStreak;
+
+  if (!isMastered) {
+    return {
+      ...progress,
+      wordStreaks: nextStreaks,
+    };
+  }
+
   const withMastered: LearningProgress = {
     ...progress,
     masteredWordIds: asUnique([...progress.masteredWordIds, wordId]),
+    wordStreaks: nextStreaks,
   };
 
   const withUnlockedFromHigherLecture: LearningProgress = {
@@ -109,6 +137,26 @@ export function markWordAsCorrect(
   return {
     ...withUnlockedFromHigherLecture,
     currentLecture: computeCurrentLecture(withUnlockedFromHigherLecture),
+  };
+}
+
+export function markWordWrong(
+  progress: LearningProgress,
+  wordId: string,
+): LearningProgress {
+  if (!progress.unlockedWordIds.includes(wordId)) {
+    return progress;
+  }
+
+  const currentStreaks = progress.wordStreaks || {};
+  const nextStreaks = {
+    ...currentStreaks,
+    [wordId]: 0,
+  };
+
+  return {
+    ...progress,
+    wordStreaks: nextStreaks,
   };
 }
 

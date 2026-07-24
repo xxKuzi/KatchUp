@@ -371,3 +371,54 @@ export async function getDeckProgress(
   }
   return buildSummary(await enrichDeck(userId, deck));
 }
+
+/**
+ * Returns a randomised set of the user's **known** words across all decks.
+ * Used for the Navbar "practice for energy" feature so the user reviews words
+ * they've already mastered (and each round is different).
+ */
+export async function selectKnownWordsForReview(
+  userId: string,
+  size = DEFAULT_PRACTICE_SIZE,
+): Promise<SessionWord[]> {
+  // Pull every word the user has marked/reached "known" across all decks.
+  const rows = await db
+    .select({
+      id: deckWords.id,
+      native: deckWords.native,
+      foreign: deckWords.foreign,
+      orderIndex: deckWords.orderIndex,
+      box: userWordStats.box,
+      streak: userWordStats.streak,
+      timesSeen: userWordStats.timesSeen,
+      timesCorrect: userWordStats.timesCorrect,
+      timesWrong: userWordStats.timesWrong,
+      known: userWordStats.known,
+      lastSeenAt: userWordStats.lastSeenAt,
+    })
+    .from(userWordStats)
+    .innerJoin(deckWords, eq(userWordStats.deckWordId, deckWords.id))
+    .where(and(eq(userWordStats.userId, userId), eq(userWordStats.known, true)));
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const mapped: SessionWord[] = rows.map((row) => ({
+    id: row.id,
+    native: row.native,
+    foreign: row.foreign,
+    orderIndex: row.orderIndex,
+    stat: {
+      box: row.box,
+      streak: row.streak,
+      timesSeen: row.timesSeen,
+      timesCorrect: row.timesCorrect,
+      timesWrong: row.timesWrong,
+      known: row.known,
+      lastSeenAt: row.lastSeenAt ? row.lastSeenAt.toISOString() : null,
+    },
+  }));
+
+  return shuffle(mapped).slice(0, size);
+}

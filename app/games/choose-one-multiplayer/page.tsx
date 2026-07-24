@@ -10,6 +10,7 @@ import { getPlayerProfile, PlayerProfile } from "./_lib/playerProfile";
 const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
   german: "German",
   spanish: "Spanish",
+  czech: "Czech",
 };
 
 const DEFAULT_OPPONENTS = [
@@ -82,6 +83,7 @@ const ChooseOneMultiplayerPage = () => {
   const [language, setLanguage] = useState<SupportedLanguage>("german");
   const [mode, setMode] = useState<MatchMode>("live");
   const [matchState, setMatchState] = useState<MatchState>("idle");
+  const [matchSettings, setMatchSettings] = useState<"fair" | "personal">("fair");
   const [searchPulse, setSearchPulse] = useState(0);
   const [opponent, setOpponent] = useState<OpponentPreview>(
     DEFAULT_OPPONENTS[0],
@@ -103,6 +105,14 @@ const ChooseOneMultiplayerPage = () => {
   useEffect(() => {
     setLanguage(getPreferredLanguage());
     setProfile(getPlayerProfile());
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlMode = params.get("mode");
+      if (urlMode === "async" || urlMode === "live") {
+        setMode(urlMode as MatchMode);
+      }
+    }
 
     try {
       const stored = window.localStorage.getItem(MATCH_HISTORY_KEY);
@@ -180,7 +190,7 @@ const ChooseOneMultiplayerPage = () => {
   }, [language, level, matchState, mode, profile]);
 
   const startFindingOpponent = async () => {
-    if (mode !== "live" || matchState === "searching" || !profile) {
+    if (matchState === "searching" || !profile) {
       return;
     }
 
@@ -200,6 +210,7 @@ const ChooseOneMultiplayerPage = () => {
           avatar: profile.avatar,
           language,
           level,
+          mode: matchSettings,
         }),
       });
 
@@ -231,6 +242,7 @@ const ChooseOneMultiplayerPage = () => {
       language,
       level,
       mode: "live",
+      settingsMode: matchSettings,
       playerId: profile?.id ?? "player-local",
       playerName: profile?.name ?? "You",
       playerAvatar: profile?.avatar ?? "https://i.pravatar.cc/100?img=12",
@@ -291,51 +303,59 @@ const ChooseOneMultiplayerPage = () => {
             </p>
           </div>
         </div>
+
+        {mode === "live" && (
+          <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+            <p className="text-xs uppercase tracking-wide text-zinc-500 font-semibold mb-2">
+              Matchmaking Mode
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMatchSettings("fair")}
+                className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+                  matchSettings === "fair"
+                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
+                    : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
+                }`}
+              >
+                <span className="text-sm font-bold">Fair Mode</span>
+                <span className="text-xxs text-zinc-500 mt-0.5">Same words for both players</span>
+              </button>
+              <button
+                onClick={() => setMatchSettings("personal")}
+                className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+                  matchSettings === "personal"
+                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
+                    : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
+                }`}
+              >
+                <span className="text-sm font-bold">Personalized Mode</span>
+                <span className="text-xxs text-zinc-500 mt-0.5">Asymmetric custom/recent vocabulary</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-        <div className="flex w-full flex-wrap items-center justify-center gap-2">
-          <button
-            className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-              mode === "live"
-                ? "border-emerald-600 bg-emerald-600 text-white"
-                : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400"
-            }`}
-            onClick={() => {
-              setMode("live");
-              setMatchState("idle");
-            }}
-          >
-            Live Duel
-          </button>
-          <button
-            className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-              mode === "async"
-                ? "border-blue-600 bg-blue-600 text-white"
-                : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400"
-            }`}
-            onClick={() => {
-              setMode("async");
-              setMatchState("idle");
-            }}
-          >
-            Score Rush (Async)
-          </button>
-        </div>
-
-        {mode === "live" && (
+        {mode === "live" ? (
           <>
             {matchState === "idle" && (
               <button
-                className="rounded-xl bg-emerald-600 px-8 py-3 text-base font-semibold text-white shadow transition hover:-translate-y-0.5 hover:bg-emerald-500"
                 onClick={() => void startFindingOpponent()}
+                className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 transition hover:-translate-y-0.5"
               >
-                Play Online
+                <span className="text-xl font-bold text-emerald-800 dark:text-emerald-300">
+                  Start Live Duel
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                  Match with a live opponent instantly and race to finish translating words.
+                </span>
               </button>
             )}
 
             {matchState === "searching" && (
-              <div className="w-full max-w-md text-center">
+              <div className="w-full max-w-md text-center py-4">
                 <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
                   Searching opponent{".".repeat(searchPulse)}
                 </p>
@@ -345,11 +365,17 @@ const ChooseOneMultiplayerPage = () => {
                     style={{ width: `${25 + searchPulse * 25}%` }}
                   />
                 </div>
+                <button
+                  onClick={() => setMatchState("idle")}
+                  className="mt-6 rounded-xl border border-zinc-200 bg-white px-6 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition"
+                >
+                  Cancel Matchmaking
+                </button>
               </div>
             )}
 
             {matchState === "found" && (
-              <div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
+              <div className="flex w-full max-w-md flex-col items-center gap-4 text-center py-4">
                 <div className="relative">
                   <img
                     src={opponent.avatar}
@@ -369,41 +395,44 @@ const ChooseOneMultiplayerPage = () => {
                 </button>
               </div>
             )}
-
-            {searchError && (
-              <p className="text-sm text-red-600 dark:text-red-400">
-                {searchError}
-              </p>
-            )}
           </>
+        ) : (
+          <button
+            onClick={startAsyncMatch}
+            className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 dark:border-blue-800/40 dark:bg-blue-950/10 dark:hover:bg-blue-950/20 transition hover:-translate-y-0.5"
+          >
+            <span className="text-xl font-bold text-blue-800 dark:text-blue-300">
+              Start Score Rush
+            </span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+              Climb async leaderboard rankings by matching words as fast as possible.
+            </span>
+          </button>
         )}
 
-        {mode === "async" && (
-          <div className="w-full max-w-xl rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              Submit your best score and race leaderboard ranking by speed and
-              accuracy.
-            </p>
-            <div className="mt-3 space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
-              {topAsyncPlayers.length === 0 ? (
-                <p>No entries yet for this level.</p>
-              ) : (
-                topAsyncPlayers.slice(0, 3).map((entry, index) => (
-                  <p key={`${entry.name}-${index}`}>
-                    #{index + 1} {entry.name} - {entry.score} pts -{" "}
-                    {Math.round(entry.timeMs / 1000)}s
-                  </p>
-                ))
-              )}
-            </div>
-            <button
-              className="mt-4 rounded-xl bg-blue-600 px-8 py-3 text-base font-semibold text-white transition hover:bg-blue-500"
-              onClick={startAsyncMatch}
-            >
-              Start Score Rush
-            </button>
-          </div>
+        {searchError && (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {searchError}
+          </p>
         )}
+      </div>
+
+      <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900 mt-2">
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+          Leaderboard (Score Rush)
+        </p>
+        <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+          {topAsyncPlayers.length === 0 ? (
+            <p className="text-zinc-500 italic">No entries yet for this level.</p>
+          ) : (
+            topAsyncPlayers.slice(0, 3).map((entry, index) => (
+              <p key={`${entry.name}-${index}`}>
+                #{index + 1} {entry.name} - {entry.score} pts -{" "}
+                {Math.round(entry.timeMs / 1000)}s
+              </p>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">

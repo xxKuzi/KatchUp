@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useAuthState } from "@/app/_lib/auth";
 import FeatureGate from "@/app/_components/FeatureGate";
@@ -13,14 +13,17 @@ import {
   saveTopicsState,
   TOPICS,
 } from "../_lib/topicsProgress";
+import { uiLangToForeignLang } from "../_lib/topicDeckMapping";
 
 export default function TopicDetailPage() {
   const params = useParams<{ topicId: string }>();
   const topicId = params.topicId;
 
-  const { t, language } = useLanguage();
+  const { t, language, learningLanguage } = useLanguage();
   const { isReady, isSignedIn } = useAuthState();
   const [refreshToken, setRefreshToken] = useState(0);
+  const [deckId, setDeckId] = useState<string | null>(null);
+
   const state = useMemo(() => {
     void refreshToken;
     return loadTopicsState(language);
@@ -30,6 +33,30 @@ export default function TopicDetailPage() {
     () => TOPICS.find((item) => item.id === topicId) ?? null,
     [topicId],
   );
+
+  // Resolve the DB topic deck for (topicKey, foreignLang) so levels can link
+  // with a real deck ID and use DB words + spaced-repetition tracking.
+  const foreignLang = uiLangToForeignLang(learningLanguage);
+  const fetchDeckId = useCallback(async () => {
+    if (!topic) return;
+    try {
+      const res = await fetch(
+        `/api/decks/topic-lookup?topicKey=${encodeURIComponent(topic.id)}&foreignLang=${encodeURIComponent(foreignLang)}`,
+      );
+      if (res.ok) {
+        const data = (await res.json()) as { deckId: string };
+        setDeckId(data.deckId);
+      }
+    } catch {
+      // silently fall back to non-deck mode
+    }
+  }, [topic, foreignLang]);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      void fetchDeckId();
+    }
+  }, [isSignedIn, fetchDeckId]);
 
   const canUseTopics = isReady && isSignedIn;
 
@@ -91,7 +118,18 @@ export default function TopicDetailPage() {
 
           <section className="grid gap-4 md:grid-cols-2">
             {levels.map((levelData) => {
-              const gameHref = `/games/one-of-three?topicId=${encodeURIComponent(topic.id)}&level=${levelData.level}`;
+              // When we have a resolved DB deck, route through the deck path so
+              // the game uses real seeded words and records spaced-repetition
+              // stats. Falls back to the old topicId path otherwise.
+              const gameBase =
+                levelData.mode === "flip-cards"
+                  ? "/games/flip-cards"
+                  : "/games/one-of-three";
+
+              const gameHref = deckId
+                ? `${gameBase}?deck=${deckId}&topicId=${encodeURIComponent(topic.id)}&level=${levelData.level}`
+                : `${gameBase}?topicId=${encodeURIComponent(topic.id)}&level=${levelData.level}`;
+
               const completedBadgeClass = levelData.completed
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                 : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";

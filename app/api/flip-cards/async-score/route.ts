@@ -8,7 +8,7 @@ import {
 } from "@/app/api/flip-cards/_lib/server";
 
 function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish";
+  return value === "german" || value === "spanish" || value === "czech";
 }
 
 export async function GET(request: NextRequest) {

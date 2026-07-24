@@ -10,8 +10,10 @@ import {
   matchQuestions,
   matches,
   users,
+  globalWords,
 } from "@/db/schema";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { eq, and, or, isNull, asc, desc } from "drizzle-orm";
+import { listDecksForUser, getDeckForUser } from "@/app/api/decks/_lib/deckStore";
 
 export interface MatchQuestionPayload {
   id: string;
@@ -41,16 +43,133 @@ function shuffleArray<T>(items: T[]): T[] {
   return cloned;
 }
 
-function createMatchQuestions(
+async function getWordsFromRecentDecks(
+  userId: string,
   language: SupportedLanguage,
-): MatchQuestionPayload[] {
-  const words = shuffleArray(getAllWords(language)).slice(
-    0,
-    LIVE_QUESTION_COUNT,
-  );
+): Promise<{ native: string; foreign: string }[]> {
+  try {
+    const userDecks = await listDecksForUser(userId);
+    const matchingDecks = userDecks.filter(
+      (d) => d.foreignLang.toLowerCase() === language.toLowerCase()
+    );
+
+    const pool: { native: string; foreign: string }[] = [];
+    for (const d of matchingDecks.slice(0, 3)) {
+      const fullDeck = await getDeckForUser(d.id, userId);
+      if (fullDeck && fullDeck.words) {
+        pool.push(
+          ...fullDeck.words.map((w) => ({
+            native: w.native,
+            foreign: w.foreign,
+          }))
+        );
+      }
+    }
+    return pool;
+  } catch {
+    return [];
+  }
+}
+
+async function createPersonalMatchQuestions(
+  userId: string,
+  language: SupportedLanguage,
+  level: string,
+): Promise<MatchQuestionPayload[]> {
+  const recentWords = await getWordsFromRecentDecks(userId, language);
+  
+  let levelWords = await db
+    .select({
+      id: globalWords.id,
+      native: globalWords.native,
+      foreign: globalWords.foreign,
+    })
+    .from(globalWords)
+    .where(
+      and(
+        eq(globalWords.language, language),
+        eq(globalWords.level, level),
+      ),
+    );
+
+  if (levelWords.length < 5) {
+    const localWords = getAllWords(language);
+    levelWords = localWords.map((w) => ({
+      id: w.id,
+      native: w.native,
+      foreign: w.foreign,
+    }));
+  }
+
+  const uniqueKeys = new Set<string>();
+  const combinedPool: { id?: string; native: string; foreign: string }[] = [];
+
+  for (const w of recentWords) {
+    const key = `${w.foreign.toLowerCase()}|||${w.native.toLowerCase()}`;
+    if (!uniqueKeys.has(key)) {
+      uniqueKeys.add(key);
+      combinedPool.push(w);
+    }
+  }
+
+  for (const w of levelWords) {
+    const key = `${w.foreign.toLowerCase()}|||${w.native.toLowerCase()}`;
+    if (!uniqueKeys.has(key)) {
+      uniqueKeys.add(key);
+      combinedPool.push(w);
+    }
+  }
+
+  const selected = shuffleArray(combinedPool).slice(0, LIVE_QUESTION_COUNT);
+
+  return selected.map((word, idx) => {
+    const wrong = shuffleArray(
+      levelWords
+        .filter((candidate) => candidate.foreign.toLowerCase() !== word.foreign.toLowerCase())
+        .map((candidate) => candidate.native),
+    ).slice(0, 3);
+
+    return {
+      id: word.id || `personal-${idx}-${Math.random()}`,
+      prompt: word.foreign,
+      correctOption: word.native,
+      options: shuffleArray([...wrong, word.native]),
+    };
+  });
+}
+
+async function createMatchQuestions(
+  language: SupportedLanguage,
+  level: string,
+): Promise<MatchQuestionPayload[]> {
+  let dbWords = await db
+    .select({
+      id: globalWords.id,
+      native: globalWords.native,
+      foreign: globalWords.foreign,
+    })
+    .from(globalWords)
+    .where(
+      and(
+        eq(globalWords.language, language),
+        eq(globalWords.level, level),
+      ),
+    );
+
+  if (dbWords.length < 5) {
+    const localWords = getAllWords(language);
+    dbWords = localWords.map((w) => ({
+      id: w.id,
+      native: w.native,
+      foreign: w.foreign,
+    }));
+  }
+
+  const words = shuffleArray(dbWords).slice(0, LIVE_QUESTION_COUNT);
+
   return words.map((word) => {
     const wrong = shuffleArray(
-      getAllWords(language)
+      dbWords
         .filter((candidate) => candidate.id !== word.id)
         .map((candidate) => candidate.native),
     ).slice(0, 3);
@@ -82,9 +201,10 @@ export async function ensureUser(user: PlayerSession) {
 }
 
 export async function tryMatch(
-  user: PlayerSession & { language: SupportedLanguage; level: string },
+  user: PlayerSession & { language: SupportedLanguage; level: string; mode?: string },
 ) {
-  const queueKey = `${QUEUE_KEY_PREFIX}:${user.language}:${user.level}`;
+  const mode = user.mode || "fair";
+  const queueKey = `${QUEUE_KEY_PREFIX}:${user.language}:${user.level}:${mode}`;
   await ensureUser(user);
 
   const playerObj: PlayerSession = {
@@ -116,20 +236,46 @@ export async function tryMatch(
     .values({
       language: user.language,
       level: user.level,
+      mode: mode,
       status: "active",
     })
     .returning();
 
-  const questions = createMatchQuestions(user.language);
-  await db.insert(matchQuestions).values(
-    questions.map((question, orderIndex) => ({
-      matchId: match.id,
-      orderIndex,
-      prompt: question.prompt,
-      options: question.options,
-      correctOption: question.correctOption,
-    })),
-  );
+  if (mode === "personal") {
+    const p1Questions = await createPersonalMatchQuestions(user.userId, user.language, user.level);
+    const p2Questions = await createPersonalMatchQuestions(waiting.userId, user.language, user.level);
+
+    await db.insert(matchQuestions).values([
+      ...p1Questions.map((question, orderIndex) => ({
+        matchId: match.id,
+        userId: user.userId,
+        orderIndex,
+        prompt: question.prompt,
+        options: question.options,
+        correctOption: question.correctOption,
+      })),
+      ...p2Questions.map((question, orderIndex) => ({
+        matchId: match.id,
+        userId: waiting.userId,
+        orderIndex,
+        prompt: question.prompt,
+        options: question.options,
+        correctOption: question.correctOption,
+      })),
+    ]);
+  } else {
+    const questions = await createMatchQuestions(user.language, user.level);
+    await db.insert(matchQuestions).values(
+      questions.map((question, orderIndex) => ({
+        matchId: match.id,
+        userId: null,
+        orderIndex,
+        prompt: question.prompt,
+        options: question.options,
+        correctOption: question.correctOption,
+      })),
+    );
+  }
 
   const playerRows = [
     { matchId: match.id, userId: user.userId, side: "player1" },
@@ -137,22 +283,20 @@ export async function tryMatch(
   ];
   await db.insert(matchPlayers).values(playerRows);
 
-  const createdMatch = { match, questions, waiting };
-
   await pusher.trigger(`${USER_CHANNEL_PREFIX}${user.userId}`, "match-found", {
-    matchId: createdMatch.match.id,
+    matchId: match.id,
     opponent: waiting,
   });
   await pusher.trigger(
     `${USER_CHANNEL_PREFIX}${waiting.userId}`,
     "match-found",
     {
-      matchId: createdMatch.match.id,
+      matchId: match.id,
       opponent: user,
     },
   );
 
-  return createdMatch;
+  return { match, waiting };
 }
 
 export async function fetchMatchForUser(matchId: string, userId: string) {
@@ -178,7 +322,15 @@ export async function fetchMatchForUser(matchId: string, userId: string) {
   const questionRows = await db
     .select()
     .from(matchQuestions)
-    .where(eq(matchQuestions.matchId, matchId))
+    .where(
+      and(
+        eq(matchQuestions.matchId, matchId),
+        or(
+          isNull(matchQuestions.userId),
+          eq(matchQuestions.userId, userId),
+        ),
+      ),
+    )
     .orderBy(asc(matchQuestions.orderIndex));
 
   return { match, me, opponent, questions: questionRows };
@@ -286,6 +438,10 @@ export async function submitLiveAnswer(params: {
     where: and(
       eq(matchQuestions.matchId, params.matchId),
       eq(matchQuestions.orderIndex, nextProgress),
+      or(
+        isNull(matchQuestions.userId),
+        eq(matchQuestions.userId, params.userId),
+      ),
     ),
   });
 

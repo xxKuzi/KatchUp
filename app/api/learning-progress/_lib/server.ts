@@ -7,11 +7,13 @@ export interface WordProgressUpdate {
   wordId: string;
   isUnlocked: boolean;
   isMastered: boolean;
+  streak?: number;
 }
 
 export interface WordProgressSnapshot {
   unlockedWordIds: string[];
   masteredWordIds: string[];
+  wordStreaks: Record<string, number>;
 }
 
 export async function fetchWordProgress(
@@ -23,6 +25,7 @@ export async function fetchWordProgress(
       wordId: userWordProgress.wordId,
       isUnlocked: userWordProgress.isUnlocked,
       isMastered: userWordProgress.isMastered,
+      streak: userWordProgress.streak,
     })
     .from(userWordProgress)
     .where(
@@ -32,6 +35,11 @@ export async function fetchWordProgress(
       ),
     );
 
+  const wordStreaks: Record<string, number> = {};
+  for (const row of rows) {
+    wordStreaks[row.wordId] = row.streak;
+  }
+
   return {
     unlockedWordIds: rows
       .filter((row) => row.isUnlocked)
@@ -39,6 +47,7 @@ export async function fetchWordProgress(
     masteredWordIds: rows
       .filter((row) => row.isMastered)
       .map((row) => row.wordId),
+    wordStreaks,
   };
 }
 
@@ -65,6 +74,7 @@ export async function syncWordProgress(
         wordId: update.wordId,
         isUnlocked: update.isUnlocked,
         isMastered: update.isMastered,
+        streak: update.streak ?? (update.isMastered ? 3 : 0),
       })),
     )
     .onConflictDoUpdate({
@@ -72,6 +82,7 @@ export async function syncWordProgress(
       set: {
         isUnlocked: sql`excluded.is_unlocked`,
         isMastered: sql`excluded.is_mastered`,
+        streak: sql`excluded.streak`,
         updatedAt: sql`now()`,
       },
     });

@@ -59,7 +59,7 @@ interface AsyncLeaderboardRow {
 }
 
 function isSupportedLanguage(value: string | null): value is SupportedLanguage {
-  return value === "german" || value === "spanish";
+  return value === "german" || value === "spanish" || value === "czech";
 }
 
 function shuffleArray<T>(items: T[]): T[] {
@@ -123,6 +123,11 @@ export default function ChooseOneMultiplayerPlayPage() {
   const [livePayload, setLivePayload] = useState<LiveMatchPayload | null>(null);
   const [score, setScore] = useState(0);
   const [status, setStatus] = useState<MatchStatus>("playing");
+  
+  const [countdown, setCountdown] = useState<number | null>(() => {
+    return mode === "async" ? 3 : null;
+  });
+
   const [winner, setWinner] = useState<"player" | "opponent" | null>(null);
   const [feedback, setFeedback] = useState<{
     text: string;
@@ -134,6 +139,27 @@ export default function ChooseOneMultiplayerPlayPage() {
   const [questionStartedAt, setQuestionStartedAt] = useState<number>(() =>
     Date.now(),
   );
+
+  useEffect(() => {
+    if (countdown === null) {
+      return;
+    }
+
+    if (countdown === 0) {
+      setStartMs(Date.now());
+      setQuestionStartedAt(Date.now());
+      const timeoutId = window.setTimeout(() => {
+        setCountdown(null);
+      }, 500);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCountdown((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [countdown]);
   const [asyncLeaderboard, setAsyncLeaderboard] = useState<
     AsyncLeaderboardRow[]
   >([]);
@@ -202,10 +228,39 @@ export default function ChooseOneMultiplayerPlayPage() {
     setLiveQuestions([]);
 
     if (mode === "async") {
-      setQuestions(buildQuestions(language));
       setLivePayload(null);
+      fetch(`/data/words-${language}.json`)
+        .then((res) => {
+          if (!res.ok) throw new Error("JSON not found");
+          return res.json() as Promise<Array<{ native: string; foreign: string; level: string }>>;
+        })
+        .then((data) => {
+          const levelWords = data.filter((w) => w.level.toLowerCase() === level.toLowerCase());
+          const pool = levelWords.length > 5 ? levelWords : data;
+          
+          const selected = shuffleArray(pool).slice(0, 10);
+          const generated = selected.map((word) => {
+            const wrongOptions = shuffleArray(
+              pool
+                .filter((candidate) => candidate.foreign !== word.foreign)
+                .map((candidate) => candidate.native),
+            ).slice(0, 3);
+            const options = shuffleArray([...wrongOptions, word.native]);
+            return {
+              id: `${word.foreign}-${Math.random()}`,
+              prompt: word.foreign,
+              options,
+              correctOption: word.native,
+            };
+          });
+          setQuestions(generated);
+        })
+        .catch(() => {
+          // Fallback to local seeds
+          setQuestions(buildQuestions(language));
+        });
     }
-  }, [language, mode]);
+  }, [language, mode, level]);
 
   useEffect(() => {
     if (mode !== "live" || status !== "playing" || !matchId) {
@@ -504,6 +559,21 @@ export default function ChooseOneMultiplayerPlayPage() {
     mode === "live"
       ? (livePayload?.opponent?.avatar ?? opponentAvatar)
       : DEFAULT_OPPONENT_AVATAR;
+
+  if (countdown !== null) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 text-white font-sans">
+        <div className="text-center animate-pulse">
+          <span className="text-xs uppercase tracking-widest text-emerald-400 font-extrabold">
+            Get Ready
+          </span>
+          <h1 className="mt-4 text-9xl font-black tracking-tight text-white transition-all duration-300 transform scale-110">
+            {countdown === 0 ? "GO!" : countdown}
+          </h1>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <GamePage

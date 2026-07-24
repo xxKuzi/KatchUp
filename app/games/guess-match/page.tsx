@@ -14,8 +14,7 @@ import {
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
 import { getAllWords } from "../_lib/learning/wordDatabase";
-import { MISTAKES_PRACTICE_ENERGY_REWARD } from "@/app/my-decks/_lib/customDecks";
-import { gainEnergy, spendEnergy } from "@/app/_lib/energy";
+import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
 
@@ -236,7 +235,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     const passed = scorePercent >= 70;
 
     if (isEnergyReview) {
-      gainEnergy(MISTAKES_PRACTICE_ENERGY_REWARD);
+      gainEnergy(ENERGY_PRACTICE_REWARD);
     } else {
       spendEnergy(1);
     }

@@ -1,11 +1,34 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { seedTopicDecks } from "@/app/api/decks/_lib/deckStore";
-import { db } from "@/lib/db";
-import { globalWords } from "@/db/schema";
+import { seedTopicDecks } from "../app/api/decks/_lib/deckStore";
+import { db } from "../lib/db";
+import { globalWords } from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
+
+// 1. Dependency-free .env loader
+function loadEnv() {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, "utf8");
+    for (const line of content.split("\n")) {
+      const match = line.match(/^\s*([\w.\-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2] || "";
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.slice(1, -1);
+        } else if (value.startsWith("'") && value.endsWith("'")) {
+          value = value.slice(1, -1);
+        }
+        process.env[key] = value.trim();
+      }
+    }
+  }
+}
+
+// Since imports are hoisted, we make sure process.env is set.
+// But we will also pass DATABASE_URL from shell command just in case.
+loadEnv();
 
 async function seedGlobalWords() {
   let createdCount = 0;
@@ -37,6 +60,8 @@ async function seedGlobalWords() {
 
     if (words.length === 0) continue;
 
+    console.log(`Seeding ${words.length} ${lang} words...`);
+
     // Batch insert into database
     const batchSize = 100;
     for (let i = 0; i < words.length; i += batchSize) {
@@ -54,23 +79,21 @@ async function seedGlobalWords() {
     }
   }
 
+  console.log(`Seed globalWords complete! Created ${createdCount} words.`);
   return { globalWordsCreated: createdCount };
 }
 
-// Idempotent: creates the canonical topic decks + words if missing, no-ops
-// otherwise. Any signed-in user may trigger it; re-running is harmless.
-export async function POST() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function run() {
+  console.log("Starting DB seeding...");
   const deckResult = await seedTopicDecks();
+  console.log("seedTopicDecks completed:", deckResult);
   const wordResult = await seedGlobalWords();
-
-  return NextResponse.json({
-    ok: true,
-    ...deckResult,
-    ...wordResult,
-  });
+  console.log("seedGlobalWords completed:", wordResult);
+  console.log("Seeding process finished!");
+  process.exit(0);
 }
+
+run().catch((err) => {
+  console.error("Seeding failed:", err);
+  process.exit(1);
+});

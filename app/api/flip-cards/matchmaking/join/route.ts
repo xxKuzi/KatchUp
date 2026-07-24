@@ -4,7 +4,7 @@ import { SupportedLanguage } from "@/app/games/_lib/learning/types";
 import { tryMatch } from "@/app/api/flip-cards/_lib/server";
 
 function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish";
+  return value === "german" || value === "spanish" || value === "czech";
 }
 
 export async function POST(request: NextRequest) {
@@ -17,11 +17,14 @@ export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     language?: SupportedLanguage;
     level?: string;
+    mode?: string;
   };
 
   if (!body.level || !isSupportedLanguage(body.language)) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
+
+  const mode = body.mode === "personal" ? "personal" : "fair";
 
   const user = {
     userId,
@@ -29,6 +32,7 @@ export async function POST(request: NextRequest) {
     avatar: session.user.image ?? "https://i.pravatar.cc/100?img=12",
     language: body.language,
     level: body.level,
+    mode,
   };
 
   const match = await tryMatch(user);

@@ -14,6 +14,7 @@ import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
 const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
   german: "German",
   spanish: "Spanish",
+  czech: "Czech",
 };
 
 const DECK_SIZE = 15;

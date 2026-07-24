@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 export const MAX_ENERGY = 20;
+/** Energy granted for completing an energy-practice review round. */
+export const ENERGY_PRACTICE_REWARD = 5;
 
 const STORAGE_KEY = "katchup-energy";
 const ENERGY_EVENT = "katchup-energy-change";

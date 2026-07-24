@@ -6,7 +6,7 @@ import { matchPlayers, matches, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish";
+  return value === "german" || value === "spanish" || value === "czech";
 }
 
 export async function GET(request: NextRequest) {

@@ -1,4 +1,4 @@
-export type SupportedLanguage = "german" | "spanish";
+export type SupportedLanguage = "german" | "spanish" | "czech";
 
 export interface LectureWord {
   id: string;
@@ -18,6 +18,7 @@ export interface LearningProgress {
   language: SupportedLanguage;
   unlockedWordIds: string[];
   masteredWordIds: string[];
+  wordStreaks?: Record<string, number>;
   currentLecture: number;
 }
 

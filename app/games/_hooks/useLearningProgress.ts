@@ -8,6 +8,8 @@ import {
   getActiveWords,
   getLearningStats,
   markWordAsCorrect,
+  markWordCorrectWithStreak,
+  markWordWrong,
 } from "../_lib/learning/progression";
 import { LearningProgress, SupportedLanguage } from "../_lib/learning/types";
 
@@ -18,11 +20,13 @@ const MAX_PENDING_BEFORE_FLUSH = 15;
 interface PendingUpdate {
   isUnlocked: boolean;
   isMastered: boolean;
+  streak?: number;
 }
 
 interface RemoteProgress {
   unlockedWordIds: string[];
   masteredWordIds: string[];
+  wordStreaks?: Record<string, number>;
 }
 
 function getStorageKey(language: SupportedLanguage): string {
@@ -30,7 +34,7 @@ function getStorageKey(language: SupportedLanguage): string {
 }
 
 function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish";
+  return value === "german" || value === "spanish" || value === "czech";
 }
 
 function parseStoredProgress(
@@ -59,6 +63,7 @@ function parseStoredProgress(
       language: parsed.language,
       unlockedWordIds: parsed.unlockedWordIds,
       masteredWordIds: parsed.masteredWordIds,
+      wordStreaks: parsed.wordStreaks ?? {},
       currentLecture: parsed.currentLecture,
     };
   } catch {
@@ -92,10 +97,17 @@ function mergeProgress(
     new Set([...local.masteredWordIds, ...remote.masteredWordIds]),
   );
 
+  const wordStreaks: Record<string, number> = { ...(local.wordStreaks || {}) };
+  const remoteStreaks = remote.wordStreaks || {};
+  for (const [wordId, remoteStreak] of Object.entries(remoteStreaks)) {
+    wordStreaks[wordId] = Math.max(wordStreaks[wordId] || 0, remoteStreak);
+  }
+
   const merged: LearningProgress = {
     language,
     unlockedWordIds,
     masteredWordIds,
+    wordStreaks,
     currentLecture: 1,
   };
 
@@ -110,16 +122,23 @@ function diffForCatchUp(
 ): Map<string, PendingUpdate> {
   const remoteUnlocked = new Set(remote.unlockedWordIds);
   const remoteMastered = new Set(remote.masteredWordIds);
+  const remoteStreaks = remote.wordStreaks || {};
   const mastered = new Set(merged.masteredWordIds);
+  const streaks = merged.wordStreaks || {};
 
   const updates = new Map<string, PendingUpdate>();
   for (const wordId of merged.unlockedWordIds) {
     const isMastered = mastered.has(wordId);
     const isNewToRemote = !remoteUnlocked.has(wordId);
     const masteryChanged = isMastered && !remoteMastered.has(wordId);
+    const streakChanged = streaks[wordId] !== remoteStreaks[wordId];
 
-    if (isNewToRemote || masteryChanged) {
-      updates.set(wordId, { isUnlocked: true, isMastered });
+    if (isNewToRemote || masteryChanged || streakChanged) {
+      updates.set(wordId, {
+        isUnlocked: true,
+        isMastered,
+        streak: streaks[wordId] ?? 0,
+      });
     }
   }
 
@@ -259,7 +278,7 @@ export function useLearningProgress(language: SupportedLanguage) {
       return;
     }
 
-    pendingRef.current.set(wordId, { isUnlocked: true, isMastered: true });
+    pendingRef.current.set(wordId, { isUnlocked: true, isMastered: true, streak: 3 });
 
     const newlyUnlocked = next.unlockedWordIds.filter(
       (id) => !progress.unlockedWordIds.includes(id),
@@ -267,6 +286,52 @@ export function useLearningProgress(language: SupportedLanguage) {
     for (const id of newlyUnlocked) {
       pendingRef.current.set(id, { isUnlocked: true, isMastered: false });
     }
+
+    if (pendingRef.current.size >= MAX_PENDING_BEFORE_FLUSH) {
+      flush(language, userId);
+    }
+  };
+
+  const markCorrectWithStreak = (wordId: string, requiredStreak = 3) => {
+    const next = markWordCorrectWithStreak(progress, wordId, requiredStreak);
+    if (next === progress) {
+      return;
+    }
+
+    setProgress(next);
+
+    if (!userId) {
+      return;
+    }
+
+    const isMastered = next.masteredWordIds.includes(wordId);
+    pendingRef.current.set(wordId, { isUnlocked: true, isMastered });
+
+    const newlyUnlocked = next.unlockedWordIds.filter(
+      (id) => !progress.unlockedWordIds.includes(id),
+    );
+    for (const id of newlyUnlocked) {
+      pendingRef.current.set(id, { isUnlocked: true, isMastered: false });
+    }
+
+    if (pendingRef.current.size >= MAX_PENDING_BEFORE_FLUSH) {
+      flush(language, userId);
+    }
+  };
+
+  const markWrong = (wordId: string) => {
+    const next = markWordWrong(progress, wordId);
+    if (next === progress) {
+      return;
+    }
+
+    setProgress(next);
+
+    if (!userId) {
+      return;
+    }
+
+    pendingRef.current.set(wordId, { isUnlocked: true, isMastered: false });
 
     if (pendingRef.current.size >= MAX_PENDING_BEFORE_FLUSH) {
       flush(language, userId);
@@ -289,6 +354,8 @@ export function useLearningProgress(language: SupportedLanguage) {
     stats,
     isHydrated,
     markCorrect,
+    markCorrectWithStreak,
+    markWrong,
     syncNow,
     reset,
   };

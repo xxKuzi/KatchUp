@@ -14,13 +14,22 @@ interface Slide {
 
 const slides: Slide[] = [
   {
-    name: "Choose One Multiplayer",
-    url: "/games/choose-one-multiplayer",
+    name: "Live Online Duel",
+    url: "/games/choose-one-multiplayer?mode=live",
     img: "flip_cards.png",
     tagline: "Live 1v1 · Race to 10",
     description:
       "Go head-to-head with another player in real time. Same ten prompts, pick the right translation faster than your rival. First to finish wins.",
     gradient: "from-emerald-900/90 via-emerald-900/40",
+  },
+  {
+    name: "Score Rush (Async)",
+    url: "/games/choose-one-multiplayer?mode=async",
+    img: "one_of_three.png",
+    tagline: "Leaderboard Climb · Speed & Accuracy",
+    description:
+      "Compete asynchronously against other players' ghost records. Answer quickly and accurately to climb the high score ladder.",
+    gradient: "from-blue-900/90 via-blue-900/40",
   },
   {
     name: "Flip Cards",
@@ -29,7 +38,7 @@ const slides: Slide[] = [
     tagline: "Self-paced flashcards",
     description:
       "A calm, no-timer deck for real study. Tap to flip between your language and the translation, swipe right when you know it or left to keep practicing.",
-    gradient: "from-blue-900/90 via-blue-900/40",
+    gradient: "from-violet-900/90 via-violet-900/40",
   },
   {
     name: "One of Three",
@@ -111,7 +120,9 @@ function HeroGameCarousel() {
             onClick={() => goTo(i)}
             aria-label={`Go to ${s.name}`}
             className={`h-2.5 rounded-full transition-all ${
-              i === index ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/75"
+              i === index
+                ? "w-8 bg-white"
+                : "w-2.5 bg-white/50 hover:bg-white/75"
             }`}
           />
         ))}
