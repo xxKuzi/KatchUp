@@ -86,7 +86,7 @@ export default function TopicsPage() {
         )}
       >
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-          <section className="first-section-static-glow rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-950/70 sm:p-8">
+          <section className="first-section-static-glow md:mb-10 mb-4 rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-950/70 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
               {t("topics.badge", "Learning Packs")}
             </p>
@@ -105,7 +105,7 @@ export default function TopicsPage() {
             </div>
           </section>
 
-          <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 sm:gap-10">
             {topicCards.map(
               ({ topic, levelCount, unlocked, justCompleted, ascended }) => {
                 return (
