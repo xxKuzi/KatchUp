@@ -36,14 +36,14 @@ export default async function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="auto"
           enableSystem
           enableColorScheme
         >
           <SessionProvider session={session}>
             <LanguageProvider>
               <Navbar />
-              <main>{children}</main>
+              <main className="pb-20 lg:pb-0">{children}</main>
             </LanguageProvider>
           </SessionProvider>
         </ThemeProvider>

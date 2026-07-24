@@ -17,7 +17,8 @@ export const translations: Record<Language, Translations> = {
       topics: "Topics",
       myDecks: "My Decks",
       friends: "Me & Friends",
-      healthBar: "Health Bar",
+      energy: "Energy",
+      resetsIn: "Resets in",
     },
     auth: {
       signIn: "Sign in",
@@ -169,7 +170,8 @@ export const translations: Record<Language, Translations> = {
       topics: "Temata",
       myDecks: "Moje balíčky",
       friends: "Já a přátelé",
-      healthBar: "Zdravolní stav",
+      energy: "Energie",
+      resetsIn: "Obnoví se za",
     },
     auth: {
       signIn: "Prihlasit se",
@@ -322,7 +324,8 @@ export const translations: Record<Language, Translations> = {
       topics: "Themen",
       myDecks: "Meine Decks",
       friends: "Ich & Freunde",
-      healthBar: "Gesundheitsbalken",
+      energy: "Energie",
+      resetsIn: "Zurücksetzen in",
     },
     auth: {
       signIn: "Anmelden",

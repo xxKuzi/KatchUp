@@ -112,7 +112,7 @@ export default function TopicsPage() {
                   <TopicCard
                     key={topic.id}
                     topic={topic}
-                    title={`${topic.icon} ${topic.names[language]}`}
+                    title={`${topic.icon} - ${topic.names[language]}`}
                     description={topic.descriptions[language]}
                     levelCount={levelCount}
                     unlocked={unlocked}

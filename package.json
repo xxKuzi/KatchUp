@@ -44,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "next-auth": "^5.0.0-beta.30",
+    "playwright-core": "^1.61.1",
     "pusher": "^5.2.0",
     "pusher-js": "^8.4.0",
     "tailwindcss": "^4",

@@ -12,6 +12,7 @@ import {
 } from "@/app/topics/_lib/topicsProgress";
 import { getAllWords } from "../_lib/learning/wordDatabase";
 import type { LectureWord } from "../_lib/learning/types";
+import { spendEnergy } from "@/app/_lib/energy";
 
 interface Question {
   id: string;
@@ -128,6 +129,7 @@ const OneOfThreePage = () => {
 
     const isCorrect = option === currentQuestion.correctOption;
     setSelectedOption(option);
+    spendEnergy();
 
     window.setTimeout(() => {
       const nextCorrectCount = correctCount + (isCorrect ? 1 : 0);

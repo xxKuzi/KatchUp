@@ -7,6 +7,7 @@ import GamePage from "../../_components/GamePage";
 import { SupportedLanguage } from "../../_lib/learning/types";
 import { getAllWords } from "../../_lib/learning/wordDatabase";
 import { pusherClient } from "@/lib/realtime/pusher-client";
+import { spendEnergy } from "@/app/_lib/energy";
 
 interface MatchQuestion {
   id: string;
@@ -414,6 +415,8 @@ export default function FlipCardsPlayPage() {
     if (!currentQuestion || status !== "playing" || isSubmitting) {
       return;
     }
+
+    spendEnergy();
 
     const responseTime = Date.now() - questionStartedAt;
     const speedBonus = Math.max(0, 50 - Math.floor(responseTime / 45));

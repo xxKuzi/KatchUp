@@ -78,7 +78,7 @@ export default function MyDecksOverview() {
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               {t("myDecks.customDecksByLanguages")}
             </h2>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-1 text-center text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {filteredDecks.length} {t("common.totalDecks")}
             </span>
           </div>

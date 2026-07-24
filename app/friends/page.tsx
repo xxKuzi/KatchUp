@@ -86,7 +86,8 @@ export default function FriendsPage() {
   const { isSignedIn, isReady, session } = useAuthState();
   const { t } = useLanguage();
   const userKey = session?.user?.email ?? session?.user?.name ?? "player";
-  const displayName = session?.user?.name ?? "You";
+  const fullName = session?.user?.name ?? "You";
+  const displayName = fullName.trim().split(/\s+/)[0] || "You";
   const [state, setState] = useState<FriendsLeagueState>(() =>
     createInitialFriendsLeagueState(displayName),
   );
@@ -389,7 +390,7 @@ export default function FriendsPage() {
     );
 
   return (
-    <div className="relative min-h-screen px-4 py-8 text-foreground sm:px-6">
+    <div className="relative min-h-screen px-4 sm:py-8 pt-0 pb-4 text-foreground sm:px-6">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(251,146,120,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_bottom,rgba(253,224,71,0.12),transparent_40%),linear-gradient(to_bottom,rgba(255,248,243,1),rgba(255,241,238,1))] dark:bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.07),transparent_45%),linear-gradient(to_bottom,rgba(11,12,16,1),rgba(8,9,12,1))]" />
       <FeatureGate
         isAllowed={isReady && isSignedIn}
@@ -398,7 +399,7 @@ export default function FriendsPage() {
           "Let your friends see your progress and challenge your streak. Sign in to open Friends.",
         )}
       >
-        <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:items-start">
+        <div className="mx-auto grid w-full max-w-6xl gap-12 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:items-start">
           {/* LEFT: my cozy room */}
           <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
             <section className="overflow-hidden rounded-[2.25rem] border border-white/70 bg-white/80 shadow-[0_24px_60px_-24px_rgba(244,114,182,0.4)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03]">
@@ -411,7 +412,7 @@ export default function FriendsPage() {
                 <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-rose-500 dark:bg-white/10 dark:text-rose-300">
                   🏡 my little home
                 </p>
-                <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
                   {profileIdentity.nickname || displayName}
                 </h1>
                 <button
@@ -490,11 +491,11 @@ export default function FriendsPage() {
           </aside>
 
           {/* RIGHT: quest + friends */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             <section className="rounded-[2.25rem] border border-white/70 bg-white/80 p-6 shadow-[0_20px_50px_-24px_rgba(56,189,248,0.35)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03] sm:p-8">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="inline-flex items-center gap-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                  🫶 My friends
+                <h3 className="inline-flex items-center gap-2 text-4xl font-bold text-slate-900 dark:text-white">
+                  My friends
                 </h3>
                 <span className="rounded-full bg-sky-100/70 px-3 py-1 text-xs font-bold text-sky-500 dark:bg-sky-500/10 dark:text-sky-300">
                   {state.friends.length} total
@@ -506,7 +507,7 @@ export default function FriendsPage() {
                   value={friendSearchTag}
                   onChange={(event) => setFriendSearchTag(event.target.value)}
                   placeholder="Search by tag (example: kuba19, kubafox44)"
-                  className="rounded-full border border-sky-100 bg-sky-50/60 px-5 py-3 text-slate-800 outline-none transition focus:border-sky-300 focus:bg-white dark:border-white/[0.14] dark:bg-white/[0.03] dark:text-slate-100 dark:focus:border-sky-500/40"
+                  className="rounded-full border border-sky-100 bg-sky-50/60 px-5 py-3 text-slate-800 outline-none transition focus:border-sky-300 focus:bg-white dark:border-white/[0.14] dark:bg-white/[0.03] dark:text-slate-100 dark:focus:border-sky-500/40 dark:focus:bg-white/6"
                 />
                 <button
                   type="button"
@@ -597,9 +598,9 @@ export default function FriendsPage() {
               </div>
             </section>
             <section className="rounded-[2.25rem] border border-white/70 bg-white/80 p-6 shadow-[0_20px_50px_-24px_rgba(251,146,120,0.4)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03] sm:p-8">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:text-left">
                 <div className="max-w-md">
-                  <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white sm:text-3xl">
                     Friend Quest
                   </h2>
                   <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -611,7 +612,7 @@ export default function FriendsPage() {
                     .
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col items-center gap-2">
                   <span className="rounded-full bg-rose-100/70 px-4 py-1.5 text-sm font-bold text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
                     {duoTasks.claimed
                       ? `🎉 ${formatXp(WEEKLY_DUO_XP)} XP earned`
@@ -620,8 +621,7 @@ export default function FriendsPage() {
                         : "Pick a partner"}
                   </span>
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    🕰 resets in {weeklyRemaining.days}d {weeklyRemaining.hours}
-                    h
+                    resets in {weeklyRemaining.days}d {weeklyRemaining.hours}h
                   </span>
                 </div>
               </div>
@@ -633,7 +633,7 @@ export default function FriendsPage() {
                   </p>
                   {state.friends.length === 0 ? (
                     <div className="mt-4 rounded-2xl border border-dashed border-rose-200 bg-rose-50/40 p-6 text-center text-sm text-slate-500 dark:border-rose-500/20 dark:bg-rose-500/[0.04] dark:text-slate-400">
-                      💌 Add a friend below first, then pick them here to start
+                      Add a friend below first, then pick them here to start
                       your weekly duo.
                     </div>
                   ) : (
@@ -742,17 +742,21 @@ export default function FriendsPage() {
                 </div>
               )}
 
-              <div className="mt-5 rounded-2xl border border-rose-100 bg-rose-50/40 px-4 py-3 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
-                {statusMessage}
-              </div>
+              {state.friends.length > 0 ? (
+                <div className="mt-5 rounded-2xl border border-rose-100 bg-rose-50/40 px-4 py-3 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
+                  {statusMessage}
+                </div>
+              ) : (
+                <div></div>
+              )}
             </section>
           </div>
         </div>
       </FeatureGate>
 
       {isProfileEditorOpen ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-sm">
-          <div className="w-full max-w-3xl rounded-[2.25rem] border border-white/70 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#1c141a] sm:p-8">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/60 px-4 pt-24 pb-8 backdrop-blur-sm">
+          <div className="max-h-[calc(100dvh-8rem)] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-[2.25rem] border border-white/70 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#1c141a] sm:p-8">
             <div className="flex items-center justify-between gap-3">
               <h3 className="inline-flex items-center gap-2 text-2xl font-black text-slate-900 dark:text-white">
                 🎨 Make it yours
@@ -766,12 +770,35 @@ export default function FriendsPage() {
               </button>
             </div>
 
-            <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_1fr]">
+            <div className="mt-5">
+              <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                Display name
+              </label>
+              <input
+                value={profileIdentity.nickname}
+                onChange={(event) =>
+                  setProfileIdentity((previous) => ({
+                    ...previous,
+                    nickname: event.target.value,
+                    updatedAt: new Date().toISOString(),
+                  }))
+                }
+                placeholder={displayName}
+                maxLength={24}
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+              <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+                This is the name your friends see. It defaults to your first
+                name — change it to whatever you like.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                   Background
                 </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {AVATAR_BACKGROUNDS.map((background) => {
                     const active =
                       background.id === profileIdentity.avatarBackgroundId;
@@ -787,16 +814,16 @@ export default function FriendsPage() {
                             updatedAt: new Date().toISOString(),
                           }))
                         }
-                        className={`rounded-2xl border p-3 text-left transition ${
+                        className={`rounded-xl border p-2 text-left transition ${
                           active
                             ? "border-rose-300 bg-rose-50 dark:border-rose-500/40 dark:bg-rose-500/10"
                             : "border-slate-200 bg-white hover:border-rose-200 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
                         }`}
                       >
                         <div
-                          className={`h-10 rounded-xl bg-linear-to-r ${background.accent}`}
+                          className={`h-6 rounded-lg bg-linear-to-r ${background.accent}`}
                         />
-                        <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <p className="mt-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
                           {background.label}
                         </p>
                       </button>

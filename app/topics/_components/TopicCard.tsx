@@ -102,18 +102,12 @@ function TopicCardContent({
       />
 
       <div className="relative flex h-full flex-col p-6 sm:p-7">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-1 items-start justify-between gap-4">
           <div className="min-w-0">
-            <div
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] backdrop-blur ${theme.badge}`}
-            >
-              {ascended ? <Crown size={12} /> : <Sparkles size={12} />}
-              {ascended ? "Ascended" : "Topic pack"}
-            </div>
-            <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-[2rem]">
+            <h2 className="mt- text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-[2rem]">
               {title}
             </h2>
-            <p className="mt-2 max-w-xs text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <p className="mt-2 mb-2 max-w-xs text-sm leading-6 text-slate-600 dark:text-slate-300">
               {description}
             </p>
           </div>

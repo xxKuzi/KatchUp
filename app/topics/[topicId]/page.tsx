@@ -78,7 +78,7 @@ export default function TopicDetailPage() {
               ← {t("topics.back", "Back to topics")}
             </Link>
             <h1 className="mt-4 text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">
-              {topic.icon} {topic.names[language]}
+              {topic.icon} - {topic.names[language]}
             </h1>
             <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
               {topic.descriptions[language]}
