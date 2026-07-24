@@ -5,10 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../_lib/languageContext";
 import {
-  CustomDeck,
-  loadCustomDecks,
-  saveCustomDecks,
-} from "../_lib/customDecks";
+  ApiError,
+  DeckWithWords,
+  getDeck,
+} from "../../games/_lib/deckSessionClient";
 
 const GAME_MODE_IDS = [
   {
@@ -38,48 +38,49 @@ const GAME_MODE_IDS = [
 ];
 
 function PracticeModeSelector() {
-  const { t, language, learningLanguage } = useLanguage();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
-  const [deck, setDeck] = useState<CustomDeck | null>(null);
+  const deckId = searchParams.get("deck") ?? "";
+  const [deck, setDeck] = useState<DeckWithWords | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "notfound">(
+    deckId ? "loading" : "notfound",
+  );
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const deckId = searchParams.get("deck");
+    if (!deckId) {
+      return;
+    }
 
-      if (!deckId) {
-        return;
-      }
+    let cancelled = false;
+    getDeck(deckId)
+      .then((data) => {
+        if (!cancelled) {
+          setDeck(data.deck);
+          setStatus("ready");
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setStatus("notfound");
+          if (!(err instanceof ApiError)) {
+            // network/parse error — treat as not found for the selector
+          }
+        }
+      });
 
-      const decks = loadCustomDecks();
-      const selectedDeck =
-        decks.find(
-          (d) =>
-            d.id === deckId &&
-            d.nativeLang.trim().toLowerCase() === language &&
-            d.foreignLang.trim().toLowerCase() === learningLanguage,
-        ) ?? null;
+    return () => {
+      cancelled = true;
+    };
+  }, [deckId]);
 
-      if (selectedDeck) {
-        const updatedDecks = decks.map((d) =>
-          d.id === deckId
-            ? { ...d, lastPracticed: new Date().toISOString() }
-            : d,
-        );
-
-        saveCustomDecks(updatedDecks);
-        setDeck(selectedDeck);
-      }
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [searchParams, language, learningLanguage]);
-
-  if (!deck) {
+  if (status !== "ready" || !deck) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8 text-foreground">
         <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <p className="text-slate-600 dark:text-slate-400">
-            {t("practice.deckNotFound")}
+            {status === "loading"
+              ? t("common.loading", "Loading…")
+              : t("practice.deckNotFound")}
           </p>
           <Link
             href="/my-decks"
@@ -128,6 +129,24 @@ function PracticeModeSelector() {
               </p>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900/60 dark:bg-amber-950/30">
+          <h2 className="text-lg font-bold text-amber-900 dark:text-amber-200">
+            🏁 {t("practice.finishRound", "Finish round")}
+          </h2>
+          <p className="mt-1 text-sm text-amber-800 dark:text-amber-300/90">
+            {t(
+              "practice.finishRoundDesc",
+              "Drill the hardest words you keep getting wrong.",
+            )}
+          </p>
+          <Link
+            href={`/games/quick-guess?deck=${deck.id}&mode=finish`}
+            className="mt-4 inline-block rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+          >
+            {t("practice.startFinishRound", "Start finish round")}
+          </Link>
         </div>
 
         <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">

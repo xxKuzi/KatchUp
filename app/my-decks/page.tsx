@@ -3,33 +3,49 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../_lib/languageContext";
-import {
-  CustomDeck,
-  groupDecksByLanguages,
-  loadCustomDecks,
-} from "./_lib/customDecks";
-
-function formatDate(value: string, t: (key: string) => string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return t("myDecks.never");
-  }
-
-  return date.toLocaleString();
-}
+import { useAuthState } from "../_lib/auth";
+import { DeckMeta, ApiError, listDecks } from "../games/_lib/deckSessionClient";
 
 export default function MyDecksOverview() {
   const { t, language, learningLanguage } = useLanguage();
-  const [decks, setDecks] = useState<CustomDeck[]>([]);
+  const { isSignedIn, isReady, signIn } = useAuthState();
+  const [decks, setDecks] = useState<DeckMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDecks(loadCustomDecks());
-    }, 0);
+    if (isReady && !isSignedIn) {
+      setUnauthorized(true);
+      setLoading(false);
+      return;
+    }
+    if (!isSignedIn) {
+      return;
+    }
 
-    return () => window.clearTimeout(timeoutId);
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    listDecks()
+      .then((data) => {
+        if (!cancelled) {
+          setDecks(data.decks);
+          setUnauthorized(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 401) {
+          setUnauthorized(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, isReady]);
 
   const filteredDecks = useMemo(
     () =>
@@ -41,14 +57,17 @@ export default function MyDecksOverview() {
     [decks, language, learningLanguage],
   );
 
-  const groupedDecks = useMemo(
-    () => groupDecksByLanguages(filteredDecks),
-    [filteredDecks],
-  );
-  const groupEntries = useMemo(
-    () => Object.entries(groupedDecks).sort((a, b) => a[0].localeCompare(b[0])),
-    [groupedDecks],
-  );
+  const groupEntries = useMemo(() => {
+    const groups = filteredDecks.reduce<Record<string, DeckMeta[]>>(
+      (acc, deck) => {
+        const key = `${deck.nativeLang} -> ${deck.foreignLang}`;
+        (acc[key] ??= []).push(deck);
+        return acc;
+      },
+      {},
+    );
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filteredDecks]);
 
   return (
     <div className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
@@ -83,7 +102,22 @@ export default function MyDecksOverview() {
             </span>
           </div>
 
-          {groupEntries.length === 0 ? (
+          {unauthorized ? (
+            <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <p>{t("myDecks.signInToSync", "Sign in to see and sync your decks.")}</p>
+              <button
+                type="button"
+                onClick={signIn}
+                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
+              >
+                {t("common.signIn", "Sign in")}
+              </button>
+            </div>
+          ) : loading ? (
+            <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              {t("common.loading", "Loading…")}
+            </div>
+          ) : groupEntries.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
               {t("common.noDecksYet")}
             </div>
@@ -104,11 +138,7 @@ export default function MyDecksOverview() {
                           {deck.name}
                         </h4>
                         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                          {deck.words.length} {t("common.words")}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {t("myDecks.lastPracticed")}:{" "}
-                          {formatDate(deck.lastPracticed, t)}
+                          {deck.wordCount} {t("common.words")}
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Link

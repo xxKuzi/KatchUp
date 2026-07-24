@@ -228,7 +228,7 @@ function Navbar() {
               </button>
 
               {energyPopoverOpen && (
-                <div className="absolute left-1/2 top-[120%] mt-2 w-60 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white/95 p-4 text-sm text-slate-700 shadow-2xl backdrop-blur-xl transition-all dark:border-slate-700 dark:bg-slate-950/95 dark:text-slate-200">
+                <div className="absolute right-0 top-[120%] mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 text-sm text-slate-700 shadow-2xl backdrop-blur-xl transition-all sm:left-1/2 sm:right-auto sm:-translate-x-1/2 dark:border-slate-700 dark:bg-slate-950/95 dark:text-slate-200">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                       {t("navbar.energy")}

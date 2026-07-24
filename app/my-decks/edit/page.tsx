@@ -2,26 +2,39 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../_lib/languageContext";
 import { useAuthState } from "../../_lib/auth";
 import { LANGUAGES, Language } from "../../_lib/translations";
 import {
-  CustomDeck,
+  DeckMeta,
+  DeckWithWords,
+  DeckWordRecord,
   createDeck,
-  createWord,
-  DeckWord,
-  groupDecksByLanguages,
-  loadCustomDecks,
-  saveCustomDecks,
-} from "../_lib/customDecks";
+  deleteDeck,
+  getDeck,
+  listDecks,
+  updateDeck,
+} from "../../games/_lib/deckSessionClient";
+
+function tempId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return `new-${crypto.randomUUID()}`;
+  }
+  return `new-${Math.random().toString(16).slice(2)}`;
+}
 
 function DeckEditorPage() {
   const { language, learningLanguage } = useLanguage();
-  const { isSignedIn, isReady } = useAuthState();
+  const { isSignedIn, isReady, signIn } = useAuthState();
   const searchParams = useSearchParams();
-  const [decks, setDecks] = useState<CustomDeck[]>([]);
+
+  const [decks, setDecks] = useState<DeckMeta[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
+  const [draft, setDraft] = useState<DeckWithWords | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const [newDeckName, setNewDeckName] = useState("New Custom Deck");
   const [newDeckNativeLang, setNewDeckNativeLang] = useState(language);
   const [newDeckForeignLang, setNewDeckForeignLang] =
@@ -36,38 +49,83 @@ function DeckEditorPage() {
   const [aiError, setAiError] = useState("");
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
 
+  const refreshDecks = useCallback(async (): Promise<DeckMeta[]> => {
+    const data = await listDecks();
+    setDecks(data.decks);
+    return data.decks;
+  }, []);
+
+  // Initial load: list the user's decks and pick the requested / first one.
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const storedDecks = loadCustomDecks();
-      setDecks(storedDecks);
-
-      const pairDecks = storedDecks.filter(
-        (deck) =>
-          deck.nativeLang.trim().toLowerCase() === language &&
-          deck.foreignLang.trim().toLowerCase() === learningLanguage,
-      );
-
-      const requestedDeckId = searchParams.get("deck");
-      if (
-        requestedDeckId &&
-        pairDecks.some((deck) => deck.id === requestedDeckId)
-      ) {
-        setSelectedDeckId(requestedDeckId);
-        return;
-      }
-
-      if (pairDecks.length > 0) {
-        setSelectedDeckId(pairDecks[0].id);
-      }
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [searchParams, language, learningLanguage]);
+    if (!isSignedIn) {
+      return;
+    }
+    let cancelled = false;
+    refreshDecks()
+      .then((all) => {
+        if (cancelled) return;
+        const pairDecks = all.filter(
+          (deck) =>
+            deck.nativeLang.trim().toLowerCase() === language &&
+            deck.foreignLang.trim().toLowerCase() === learningLanguage,
+        );
+        const requested = searchParams.get("deck");
+        if (requested && all.some((deck) => deck.id === requested)) {
+          setSelectedDeckId(requested);
+        } else if (pairDecks.length > 0) {
+          setSelectedDeckId(pairDecks[0].id);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, refreshDecks, searchParams, language, learningLanguage]);
 
   useEffect(() => {
     setNewDeckNativeLang(language);
     setNewDeckForeignLang(learningLanguage);
   }, [language, learningLanguage]);
+
+  // Load the selected deck's words into an editable draft.
+  useEffect(() => {
+    if (!selectedDeckId) {
+      setDraft(null);
+      return;
+    }
+    let cancelled = false;
+    getDeck(selectedDeckId)
+      .then((data) => {
+        if (!cancelled) {
+          setDraft(data.deck);
+          setDirty(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setDraft(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDeckId]);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/decks/generate")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.remaining === "number") {
+          setAiRemaining(data.remaining);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn]);
 
   const filteredDecks = useMemo(
     () =>
@@ -79,63 +137,37 @@ function DeckEditorPage() {
     [decks, language, learningLanguage],
   );
 
-  const selectedDeck = useMemo(
-    () => filteredDecks.find((deck) => deck.id === selectedDeckId) ?? null,
-    [filteredDecks, selectedDeckId],
-  );
+  const groupEntries = useMemo(() => {
+    const groups = filteredDecks.reduce<Record<string, DeckMeta[]>>(
+      (acc, deck) => {
+        const key = `${deck.nativeLang} -> ${deck.foreignLang}`;
+        (acc[key] ??= []).push(deck);
+        return acc;
+      },
+      {},
+    );
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filteredDecks]);
 
-  const groupedDecks = useMemo(
-    () => groupDecksByLanguages(filteredDecks),
-    [filteredDecks],
-  );
-  const groupEntries = useMemo(
-    () => Object.entries(groupedDecks).sort((a, b) => a[0].localeCompare(b[0])),
-    [groupedDecks],
-  );
-
-  const persistDecks = (nextDecks: CustomDeck[]) => {
-    setDecks(nextDecks);
-    saveCustomDecks(nextDecks);
+  const mutateDraft = (updater: (deck: DeckWithWords) => DeckWithWords) => {
+    setDraft((current) => (current ? updater(current) : current));
+    setDirty(true);
   };
 
-  const handleCreateDeck = (event: React.FormEvent) => {
+  const handleCreateDeck = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    const deck = createDeck({
+    const { deck } = await createDeck({
       name: newDeckName.trim() || "New Custom Deck",
       nativeLang: newDeckNativeLang.trim() || language,
       foreignLang: newDeckForeignLang.trim() || learningLanguage,
     });
-
-    const nextDecks = [deck, ...decks];
-    persistDecks(nextDecks);
+    await refreshDecks();
     setSelectedDeckId(deck.id);
   };
-
-  useEffect(() => {
-    if (!isSignedIn) {
-      return;
-    }
-
-    let cancelled = false;
-    fetch("/api/decks/generate")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data && typeof data.remaining === "number") {
-          setAiRemaining(data.remaining);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isSignedIn]);
 
   const handleGenerateDeck = async (event: React.FormEvent) => {
     event.preventDefault();
     setAiError("");
-
     const topic = aiTopic.trim();
     if (!topic) {
       setAiError("Enter a topic first.");
@@ -154,37 +186,35 @@ function DeckEditorPage() {
           count: aiCount,
         }),
       });
-
       const data = await res.json().catch(() => null);
-
       if (!res.ok) {
         setAiError(data?.error ?? "Failed to generate deck.");
-        if (typeof data?.remaining === "number") {
-          setAiRemaining(data.remaining);
-        }
+        if (typeof data?.remaining === "number") setAiRemaining(data.remaining);
         return;
       }
 
-      const words: DeckWord[] = Array.isArray(data?.words)
-        ? data.words.map((word: { native?: string; foreign?: string }) =>
-            createWord(word.native ?? "", word.foreign ?? ""),
-          )
+      const words = Array.isArray(data?.words)
+        ? data.words
+            .map((word: { native?: string; foreign?: string }) => ({
+              native: (word.native ?? "").trim(),
+              foreign: (word.foreign ?? "").trim(),
+            }))
+            .filter(
+              (word: { native: string; foreign: string }) =>
+                word.native && word.foreign,
+            )
         : [];
 
-      const deck = createDeck({
+      const { deck } = await createDeck({
         name: topic,
         nativeLang: newDeckNativeLang.trim() || language,
         foreignLang: newDeckForeignLang.trim() || learningLanguage,
+        words,
       });
-      deck.words = words;
-
-      const nextDecks = [deck, ...decks];
-      persistDecks(nextDecks);
+      await refreshDecks();
       setSelectedDeckId(deck.id);
       setAiTopic("");
-      if (typeof data?.remaining === "number") {
-        setAiRemaining(data.remaining);
-      }
+      if (typeof data?.remaining === "number") setAiRemaining(data.remaining);
     } catch {
       setAiError("Something went wrong. Please try again.");
     } finally {
@@ -192,72 +222,62 @@ function DeckEditorPage() {
     }
   };
 
-  const updateSelectedDeck = (updater: (deck: CustomDeck) => CustomDeck) => {
-    if (!selectedDeck) {
-      return;
+  const handleSave = async () => {
+    if (!draft) return;
+    setSaving(true);
+    try {
+      await updateDeck(draft.id, {
+        name: draft.name,
+        nativeLang: draft.nativeLang,
+        foreignLang: draft.foreignLang,
+        words: draft.words.map((word) => ({
+          native: word.native,
+          foreign: word.foreign,
+        })),
+      });
+      const refreshed = await getDeck(draft.id);
+      setDraft(refreshed.deck);
+      setDirty(false);
+      await refreshDecks();
+    } finally {
+      setSaving(false);
     }
+  };
 
-    const nextDecks = decks.map((deck) =>
-      deck.id === selectedDeck.id ? updater(deck) : deck,
+  const handleDeleteDeck = async () => {
+    if (!draft) return;
+    await deleteDeck(draft.id);
+    const remaining = await refreshDecks();
+    const nextPair = remaining.filter(
+      (deck) =>
+        deck.nativeLang.trim().toLowerCase() === language &&
+        deck.foreignLang.trim().toLowerCase() === learningLanguage,
     );
-
-    persistDecks(nextDecks);
-  };
-
-  const handleRenameDeck = (name: string) => {
-    updateSelectedDeck((deck) => ({ ...deck, name }));
-  };
-
-  const handleLanguageChange = (
-    field: "nativeLang" | "foreignLang",
-    value: string,
-  ) => {
-    updateSelectedDeck((deck) => ({ ...deck, [field]: value }));
-  };
-
-  const handleDeleteDeck = () => {
-    if (!selectedDeck) {
-      return;
-    }
-
-    const nextDecks = decks.filter((deck) => deck.id !== selectedDeck.id);
-    persistDecks(nextDecks);
-    setSelectedDeckId(
-      nextDecks.filter(
-        (deck) =>
-          deck.nativeLang.trim().toLowerCase() === language &&
-          deck.foreignLang.trim().toLowerCase() === learningLanguage,
-      )[0]?.id ?? "",
-    );
+    setSelectedDeckId(nextPair[0]?.id ?? "");
+    setDraft(null);
   };
 
   const handleAddWord = (event: React.FormEvent) => {
     event.preventDefault();
-
-    if (!selectedDeck) {
+    if (!draft || !newNativeWord.trim() || !newForeignWord.trim()) {
       return;
     }
-
-    if (!newNativeWord.trim() || !newForeignWord.trim()) {
-      return;
-    }
-
-    const word = createWord(newNativeWord.trim(), newForeignWord.trim());
-
-    updateSelectedDeck((deck) => ({
-      ...deck,
-      words: [...deck.words, word],
-    }));
-
+    const word: DeckWordRecord = {
+      id: tempId(),
+      native: newNativeWord.trim(),
+      foreign: newForeignWord.trim(),
+      orderIndex: draft.words.length,
+    };
+    mutateDraft((deck) => ({ ...deck, words: [...deck.words, word] }));
     setNewNativeWord("");
     setNewForeignWord("");
   };
 
   const updateWord = (
     wordId: string,
-    updater: (word: DeckWord) => DeckWord,
+    updater: (word: DeckWordRecord) => DeckWordRecord,
   ) => {
-    updateSelectedDeck((deck) => ({
+    mutateDraft((deck) => ({
       ...deck,
       words: deck.words.map((word) =>
         word.id === wordId ? updater(word) : word,
@@ -266,11 +286,33 @@ function DeckEditorPage() {
   };
 
   const deleteWord = (wordId: string) => {
-    updateSelectedDeck((deck) => ({
+    mutateDraft((deck) => ({
       ...deck,
       words: deck.words.filter((word) => word.id !== wordId),
     }));
   };
+
+  if (isReady && !isSignedIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+        <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            Sign in to edit decks
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            Your decks are synced to your account.
+          </p>
+          <button
+            type="button"
+            onClick={signIn}
+            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700"
+          >
+            Sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
@@ -430,7 +472,7 @@ function DeckEditorPage() {
                     >
                       <p className="text-sm font-semibold">{deck.name}</p>
                       <p className="text-xs opacity-80">
-                        {deck.words.length} words
+                        {deck.wordCount} words
                       </p>
                     </button>
                   ))}
@@ -441,19 +483,38 @@ function DeckEditorPage() {
         </aside>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-8">
-          {!selectedDeck ? (
+          {!draft ? (
             <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
               Choose a deck to start editing.
             </p>
           ) : (
             <div className="space-y-6">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {dirty ? "Unsaved changes" : "All changes saved"}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!dirty || saving}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save changes"}
+                </button>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="space-y-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                   Deck Name
                   <input
                     type="text"
-                    value={selectedDeck.name}
-                    onChange={(event) => handleRenameDeck(event.target.value)}
+                    value={draft.name}
+                    onChange={(event) =>
+                      mutateDraft((deck) => ({
+                        ...deck,
+                        name: event.target.value,
+                      }))
+                    }
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                   />
                 </label>
@@ -462,9 +523,12 @@ function DeckEditorPage() {
                     Native
                     <input
                       type="text"
-                      value={selectedDeck.nativeLang}
+                      value={draft.nativeLang}
                       onChange={(event) =>
-                        handleLanguageChange("nativeLang", event.target.value)
+                        mutateDraft((deck) => ({
+                          ...deck,
+                          nativeLang: event.target.value,
+                        }))
                       }
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     />
@@ -473,9 +537,12 @@ function DeckEditorPage() {
                     Foreign
                     <input
                       type="text"
-                      value={selectedDeck.foreignLang}
+                      value={draft.foreignLang}
                       onChange={(event) =>
-                        handleLanguageChange("foreignLang", event.target.value)
+                        mutateDraft((deck) => ({
+                          ...deck,
+                          foreignLang: event.target.value,
+                        }))
                       }
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     />
@@ -501,14 +568,14 @@ function DeckEditorPage() {
                   type="text"
                   value={newNativeWord}
                   onChange={(event) => setNewNativeWord(event.target.value)}
-                  placeholder={`Native (${selectedDeck.nativeLang})`}
+                  placeholder={`Native (${draft.nativeLang})`}
                   className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
                 <input
                   type="text"
                   value={newForeignWord}
                   onChange={(event) => setNewForeignWord(event.target.value)}
-                  placeholder={`Foreign (${selectedDeck.foreignLang})`}
+                  placeholder={`Foreign (${draft.foreignLang})`}
                   className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
                 <button
@@ -529,16 +596,13 @@ function DeckEditorPage() {
                       <th className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
                         Foreign
                       </th>
-                      <th className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
-                        Word id
-                      </th>
                       <th className="px-4 py-3 text-right font-semibold text-slate-800 dark:text-slate-200">
                         Action
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {selectedDeck.words.map((word) => (
+                    {draft.words.map((word) => (
                       <tr key={word.id} className="bg-white dark:bg-slate-950">
                         <td className="px-4 py-3">
                           <input
@@ -565,9 +629,6 @@ function DeckEditorPage() {
                             }
                             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                           />
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
-                          {word.id}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button

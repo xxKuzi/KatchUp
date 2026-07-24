@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
+import DeckMessage from "../_components/DeckMessage";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { Language } from "@/app/_lib/translations";
 import {
@@ -13,11 +14,10 @@ import {
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
 import { getAllWords } from "../_lib/learning/wordDatabase";
-import {
-  loadCustomDecks,
-  MISTAKES_PRACTICE_ENERGY_REWARD,
-} from "@/app/my-decks/_lib/customDecks";
+import { MISTAKES_PRACTICE_ENERGY_REWARD } from "@/app/my-decks/_lib/customDecks";
 import { gainEnergy, spendEnergy } from "@/app/_lib/energy";
+import { useDeckSession } from "../_hooks/useDeckSession";
+import { useAuthState } from "@/app/_lib/auth";
 
 interface PracticeWord {
   id: string;
@@ -26,6 +26,11 @@ interface PracticeWord {
 }
 
 const MAX_PAIRS = 6;
+const GATE = {
+  name: "Word Pairing",
+  description: "Match each word with its translation.",
+  bgImage: "guess_match.png",
+};
 
 function hashSeed(value: string): number {
   let hash = 0;
@@ -66,6 +71,7 @@ function buildRoundWords(words: PracticeWord[], seed: string): PracticeWord[] {
 const GuessMatchPage = () => {
   const searchParams = useSearchParams();
   const { language } = useLanguage();
+  const { isSignedIn, isReady, signIn } = useAuthState();
 
   const deckId = searchParams.get("deck") ?? "";
   const topicId = searchParams.get("topicId") ?? "";
@@ -74,27 +80,31 @@ const GuessMatchPage = () => {
     ? Math.max(1, Math.min(5, level))
     : 1;
   const isEnergyReview = searchParams.get("energyReview") === "1";
+  const sessionMode =
+    searchParams.get("mode") === "finish" ? "finish" : "practice";
 
   const [attempt, setAttempt] = useState(0);
 
-  const customDeck = useMemo(() => {
-    if (!deckId) {
-      return null;
-    }
-    return loadCustomDecks().find((item) => item.id === deckId) ?? null;
-  }, [deckId]);
+  const deckSession = useDeckSession(deckId || null, sessionMode);
 
   const allWords = useMemo(() => getAllWords("german"), []);
   const roundSeed = deckId
-    ? `deck:${deckId}:guess-match:${attempt}`
+    ? `deck:${deckId}:${sessionMode}:guess-match:${
+        deckSession.session?.words.map((w) => w.id).join(",") ?? ""
+      }`
     : `${topicId || "default"}:${safeLevel}:guess-match:${attempt}`;
 
-  const pairs = useMemo(() => {
+  const pairs = useMemo<PracticeWord[]>(() => {
     if (deckId) {
-      return customDeck ? buildRoundWords(customDeck.words, roundSeed) : [];
+      const words = (deckSession.session?.words ?? []).map((word) => ({
+        id: word.id,
+        native: word.native,
+        foreign: word.foreign,
+      }));
+      return words.slice(0, MAX_PAIRS);
     }
     return buildRoundWords(allWords, roundSeed);
-  }, [deckId, customDeck, allWords, roundSeed]);
+  }, [deckId, deckSession.session, allWords, roundSeed]);
 
   const leftTiles = useMemo(
     () => shuffleWithSeed(pairs, `${roundSeed}:left`),
@@ -105,6 +115,40 @@ const GuessMatchPage = () => {
     [pairs, roundSeed],
   );
 
+  if (deckId) {
+    if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
+      return (
+        <DeckMessage
+          {...GATE}
+          title="Sign in to practice this deck"
+          body="Your progress is saved to your account."
+          action={{ label: "Sign in", onClick: signIn }}
+        />
+      );
+    }
+    if (deckSession.status === "loading" || deckSession.status === "idle") {
+      return <DeckMessage {...GATE} title="Loading deck…" />;
+    }
+    if (deckSession.status === "notfound") {
+      return (
+        <DeckMessage {...GATE} title="Deck not found" backHref="/my-decks" />
+      );
+    }
+    if (deckSession.status === "empty") {
+      return (
+        <DeckMessage
+          {...GATE}
+          title={
+            sessionMode === "finish"
+              ? "No hard words to review yet"
+              : "You've mastered every word in this deck! 🎉"
+          }
+          backHref="/my-decks"
+        />
+      );
+    }
+  }
+
   return (
     <GuessMatchRound
       key={roundSeed}
@@ -112,11 +156,19 @@ const GuessMatchPage = () => {
       leftTiles={leftTiles}
       rightTiles={rightTiles}
       deckId={deckId}
+      sessionMode={sessionMode}
       topicId={topicId}
       safeLevel={safeLevel}
       language={language}
       isEnergyReview={isEnergyReview}
-      onReplay={() => setAttempt((value) => value + 1)}
+      onResult={deckId ? deckSession.recordResult : undefined}
+      onReplay={() => {
+        if (deckId) {
+          deckSession.reload();
+        } else {
+          setAttempt((value) => value + 1);
+        }
+      }}
     />
   );
 };
@@ -126,10 +178,12 @@ interface GuessMatchRoundProps {
   leftTiles: PracticeWord[];
   rightTiles: PracticeWord[];
   deckId: string;
+  sessionMode: "practice" | "finish";
   topicId: string;
   safeLevel: number;
   language: Language;
   isEnergyReview: boolean;
+  onResult?: (deckWordId: string, correct: boolean) => void;
   onReplay: () => void;
 }
 
@@ -139,10 +193,12 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     leftTiles,
     rightTiles,
     deckId,
+    sessionMode,
     topicId,
     safeLevel,
     language,
     isEnergyReview,
+    onResult,
     onReplay,
   } = props;
   const totalPairs = pairs.length;
@@ -203,6 +259,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
 
   const resolveAttempt = (leftId: string, rightId: string) => {
     if (leftId === rightId) {
+      onResult?.(leftId, true);
       const nextMatched = new Set(matchedIds);
       nextMatched.add(leftId);
       setMatchedIds(nextMatched);
@@ -215,6 +272,8 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
       return;
     }
 
+    // Wrong pairing: penalize the word the user was trying to match (left).
+    onResult?.(leftId, false);
     const nextMistakes = mistakes + 1;
     setMistakes(nextMistakes);
     setWrongPair({ left: leftId, right: rightId });
@@ -271,6 +330,12 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
       ? "Back to topic"
       : "Back to games";
 
+  const headerLabel = deckId
+    ? sessionMode === "finish"
+      ? "Finish Round"
+      : "Custom Deck"
+    : `Lesson ${safeLevel}`;
+
   const tileClass = (
     isMatched: boolean,
     isSelected: boolean,
@@ -289,13 +354,13 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
   return (
     <GamePage
       name="Word Pairing"
-      description="Match each German word with its English translation before the mistakes pile up. Reach 70% accuracy to complete the lesson."
+      description="Match each word with its translation before the mistakes pile up. Reach 70% accuracy to complete the lesson."
       bgImage="guess_match.png"
     >
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300 p-5 dark:from-emerald-700 dark:via-teal-700 dark:to-cyan-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-emerald-100">
-            {deckId ? "Custom Deck" : `Lesson ${safeLevel}`}
+            {headerLabel}
           </p>
           <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
             Synonym Match
@@ -401,6 +466,14 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
                 >
                   {backLabel}
                 </Link>
+                {deckId && sessionMode !== "finish" && (
+                  <Link
+                    href={`/games/guess-match?deck=${deckId}&mode=finish`}
+                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                  >
+                    🏁 Finish round
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={onReplay}

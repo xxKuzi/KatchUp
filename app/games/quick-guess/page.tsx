@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
+import DeckMessage from "../_components/DeckMessage";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { Language } from "@/app/_lib/translations";
 import {
@@ -14,11 +15,12 @@ import {
 } from "@/app/topics/_lib/topicsProgress";
 import { getAllWords } from "../_lib/learning/wordDatabase";
 import {
-  loadCustomDecks,
   recordMistake,
   MISTAKES_PRACTICE_ENERGY_REWARD,
 } from "@/app/my-decks/_lib/customDecks";
 import { gainEnergy, spendEnergy } from "@/app/_lib/energy";
+import { useDeckSession } from "../_hooks/useDeckSession";
+import { useAuthState } from "@/app/_lib/auth";
 
 interface PracticeWord {
   id: string;
@@ -70,6 +72,7 @@ function buildRoundWords(words: PracticeWord[], seed: string): PracticeWord[] {
 const QuickGuessPage = () => {
   const searchParams = useSearchParams();
   const { language } = useLanguage();
+  const { isSignedIn, isReady, signIn } = useAuthState();
 
   const deckId = searchParams.get("deck") ?? "";
   const topicId = searchParams.get("topicId") ?? "";
@@ -78,43 +81,91 @@ const QuickGuessPage = () => {
     ? Math.max(1, Math.min(5, level))
     : 1;
   const isEnergyReview = searchParams.get("energyReview") === "1";
+  const sessionMode =
+    searchParams.get("mode") === "finish" ? "finish" : "practice";
 
   const [attempt, setAttempt] = useState(0);
 
-  const customDeck = useMemo(() => {
-    if (!deckId) {
-      return null;
-    }
-    return loadCustomDecks().find((item) => item.id === deckId) ?? null;
-  }, [deckId]);
+  const deckSession = useDeckSession(deckId || null, sessionMode);
 
   const allWords = useMemo(() => getAllWords("german"), []);
-  const roundSeed = deckId
-    ? `deck:${deckId}:quick-guess:${attempt}`
-    : `${topicId || "default"}:${safeLevel}:quick-guess:${attempt}`;
+  const roundSeed = `${topicId || "default"}:${safeLevel}:quick-guess:${attempt}`;
 
-  const words = useMemo(() => {
+  const words = useMemo<PracticeWord[]>(() => {
     if (deckId) {
-      return customDeck ? buildRoundWords(customDeck.words, roundSeed) : [];
+      return (deckSession.session?.words ?? []).map((word) => ({
+        id: word.id,
+        native: word.native,
+        foreign: word.foreign,
+      }));
     }
     return buildRoundWords(allWords, roundSeed);
-  }, [deckId, customDeck, allWords, roundSeed]);
+  }, [deckId, deckSession.session, allWords, roundSeed]);
 
-  const mistakeLanguagePair = customDeck
-    ? { nativeLang: customDeck.nativeLang, foreignLang: customDeck.foreignLang }
-    : { nativeLang: "english", foreignLang: "deutsch" };
+  // Deck path: gate on auth/session status before rendering the round.
+  if (deckId) {
+    const gate = { name: "Speed Spelling", description: "Type the correct word before the timer runs out.", bgImage: "flip_cards.png" };
+    if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
+      return (
+        <DeckMessage
+          {...gate}
+          title="Sign in to practice this deck"
+          body="Your progress is saved to your account."
+          action={{ label: "Sign in", onClick: signIn }}
+        />
+      );
+    }
+    if (deckSession.status === "loading" || deckSession.status === "idle") {
+      return <DeckMessage {...gate} title="Loading deck…" />;
+    }
+    if (deckSession.status === "notfound") {
+      return (
+        <DeckMessage {...gate} title="Deck not found" backHref="/my-decks" />
+      );
+    }
+    if (deckSession.status === "empty") {
+      return (
+        <DeckMessage
+          {...gate}
+          title={
+            sessionMode === "finish"
+              ? "No hard words to review yet"
+              : "You've mastered every word in this deck! 🎉"
+          }
+          body={
+            sessionMode === "finish"
+              ? "Practice some rounds first, then the toughest words show up here."
+              : "Nothing left to practice right now."
+          }
+          backHref="/my-decks"
+        />
+      );
+    }
+  }
 
   return (
     <QuickGuessRound
-      key={roundSeed}
+      key={
+        deckId
+          ? `deck:${deckId}:${sessionMode}:${words.map((w) => w.id).join(",")}`
+          : roundSeed
+      }
       words={words}
       deckId={deckId}
+      sessionMode={sessionMode}
       topicId={topicId}
       safeLevel={safeLevel}
       language={language}
-      mistakeLanguagePair={mistakeLanguagePair}
       isEnergyReview={isEnergyReview}
-      onReplay={() => setAttempt((value) => value + 1)}
+      onResult={deckId ? deckSession.recordResult : undefined}
+      onKnown={deckId ? deckSession.markKnown : undefined}
+      onReplay={() => {
+        if (deckId) {
+          deckSession.reload();
+        } else {
+          setAttempt((value) => value + 1);
+        }
+      }}
     />
   );
 };
@@ -122,11 +173,13 @@ const QuickGuessPage = () => {
 interface QuickGuessRoundProps {
   words: PracticeWord[];
   deckId: string;
+  sessionMode: "practice" | "finish";
   topicId: string;
   safeLevel: number;
   language: Language;
-  mistakeLanguagePair: { nativeLang: string; foreignLang: string };
   isEnergyReview: boolean;
+  onResult?: (deckWordId: string, correct: boolean) => void;
+  onKnown?: (deckWordId: string) => void;
   onReplay: () => void;
 }
 
@@ -134,11 +187,13 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
   const {
     words,
     deckId,
+    sessionMode,
     topicId,
     safeLevel,
     language,
-    mistakeLanguagePair,
     isEnergyReview,
+    onResult,
+    onKnown,
     onReplay,
   } = props;
 
@@ -165,6 +220,44 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
   const scorePercent =
     totalWords > 0 ? Math.round((correctCount / totalWords) * 100) : 0;
 
+  const goToNext = (nextCorrect: number) => {
+    const nextIndex = questionIndex + 1;
+
+    if (nextIndex >= totalWords) {
+      const finalScore =
+        totalWords > 0 ? Math.round((nextCorrect / totalWords) * 100) : 0;
+      const passed = finalScore >= 70;
+
+      if (isEnergyReview) {
+        gainEnergy(MISTAKES_PRACTICE_ENERGY_REWARD);
+      } else {
+        spendEnergy(1);
+      }
+      setCorrectCount(nextCorrect);
+      setLessonPassed(passed);
+      setIsFinished(true);
+
+      if (
+        passed &&
+        topicId &&
+        !deckId &&
+        !completionSaved.current &&
+        totalWords > 0
+      ) {
+        const state = loadTopicsState(language);
+        const { nextState } = completeTopicLevel(state, topicId, safeLevel);
+        saveTopicsState(language, nextState);
+        completionSaved.current = true;
+      }
+      return;
+    }
+
+    setCorrectCount(nextCorrect);
+    lockedRef.current = false;
+    setIsLocked(false);
+    setQuestionIndex(nextIndex);
+  };
+
   const advance = (wasCorrect: boolean, revealText?: string) => {
     if (lockedRef.current) {
       return;
@@ -175,11 +268,15 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
 
     const nextCorrect = correctCount + (wasCorrect ? 1 : 0);
 
-    if (!wasCorrect && currentWord) {
-      recordMistake(
-        { native: currentWord.native, foreign: currentWord.foreign },
-        mistakeLanguagePair,
-      );
+    if (currentWord) {
+      if (deckId) {
+        onResult?.(currentWord.id, wasCorrect);
+      } else if (!wasCorrect) {
+        recordMistake(
+          { native: currentWord.native, foreign: currentWord.foreign },
+          { nativeLang: "english", foreignLang: "deutsch" },
+        );
+      }
     }
 
     setBanner(
@@ -194,50 +291,22 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
     );
 
     window.setTimeout(
-      () => {
-        const nextIndex = questionIndex + 1;
-
-        if (nextIndex >= totalWords) {
-          const finalScore =
-            totalWords > 0 ? Math.round((nextCorrect / totalWords) * 100) : 0;
-          const passed = finalScore >= 70;
-
-          if (isEnergyReview) {
-            gainEnergy(MISTAKES_PRACTICE_ENERGY_REWARD);
-          } else {
-            spendEnergy(1);
-          }
-          setCorrectCount(nextCorrect);
-          setLessonPassed(passed);
-          setIsFinished(true);
-
-          if (
-            passed &&
-            topicId &&
-            !deckId &&
-            !completionSaved.current &&
-            totalWords > 0
-          ) {
-            const state = loadTopicsState(language);
-            const { nextState } = completeTopicLevel(
-              state,
-              topicId,
-              safeLevel,
-            );
-            saveTopicsState(language, nextState);
-            completionSaved.current = true;
-          }
-
-          return;
-        }
-
-        setCorrectCount(nextCorrect);
-        lockedRef.current = false;
-        setIsLocked(false);
-        setQuestionIndex(nextIndex);
-      },
+      () => goToNext(nextCorrect),
       wasCorrect ? CORRECT_ADVANCE_DELAY_MS : REVEAL_ADVANCE_DELAY_MS,
     );
+  };
+
+  // Deck path only: "I already know this" marks the word known and skips it
+  // without counting as a scored attempt.
+  const handleKnowIt = () => {
+    if (!currentWord || lockedRef.current) {
+      return;
+    }
+    lockedRef.current = true;
+    setIsLocked(true);
+    onKnown?.(currentWord.id);
+    setBanner({ tone: "good", text: "Marked as known" });
+    window.setTimeout(() => goToNext(correctCount), CORRECT_ADVANCE_DELAY_MS);
   };
 
   useEffect(() => {
@@ -304,16 +373,22 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
       ? "Back to topic"
       : "Back to games";
 
+  const headerLabel = deckId
+    ? sessionMode === "finish"
+      ? "Finish Round"
+      : "Custom Deck"
+    : `Lesson ${safeLevel}`;
+
   return (
     <GamePage
       name="Speed Spelling"
-      description="Type the correct German word before the timer runs out. Reach 70% to complete the lesson."
+      description="Type the correct word before the timer runs out. Reach 70% to complete the lesson."
       bgImage="flip_cards.png"
     >
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-sky-300 via-cyan-300 to-teal-300 p-5 dark:from-sky-700 dark:via-cyan-700 dark:to-teal-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-sky-100">
-            {deckId ? "Custom Deck" : `Lesson ${safeLevel}`}
+            {headerLabel}
           </p>
           <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
             Type the Translation
@@ -348,7 +423,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
                   />
                 </div>
                 <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  Type this word in German
+                  Type this word
                 </p>
                 <p className="mt-2 text-4xl font-black text-slate-900 dark:text-slate-100">
                   {currentWord.native}
@@ -395,9 +470,21 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
                 </p>
               )}
 
-              <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                Correct answers: {correctCount}/{totalWords}
-              </p>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Correct answers: {correctCount}/{totalWords}
+                </p>
+                {deckId && onKnown && (
+                  <button
+                    type="button"
+                    onClick={handleKnowIt}
+                    disabled={isLocked}
+                    className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                  >
+                    ✓ I already know this
+                  </button>
+                )}
+              </div>
             </>
           )}
 
@@ -440,6 +527,14 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
                 >
                   {backLabel}
                 </Link>
+                {deckId && sessionMode !== "finish" && (
+                  <Link
+                    href={`/games/quick-guess?deck=${deckId}&mode=finish`}
+                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
+                  >
+                    🏁 Finish round
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={onReplay}

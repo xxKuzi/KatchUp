@@ -1,10 +1,14 @@
 "use client";
-/* eslint-disable react-hooks/purity */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import GamePage from "../_components/GamePage";
-import { SupportedLanguage, LectureWord } from "../_lib/learning/types";
+import DeckMessage from "../_components/DeckMessage";
+import { SupportedLanguage } from "../_lib/learning/types";
 import { getAllWords } from "../_lib/learning/wordDatabase";
+import { useDeckSession } from "../_hooks/useDeckSession";
+import { useAuthState } from "@/app/_lib/auth";
 import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
 
 const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
@@ -15,6 +19,17 @@ const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
 const DECK_SIZE = 15;
 const SWIPE_THRESHOLD = 110;
 const TAP_TOLERANCE = 8;
+const GATE = {
+  name: "Flip Cards",
+  description: "A calm, self-paced flashcard deck.",
+  bgImage: "flip_cards.png",
+};
+
+interface CardWord {
+  id: string;
+  native: string;
+  foreign: string;
+}
 
 function shuffleArray<T>(items: T[]): T[] {
   const cloned = [...items];
@@ -52,12 +67,20 @@ function getPreferredLanguage(): SupportedLanguage {
 type Verdict = "known" | "practice";
 
 const FlipCardsPage = () => {
+  const searchParams = useSearchParams();
+  const { isSignedIn, isReady, signIn } = useAuthState();
+
+  const deckId = searchParams.get("deck") ?? "";
+  const sessionMode =
+    searchParams.get("mode") === "finish" ? "finish" : "practice";
+  const deckSession = useDeckSession(deckId || null, sessionMode);
+
   const [language, setLanguage] = useState<SupportedLanguage>("german");
-  const [deck, setDeck] = useState<LectureWord[]>([]);
+  const [deck, setDeck] = useState<CardWord[]>([]);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [known, setKnown] = useState<LectureWord[]>([]);
-  const [practice, setPractice] = useState<LectureWord[]>([]);
+  const [known, setKnown] = useState<CardWord[]>([]);
+  const [practice, setPractice] = useState<CardWord[]>([]);
   const [leaving, setLeaving] = useState<Verdict | null>(null);
 
   // Drag state (kept in refs so pointer handlers stay stable).
@@ -66,9 +89,7 @@ const FlipCardsPage = () => {
   const dragging = useRef(false);
   const moved = useRef(false);
 
-  const buildDeck = (lang: SupportedLanguage, source?: LectureWord[]) => {
-    const words = source ?? getAllWords(lang);
-    setDeck(shuffleArray(words).slice(0, DECK_SIZE));
+  const resetPiles = () => {
     setIndex(0);
     setFlipped(false);
     setKnown([]);
@@ -77,12 +98,37 @@ const FlipCardsPage = () => {
     setLeaving(null);
   };
 
+  const buildDeck = (lang: SupportedLanguage, source?: CardWord[]) => {
+    const words = source ?? getAllWords(lang);
+    setDeck(shuffleArray(words).slice(0, DECK_SIZE));
+    resetPiles();
+  };
+
+  // Non-deck path: seed from the base word DB in the preferred language.
   useEffect(() => {
+    if (deckId) {
+      return;
+    }
     const preferred = getPreferredLanguage();
     setLanguage(preferred);
     buildDeck(preferred);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [deckId]);
+
+  // Deck path: load the session's selected words.
+  useEffect(() => {
+    if (!deckId || !deckSession.session) {
+      return;
+    }
+    setDeck(
+      deckSession.session.words.map((word) => ({
+        id: word.id,
+        native: word.native,
+        foreign: word.foreign,
+      })),
+    );
+    resetPiles();
+  }, [deckId, deckSession.session]);
 
   const currentCard = deck[index] ?? null;
   const finished = deck.length > 0 && index >= deck.length;
@@ -102,8 +148,15 @@ const FlipCardsPage = () => {
 
     if (verdict === "known") {
       setKnown((previous) => [...previous, currentCard]);
+      if (deckId) {
+        deckSession.markKnown(currentCard.id);
+      }
     } else {
       setPractice((previous) => [...previous, currentCard]);
+      if (deckId) {
+        // "Still learning" → a wrong attempt so the word resurfaces.
+        deckSession.recordResult(currentCard.id, false);
+      }
     }
 
     window.setTimeout(() => {
@@ -163,6 +216,41 @@ const FlipCardsPage = () => {
     buildDeck(lang);
   };
 
+  // Deck-path gating.
+  if (deckId) {
+    if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
+      return (
+        <DeckMessage
+          {...GATE}
+          title="Sign in to practice this deck"
+          body="Your progress is saved to your account."
+          action={{ label: "Sign in", onClick: signIn }}
+        />
+      );
+    }
+    if (deckSession.status === "loading" || deckSession.status === "idle") {
+      return <DeckMessage {...GATE} title="Loading deck…" />;
+    }
+    if (deckSession.status === "notfound") {
+      return (
+        <DeckMessage {...GATE} title="Deck not found" backHref="/my-decks" />
+      );
+    }
+    if (deckSession.status === "empty") {
+      return (
+        <DeckMessage
+          {...GATE}
+          title={
+            sessionMode === "finish"
+              ? "No hard words to review yet"
+              : "You've mastered every word in this deck! 🎉"
+          }
+          backHref="/my-decks"
+        />
+      );
+    }
+  }
+
   const rotation = dragX / 18;
   const swipeHint: Verdict | null =
     dragX > 40 ? "known" : dragX < -40 ? "practice" : null;
@@ -178,21 +266,31 @@ const FlipCardsPage = () => {
     >
       {/* Language + progress bar */}
       <div className="w-full max-w-xl">
-        <div className="flex items-center justify-center gap-2">
-          {(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map((lang) => (
-            <button
-              key={lang}
-              onClick={() => switchLanguage(lang)}
-              className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                language === lang
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-              }`}
-            >
-              {LANGUAGE_LABELS[lang]}
-            </button>
-          ))}
-        </div>
+        {!deckId && (
+          <div className="flex items-center justify-center gap-2">
+            {(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map(
+              (lang) => (
+                <button
+                  key={lang}
+                  onClick={() => switchLanguage(lang)}
+                  className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                    language === lang
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                  }`}
+                >
+                  {LANGUAGE_LABELS[lang]}
+                </button>
+              ),
+            )}
+          </div>
+        )}
+        {deckId && deckSession.session && (
+          <p className="text-center text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+            {deckSession.session.deckName}
+            {sessionMode === "finish" ? " · Finish round" : ""}
+          </p>
+        )}
 
         <div className="mt-5 flex items-center justify-between text-xs font-medium text-zinc-500 dark:text-zinc-400">
           <span className="inline-flex items-center gap-1.5">
@@ -269,7 +367,7 @@ const FlipCardsPage = () => {
                   className="absolute inset-0 flex flex-col items-center justify-center rounded-3xl border border-blue-200 bg-blue-50 p-6 text-center shadow-xl dark:border-blue-900 dark:bg-blue-950/40"
                 >
                   <span className="absolute top-4 left-5 text-[11px] font-semibold uppercase tracking-wider text-blue-500/70">
-                    {LANGUAGE_LABELS[language]}
+                    {deckId ? "Translation" : LANGUAGE_LABELS[language]}
                   </span>
                   <p className="text-4xl font-black text-blue-700 dark:text-blue-300">
                     {currentCard.foreign}
@@ -354,13 +452,31 @@ const FlipCardsPage = () => {
                   Review the {practice.length} you&apos;re learning
                 </button>
               )}
-              <button
-                onClick={() => buildDeck(language)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Shuffle a fresh deck
-              </button>
+              {deckId ? (
+                <button
+                  onClick={() => deckSession.reload()}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Next round
+                </button>
+              ) : (
+                <button
+                  onClick={() => buildDeck(language)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Shuffle a fresh deck
+                </button>
+              )}
+              {deckId && (
+                <Link
+                  href="/my-decks"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                >
+                  Back to decks
+                </Link>
+              )}
             </div>
           </div>
         )
