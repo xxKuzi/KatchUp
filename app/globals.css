@@ -145,6 +145,22 @@ body {
   animation: float 9s ease-in-out infinite;
 }
 
+@keyframes float-mascot {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-14px) translateX(7px) rotate(2.8deg);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+}
+
+.animate-float-mascot {
+  animation: float-mascot 9s ease-in-out infinite;
+}
+
 .animate-float-medium {
   animation: float-reverse 7s ease-in-out infinite;
 }

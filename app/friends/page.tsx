@@ -491,8 +491,22 @@ export default function FriendsPage() {
           </aside>
 
           {/* RIGHT: quest + friends */}
-          <div className="flex flex-col gap-8">
-            <section className="rounded-[2.25rem] border border-white/70 bg-white/80 p-6 shadow-[0_20px_50px_-24px_rgba(56,189,248,0.35)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03] sm:p-8">
+          <div className="relative flex flex-col gap-8">
+            {/* Mascot duo peeking in from above, bottom half tucked behind the cards below */}
+            <div className="pointer-events-none absolute -top-12 left-1/2 z-0 flex -translate-x-1/2 items-end justify-center gap-3 sm:-top-16 sm:gap-6">
+              <img
+                src="/katchup_maskot_original.png"
+                alt="KatchUp Mascot"
+                className="h-32 w-32 select-none object-contain sm:h-48 sm:w-48 md:h-56 md:w-56"
+              />
+              <img
+                src="/katchup_mascot.png"
+                alt="Ketchup buddy"
+                className="h-32 w-32 select-none object-contain sm:h-44 sm:w-44 md:h-52 md:w-52"
+              />
+            </div>
+
+            <section className="relative z-10 mt-24 rounded-[2.25rem] border border-white/70 bg-white/80 p-6 shadow-[0_20px_50px_-24px_rgba(56,189,248,0.35)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03] sm:p-8 sm:mt-34">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="inline-flex items-center gap-2 text-4xl font-bold text-slate-900 dark:text-white">
                   My friends

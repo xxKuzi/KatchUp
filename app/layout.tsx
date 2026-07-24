@@ -36,7 +36,7 @@ export default async function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="auto"
+          defaultTheme="dark"
           enableSystem
           enableColorScheme
         >

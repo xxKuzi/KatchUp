@@ -10,39 +10,52 @@ export default function Games() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background font-sans text-foreground">
       <main className="flex min-h-screen w-full flex-col items-center bg-background px-6 pb-24 pt-6 sm:px-10 lg:px-16">
-        <section className="relative w-full max-w-6xl py-12 md:py-16 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
-          {/* Subtle decorative glow in background */}
-          <div className="absolute -left-10 -top-10 -z-10 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-600/5" />
-          <div className="absolute left-1/3 top-10 -z-10 h-64 w-64 rounded-full bg-indigo-500/5 blur-3xl dark:bg-indigo-600/5" />
+        <section className="relative w-full max-w-6xl overflow-hidden py-14 md:py-20">
+          {/* Decorative glow / mesh background */}
+          <div className="absolute -left-16 -top-16 -z-10 h-80 w-80 rounded-full bg-blue-500/15 blur-3xl dark:bg-blue-600/10" />
+          <div className="absolute right-0 top-4 -z-10 h-72 w-72 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-600/10" />
+          <div className="absolute left-1/2 bottom-0 -z-10 h-56 w-56 -translate-x-1/2 rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-600/10" />
 
-          {/* Left Column (Content) */}
-          <div className="flex-1 text-left w-full">
+          {/* Floating decorative emojis */}
+          <span className="animate-float-medium absolute left-4 top-6 -z-10 hidden text-4xl opacity-70 sm:block md:left-10">
+            🎯
+          </span>
+          <span className="animate-float-fast absolute right-6 top-2 -z-10 hidden text-3xl opacity-60 sm:block md:right-16">
+            ⚡
+          </span>
+          <span className="animate-float-slow absolute bottom-4 left-1/4 -z-10 hidden text-3xl opacity-50 sm:block">
+            🏆
+          </span>
+
+          <div className="flex flex-col items-center text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
               <span className="h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
               Online Games
             </span>
 
-            <h1 className="mt-6 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-6xl">
-              Pick a game{" "}
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 whitespace-nowrap">
-                and jump in.
+            <h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
+              Learn words{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
+                by playing.
               </span>
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg">
-              Practice vocabulary with fast rounds, live competition, and
-              adaptive challenge levels. Everything here is built to feel like
-              play, not homework.
-            </p>
-          </div>
 
-          {/* Right Column (Mascot) */}
-          <div className="flex items-center justify-center md:justify-end w-full md:w-auto shrink-0">
-            {/* Mascot Container with entry and hover animations */}
-            <div className="animate-mascot-appear relative h-36 w-36 sm:h-44 sm:w-44 md:h-48 md:w-48 lg:h-56 lg:w-56">
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg">
+              Practice vocabulary with fast rounds, live competition, and
+              adaptive challenge levels. Everything here is built to feel
+              like play, not homework.
+            </p>
+
+            {/* Mascot with speech bubble */}
+            <div className="animate-mascot-appear relative mt-10 flex flex-col items-center">
+              <div className="relative mb-2 rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-md ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
+                Ready to play? 👋
+                <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white dark:bg-slate-800" />
+              </div>
               <img
-                src="/katchup_mascot.png"
+                src="/katchup_maskot_original.png"
                 alt="KatchUp Mascot"
-                className="h-full w-full object-contain animate-float-slow select-none pointer-events-none"
+                className="h-48 w-48 select-none object-contain animate-float-mascot pointer-events-none sm:h-60 sm:w-60 md:h-72 md:w-72"
               />
             </div>
           </div>
