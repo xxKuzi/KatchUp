@@ -129,7 +129,6 @@ const OneOfThreePage = () => {
 
     const isCorrect = option === currentQuestion.correctOption;
     setSelectedOption(option);
-    spendEnergy();
 
     window.setTimeout(() => {
       const nextCorrectCount = correctCount + (isCorrect ? 1 : 0);
@@ -142,6 +141,7 @@ const OneOfThreePage = () => {
             : 0;
         const passed = scorePercent >= 70;
 
+        spendEnergy();
         setCorrectCount(nextCorrectCount);
         setLessonPassed(passed);
         setIsFinished(true);

@@ -8,8 +8,8 @@ function GameCarousel() {
   const cards = [
     {
       name: "Word Pairing",
-      url: "#",
-      img: "one_of_three.png",
+      url: "/games/guess-match",
+      img: "guess_match.png",
       color: "green",
       description: "Connect the synonyms",
       feature: "classic",
@@ -26,7 +26,7 @@ function GameCarousel() {
     },
     {
       name: "Speed Spelling",
-      url: "#",
+      url: "/games/quick-guess",
       img: "flip_cards.png",
       color: "yellow",
       description: "Type it before time runs out",

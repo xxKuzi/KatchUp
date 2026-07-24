@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export const MAX_ENERGY = 30;
+export const MAX_ENERGY = 20;
 
 const STORAGE_KEY = "katchup-energy";
 const ENERGY_EVENT = "katchup-energy-change";
