@@ -15,9 +15,9 @@ import {
 import { getAllWords } from "../_lib/learning/wordDatabase";
 import {
   loadCustomDecks,
-  MISTAKES_PRACTICE_ENERGY_COST,
+  MISTAKES_PRACTICE_ENERGY_REWARD,
 } from "@/app/my-decks/_lib/customDecks";
-import { spendEnergy } from "@/app/_lib/energy";
+import { gainEnergy, spendEnergy } from "@/app/_lib/energy";
 
 interface PracticeWord {
   id: string;
@@ -179,7 +179,11 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     );
     const passed = scorePercent >= 70;
 
-    spendEnergy(isEnergyReview ? MISTAKES_PRACTICE_ENERGY_COST : 1);
+    if (isEnergyReview) {
+      gainEnergy(MISTAKES_PRACTICE_ENERGY_REWARD);
+    } else {
+      spendEnergy(1);
+    }
     setLessonPassed(passed);
     setIsFinished(true);
 

@@ -1,11 +1,13 @@
 import {
   boolean,
+  index,
   integer,
   json,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -125,3 +127,30 @@ export const asyncScores = pgTable("async_scores", {
   timeMs: integer("time_ms").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
+
+export const userWordProgress = pgTable(
+  "user_word_progress",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    wordId: text("word_id").notNull(),
+    language: text("language").notNull(),
+    isUnlocked: boolean("is_unlocked").default(true).notNull(),
+    isMastered: boolean("is_mastered").default(false).notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    userWordUnique: uniqueIndex("user_word_progress_user_id_word_id_key").on(
+      table.userId,
+      table.wordId,
+    ),
+    userLanguageIdx: index("user_word_progress_user_id_language_idx").on(
+      table.userId,
+      table.language,
+    ),
+  }),
+);

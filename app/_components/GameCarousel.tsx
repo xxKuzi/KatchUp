@@ -38,9 +38,9 @@ function GameCarousel() {
       url: "/games/flip-cards",
       img: "flip_cards.png",
       color: "red",
-      description: "Match translations fast",
-      feature: "favorite",
-      featureColor: "green",
+      description: "Self-paced flashcards",
+      feature: "study",
+      featureColor: "blue",
     },
   ];
 

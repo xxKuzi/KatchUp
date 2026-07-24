@@ -16,9 +16,9 @@ import { getAllWords } from "../_lib/learning/wordDatabase";
 import {
   loadCustomDecks,
   recordMistake,
-  MISTAKES_PRACTICE_ENERGY_COST,
+  MISTAKES_PRACTICE_ENERGY_REWARD,
 } from "@/app/my-decks/_lib/customDecks";
-import { spendEnergy } from "@/app/_lib/energy";
+import { gainEnergy, spendEnergy } from "@/app/_lib/energy";
 
 interface PracticeWord {
   id: string;
@@ -202,7 +202,11 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
             totalWords > 0 ? Math.round((nextCorrect / totalWords) * 100) : 0;
           const passed = finalScore >= 70;
 
-          spendEnergy(isEnergyReview ? MISTAKES_PRACTICE_ENERGY_COST : 1);
+          if (isEnergyReview) {
+            gainEnergy(MISTAKES_PRACTICE_ENERGY_REWARD);
+          } else {
+            spendEnergy(1);
+          }
           setCorrectCount(nextCorrect);
           setLessonPassed(passed);
           setIsFinished(true);

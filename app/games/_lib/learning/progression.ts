@@ -42,7 +42,7 @@ export function getActiveWords(progress: LearningProgress): LectureWord[] {
   );
 }
 
-function computeCurrentLecture(progress: LearningProgress): number {
+export function computeCurrentLecture(progress: LearningProgress): number {
   const activeWords = getActiveWords(progress);
   if (activeWords.length === 0) {
     return TOTAL_LECTURES;

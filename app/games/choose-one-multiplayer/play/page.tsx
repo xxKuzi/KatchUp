@@ -21,7 +21,7 @@ type MatchMode = "live" | "async";
 
 const DEFAULT_PLAYER_AVATAR = "https://i.pravatar.cc/100?img=12";
 const DEFAULT_OPPONENT_AVATAR = "https://i.pravatar.cc/100?img=34";
-const MATCH_HISTORY_KEY = "katchup-flip-cards-history-v1";
+const MATCH_HISTORY_KEY = "katchup-choose-one-multi-history-v1";
 
 interface LiveMatchPayload {
   match: {
@@ -92,7 +92,7 @@ function buildQuestions(language: SupportedLanguage): MatchQuestion[] {
   });
 }
 
-export default function FlipCardsPlayPage() {
+export default function ChooseOneMultiplayerPlayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -489,11 +489,11 @@ export default function FlipCardsPlayPage() {
   };
 
   const restartMatch = () => {
-    router.push("/games/flip-cards");
+    router.push("/games/choose-one-multiplayer");
   };
 
   const backToPregame = () => {
-    router.push("/games/flip-cards");
+    router.push("/games/choose-one-multiplayer");
   };
 
   const rivalName =
@@ -507,10 +507,14 @@ export default function FlipCardsPlayPage() {
 
   return (
     <GamePage
-      name={mode === "live" ? "Flip Cards Match" : "Flip Cards Score Rush"}
+      name={
+        mode === "live"
+          ? "Choose One Multiplayer Match"
+          : "Choose One Score Rush"
+      }
       description={
         mode === "live"
-          ? "Both players race through a shared set of cards. First player to reach 10 correct answers wins."
+          ? "Both players race through a shared set of prompts. First player to reach 10 correct answers wins."
           : "Answer quickly for timing bonus and push your score onto the online board."
       }
       bgImage="flip_cards.png"

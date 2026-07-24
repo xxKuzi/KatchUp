@@ -151,7 +151,7 @@ export function saveCustomDecks(decks: CustomDeck[]): void {
 
 const MISTAKES_DECK_PREFIX = "auto-mistakes";
 export const MISTAKES_DECK_NAME = "Words to review - mistakes";
-export const MISTAKES_PRACTICE_ENERGY_COST = 5;
+export const MISTAKES_PRACTICE_ENERGY_REWARD = 5;
 
 function mistakesDeckId(nativeLang: string, foreignLang: string): string {
   return `${MISTAKES_DECK_PREFIX}:${nativeLang}:${foreignLang}`;

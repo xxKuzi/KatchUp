@@ -14,13 +14,22 @@ interface Slide {
 
 const slides: Slide[] = [
   {
+    name: "Choose One Multiplayer",
+    url: "/games/choose-one-multiplayer",
+    img: "flip_cards.png",
+    tagline: "Live 1v1 · Race to 10",
+    description:
+      "Go head-to-head with another player in real time. Same ten prompts, pick the right translation faster than your rival. First to finish wins.",
+    gradient: "from-emerald-900/90 via-emerald-900/40",
+  },
+  {
     name: "Flip Cards",
     url: "/games/flip-cards",
     img: "flip_cards.png",
-    tagline: "Race to 10 correct",
+    tagline: "Self-paced flashcards",
     description:
-      "Flip through word pairs and lock in matches before the clock runs out. Fast rounds, instant feedback, and a streak that keeps you coming back.",
-    gradient: "from-amber-900/90 via-amber-900/40",
+      "A calm, no-timer deck for real study. Tap to flip between your language and the translation, swipe right when you know it or left to keep practicing.",
+    gradient: "from-blue-900/90 via-blue-900/40",
   },
   {
     name: "One of Three",

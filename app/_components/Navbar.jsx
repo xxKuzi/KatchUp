@@ -20,7 +20,7 @@ import { useEnergy, useResetCountdown, MAX_ENERGY } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
 import {
   getMistakesDeck,
-  MISTAKES_PRACTICE_ENERGY_COST,
+  MISTAKES_PRACTICE_ENERGY_REWARD,
 } from "@/app/my-decks/_lib/customDecks";
 
 function getInitials(value) {
@@ -253,29 +253,58 @@ function Navbar() {
                   </p>
 
                   <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-800">
-                    {mistakesDeck && mistakesDeck.words.length > 0 ? (
+                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                      {t("navbar.earnEnergy")}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {/* Repetition drill over all your words — always available. */}
                       <button
                         type="button"
-                        disabled={energy < MISTAKES_PRACTICE_ENERGY_COST}
+                        disabled={energy >= MAX_ENERGY}
                         onClick={() => {
                           setEnergyPopoverOpen(false);
-                          router.push(
-                            `/games/quick-guess?deck=${mistakesDeck.id}&energyReview=1`,
-                          );
+                          router.push("/games/quick-guess?energyReview=1");
                         }}
                         className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-amber-400"
                       >
-                        Review your knowledge
+                        {t("navbar.speedSpellingDrill")}
                         <span className="inline-flex items-center gap-0.5">
-                          <Zap className="h-3.5 w-3.5 fill-current" />
-                          {MISTAKES_PRACTICE_ENERGY_COST}
+                          <Zap className="h-3.5 w-3.5 fill-current" />+
+                          {MISTAKES_PRACTICE_ENERGY_REWARD}
                         </span>
                       </button>
-                    ) : (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Practice more to build your review list.
-                      </p>
-                    )}
+
+                      {/* Targeted review of words you've missed. */}
+                      {mistakesDeck && mistakesDeck.words.length > 0 ? (
+                        <button
+                          type="button"
+                          disabled={energy >= MAX_ENERGY}
+                          onClick={() => {
+                            setEnergyPopoverOpen(false);
+                            router.push(
+                              `/games/quick-guess?deck=${mistakesDeck.id}&energyReview=1`,
+                            );
+                          }}
+                          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500 bg-transparent px-3 py-2 text-xs font-bold text-amber-600 transition hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:text-amber-400"
+                        >
+                          {t("navbar.reviewMistakes")}
+                          <span className="inline-flex items-center gap-0.5">
+                            <Zap className="h-3.5 w-3.5 fill-current" />+
+                            {MISTAKES_PRACTICE_ENERGY_REWARD}
+                          </span>
+                        </button>
+                      ) : (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {t("navbar.buildReviewList")}
+                        </p>
+                      )}
+
+                      {energy >= MAX_ENERGY && (
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                          {t("navbar.energyFull")}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

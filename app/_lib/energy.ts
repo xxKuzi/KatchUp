@@ -101,6 +101,19 @@ export function spendEnergy(amount = 1): number {
   return value;
 }
 
+/**
+ * Grant energy back as a reward for reviewing your mistakes.
+ * Returns the new energy. Never rises above MAX_ENERGY.
+ */
+export function gainEnergy(amount = 1): number {
+  const state = readState();
+  const value = Math.min(MAX_ENERGY, state.value + amount);
+  const next = { date: state.date, value };
+  writeState(next);
+  emit(value);
+  return value;
+}
+
 /** Reactive hook that reflects the current daily energy across the app. */
 export function useEnergy(): number {
   const [energy, setEnergy] = useState<number>(MAX_ENERGY);
