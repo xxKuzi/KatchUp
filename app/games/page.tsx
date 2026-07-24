@@ -22,7 +22,7 @@ export default function Games() {
               Online Games
             </span>
 
-            <h1 className="mt-6 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-7xl">
+            <h1 className="mt-6 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-6xl">
               Pick a game{" "}
               <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 whitespace-nowrap">
                 and jump in.
