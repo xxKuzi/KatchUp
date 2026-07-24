@@ -1,6 +1,6 @@
 "use client";
 import Carousel from "./../_components/GameCarousel";
-import HeroGameCarousel from "./../_components/HeroGameCarousel";
+import GameBanner from "./../_components/GameBanner";
 import { TrendingUpDown, Star } from "lucide-react";
 import { useLanguage } from "@/app/_lib/languageContext";
 
@@ -42,8 +42,8 @@ export default function Games() {
 
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg">
               Practice vocabulary with fast rounds, live competition, and
-              adaptive challenge levels. Everything here is built to feel
-              like play, not homework.
+              adaptive challenge levels. Everything here is built to feel like
+              play, not homework.
             </p>
 
             {/* Mascot with speech bubble */}
@@ -67,10 +67,27 @@ export default function Games() {
             <Star className="h-7 w-7" />
           </h2>
 
-          <HeroGameCarousel />
+          <div className="flex flex-col gap-8">
+            <GameBanner
+              name="Live Online Duel"
+              url="/games/choose-one-multiplayer?mode=live"
+              img="flip_cards.png"
+              tagline="Live 1v1 · Race to 10"
+              description="Go head-to-head with another player in real time. Same ten prompts, pick the right translation faster than your rival. First to finish wins."
+              gradient="from-blue-900/90 via-blue-900/40"
+            />
+            <GameBanner
+              name="Score Rush"
+              url="/games/choose-one-multiplayer?mode=async"
+              img="one_of_three.png"
+              tagline="Leaderboard Climb · Speed & Accuracy"
+              description="Compete asynchronously against other players' ghost records. Answer quickly and accurately to climb the high score ladder."
+              gradient="from-red-700/90 via-yellow-900/40"
+            />
+          </div>
         </section>
 
-        <section className="mt-14 w-full max-w-6xl">
+        <section className="sm:mt-20 mt-14 w-full max-w-6xl">
           <div className="mb-8 flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
             <span>Explore more</span>
             <TrendingUpDown className="h-7 w-7" />

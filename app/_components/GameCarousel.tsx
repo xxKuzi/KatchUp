@@ -7,23 +7,34 @@ function GameCarousel() {
 
   const cards = [
     {
-      name: "Live Online Duel",
-      url: "/games/choose-one-multiplayer?mode=live",
-      img: "flip_cards.png",
-      color: "green",
-      description: "Match with an online opponent live",
-      feature: "online",
-      featureColor: "emerald",
-    },
-    {
-      name: "Score Rush",
-      url: "/games/choose-one-multiplayer?mode=async",
+      name: "One of Three",
+      url: "/games/one-of-three",
       img: "one_of_three.png",
       color: "blue",
-      description: "Climb rankings in speed trials",
-      feature: "ranks",
+      description: "Quick choice rounds",
+
       featureColor: "blue",
     },
+
+    {
+      name: "Flip Cards",
+      url: "/games/flip-cards",
+      img: "flip_cards.png",
+      color: "red",
+      description: "Self-paced flashcards",
+      feature: "popular",
+      featureColor: "blue",
+    },
+    {
+      name: "Speed Spelling",
+      url: "/games/quick-guess",
+      img: "flip_cards.png",
+      color: "yellow",
+      description: "Type it before time runs out",
+
+      featureColor: "yellow",
+    },
+
     {
       name: "Word Pairing",
       url: "/games/guess-match",
@@ -34,31 +45,22 @@ function GameCarousel() {
       featureColor: "red",
     },
     {
-      name: "One of Three",
-      url: "/games/one-of-three",
+      name: "Score Rush",
+      url: "/games/choose-one-multiplayer?mode=async",
       img: "one_of_three.png",
-      color: "blue",
-      description: "Quick choice rounds",
-      feature: "popular",
-      featureColor: "blue",
-    },
-    {
-      name: "Speed Spelling",
-      url: "/games/quick-guess",
-      img: "flip_cards.png",
-      color: "yellow",
-      description: "Type it before time runs out",
-      feature: "new",
-      featureColor: "yellow",
-    },
-    {
-      name: "Flip Cards",
-      url: "/games/flip-cards",
-      img: "flip_cards.png",
       color: "red",
-      description: "Self-paced flashcards",
-      feature: "study",
+      description: "Climb rankings in speed trials",
+
       featureColor: "blue",
+    },
+    {
+      name: "Live Online Duel",
+      url: "/games/choose-one-multiplayer?mode=live",
+      img: "flip_cards.png",
+      color: "blue",
+      description: "Match with an online opponent live",
+
+      featureColor: "emerald",
     },
   ];
 
