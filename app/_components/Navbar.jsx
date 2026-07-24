@@ -18,6 +18,26 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { useLanguage } from "../_lib/languageContext";
 import { useEnergy, useResetCountdown, MAX_ENERGY } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
+import {
+  getMistakesDeck,
+  MISTAKES_PRACTICE_ENERGY_COST,
+} from "@/app/my-decks/_lib/customDecks";
+
+function getInitials(value) {
+  const trimmed = (value || "").trim();
+
+  if (!trimmed) {
+    return "?";
+  }
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 function Navbar() {
   const router = useRouter();
@@ -27,8 +47,11 @@ function Navbar() {
   const reset = useResetCountdown();
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [energyPopoverOpen, setEnergyPopoverOpen] = useState(false);
+  const [mistakesDeck, setMistakesDeck] = useState(null);
   const [langModalOpen, setLangModalOpen] = useState(false);
   const menuRef = useRef(null);
+  const energyRef = useRef(null);
   const isSignedIn = status === "authenticated";
   const isHomePage = pathname === "/";
 
@@ -57,6 +80,9 @@ function Navbar() {
     const handlePointerDown = (event) => {
       if (!menuRef.current?.contains(event.target)) {
         setMenuOpen(false);
+      }
+      if (!energyRef.current?.contains(event.target)) {
+        setEnergyPopoverOpen(false);
       }
     };
 
@@ -176,28 +202,104 @@ function Navbar() {
             </div>
 
             {/* Always-visible daily energy */}
-            <div
-              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-sm font-bold shadow-sm ${
-                energy <= 0
-                  ? "border-rose-400/60 bg-rose-500/10 text-rose-500 dark:border-rose-500/50 dark:text-rose-400"
-                  : isHomePage
-                    ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
-                    : "border-amber-400/60 bg-amber-50 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
-              }`}
-              title={t("navbar.energy")}
-              aria-label={`${t("navbar.energy")}: ${energy}/${MAX_ENERGY}`}
-            >
-              <Zap className="h-4 w-4 fill-current" />
-              <span className="tabular-nums leading-none">{energy}</span>
+            <div className="relative" ref={energyRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  const next = !energyPopoverOpen;
+                  if (next) {
+                    setMistakesDeck(getMistakesDeck("english", "deutsch"));
+                  }
+                  setEnergyPopoverOpen(next);
+                }}
+                aria-label={`${t("navbar.energy")}: ${energy}/${MAX_ENERGY}`}
+                aria-expanded={energyPopoverOpen}
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1.5 text-sm font-bold shadow-sm transition hover:scale-105 ${
+                  energy <= 0
+                    ? "border-rose-400/60 bg-rose-500/10 text-rose-500 dark:border-rose-500/50 dark:text-rose-400"
+                    : isHomePage
+                      ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
+                      : "border-amber-400/60 bg-amber-50 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
+                }`}
+              >
+                <Zap className="h-4 w-4 fill-current" />
+                <span className="tabular-nums leading-none">{energy}</span>
+              </button>
+
+              {energyPopoverOpen && (
+                <div className="absolute left-1/2 top-[120%] mt-2 w-60 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white/95 p-4 text-sm text-slate-700 shadow-2xl backdrop-blur-xl transition-all dark:border-slate-700 dark:bg-slate-950/95 dark:text-slate-200">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                      {t("navbar.energy")}
+                    </p>
+                    <span className="flex items-center gap-1 text-sm font-bold text-amber-600 dark:text-amber-400">
+                      <Zap className="h-4 w-4 fill-current" />
+                      <span className="tabular-nums">
+                        {energy}/{MAX_ENERGY}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                    <div
+                      className="h-full rounded-full bg-amber-500 transition-all duration-300 dark:bg-amber-400"
+                      style={{
+                        width: `${(Math.max(0, Math.min(energy, MAX_ENERGY)) / MAX_ENERGY) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                  <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {t("navbar.resetsIn")} {reset.hours}h {reset.minutes}m
+                  </p>
+
+                  <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-800">
+                    {mistakesDeck && mistakesDeck.words.length > 0 ? (
+                      <button
+                        type="button"
+                        disabled={energy < MISTAKES_PRACTICE_ENERGY_COST}
+                        onClick={() => {
+                          setEnergyPopoverOpen(false);
+                          router.push(
+                            `/games/quick-guess?deck=${mistakesDeck.id}&energyReview=1`,
+                          );
+                        }}
+                        className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-amber-400"
+                      >
+                        Review your knowledge
+                        <span className="inline-flex items-center gap-0.5">
+                          <Zap className="h-3.5 w-3.5 fill-current" />
+                          {MISTAKES_PRACTICE_ENERGY_COST}
+                        </span>
+                      </button>
+                    ) : (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Practice more to build your review list.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="relative flex" role="presentation" ref={menuRef}>
               <button
                 type="button"
-                aria-label="Open menu"
+                aria-label={
+                  isSignedIn
+                    ? `Account: ${session?.user?.name || session?.user?.email || "Signed in"}`
+                    : "Open menu"
+                }
+                title={
+                  isSignedIn
+                    ? session?.user?.name || session?.user?.email || "Signed in"
+                    : undefined
+                }
                 aria-expanded={menuOpen}
-                onClick={() => setMenuOpen((value) => !value)}
-                className={`inline-flex cursor-pointer items-center justify-center rounded-lg border p-2 shadow-sm transition ${
+                onClick={() => {
+                  setEnergyPopoverOpen(false);
+                  setMenuOpen((value) => !value);
+                }}
+                className={`inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border shadow-sm transition hover:scale-105 ${
                   isHomePage
                     ? "border-slate-700/80 bg-slate-900/80 text-slate-100 hover:bg-slate-800"
                     : "border-slate-300/80 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -205,6 +307,20 @@ function Navbar() {
               >
                 {menuOpen ? (
                   <X className="h-4 w-4" />
+                ) : isSignedIn ? (
+                  session?.user?.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={session.user.image}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs font-bold">
+                      {getInitials(session?.user?.name || session?.user?.email)}
+                    </span>
+                  )
                 ) : (
                   <Menu className="h-4 w-4" />
                 )}
@@ -256,32 +372,6 @@ function Navbar() {
                         {t("navbar.friends")}
                       </button>
                       <div className="my-2 h-px w-full bg-slate-200 dark:bg-slate-800" />
-                    </div>
-
-                    {/* Utilities */}
-                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 text-sm text-slate-700 dark:border-slate-800/80 dark:bg-slate-900/60 dark:text-slate-200">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                          {t("navbar.energy")}
-                        </p>
-                        <span className="flex items-center gap-1 text-sm font-bold text-amber-600 dark:text-amber-400">
-                          <Zap className="h-4 w-4 fill-current" />
-                          <span className="tabular-nums">
-                            {energy}/{MAX_ENERGY}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                        <div
-                          className="h-full rounded-full bg-amber-500 transition-all duration-300 dark:bg-amber-400"
-                          style={{
-                            width: `${(Math.max(0, Math.min(energy, MAX_ENERGY)) / MAX_ENERGY) * 100}%`,
-                          }}
-                        ></div>
-                      </div>
-                      <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                        {t("navbar.resetsIn")} {reset.hours}h {reset.minutes}m
-                      </p>
                     </div>
 
                     <ThemeToggle />

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import { useLanguage } from "@/app/_lib/languageContext";
+import { Language } from "@/app/_lib/translations";
 import {
   completeTopicLevel,
   loadTopicsState,
@@ -13,6 +14,7 @@ import {
 import { getAllWords } from "../_lib/learning/wordDatabase";
 import type { LectureWord } from "../_lib/learning/types";
 import { spendEnergy } from "@/app/_lib/energy";
+import { recordMistake } from "@/app/my-decks/_lib/customDecks";
 
 interface Question {
   id: string;
@@ -52,32 +54,27 @@ function shuffleWithSeed<T>(items: T[], seed: string): T[] {
   return cloned;
 }
 
-function buildLessonWords(
-  words: LectureWord[],
-  topicId: string,
-  level: number,
-): LectureWord[] {
-  const shuffled = shuffleWithSeed(words, `${topicId}:${level}:lesson`);
+function buildLessonWords(words: LectureWord[], seed: string): LectureWord[] {
+  const shuffled = shuffleWithSeed(words, `${seed}:lesson`);
   return shuffled.slice(0, Math.min(10, shuffled.length));
 }
 
 function buildQuestions(
   lessonWords: LectureWord[],
   allWords: LectureWord[],
-  topicId: string,
-  level: number,
+  seed: string,
 ): Question[] {
   return lessonWords.map((word, index) => {
     const distractors = shuffleWithSeed(
       allWords
         .filter((candidate) => candidate.id !== word.id)
         .map((candidate) => candidate.foreign),
-      `${topicId}:${level}:${word.id}:distractors`,
+      `${seed}:${word.id}:distractors`,
     ).slice(0, 2);
 
     const options = shuffleWithSeed(
       [word.foreign, ...distractors],
-      `${topicId}:${level}:${word.id}:options`,
+      `${seed}:${word.id}:options`,
     );
 
     return {
@@ -99,16 +96,42 @@ const OneOfThreePage = () => {
     ? Math.max(1, Math.min(5, level))
     : 1;
 
+  const [attempt, setAttempt] = useState(0);
+
   const allWords = useMemo(() => getAllWords("german"), []);
+  const roundSeed = `${topicId || "default"}:${safeLevel}:${attempt}`;
+
   const lessonWords = useMemo(
-    () => buildLessonWords(allWords, topicId || "default", safeLevel),
-    [allWords, safeLevel, topicId],
+    () => buildLessonWords(allWords, roundSeed),
+    [allWords, roundSeed],
   );
   const questions = useMemo(
-    () =>
-      buildQuestions(lessonWords, allWords, topicId || "default", safeLevel),
-    [allWords, lessonWords, safeLevel, topicId],
+    () => buildQuestions(lessonWords, allWords, roundSeed),
+    [lessonWords, allWords, roundSeed],
   );
+
+  return (
+    <OneOfThreeRound
+      key={roundSeed}
+      questions={questions}
+      topicId={topicId}
+      safeLevel={safeLevel}
+      language={language}
+      onReplay={() => setAttempt((value) => value + 1)}
+    />
+  );
+};
+
+interface OneOfThreeRoundProps {
+  questions: Question[];
+  topicId: string;
+  safeLevel: number;
+  language: Language;
+  onReplay: () => void;
+}
+
+function OneOfThreeRound(props: OneOfThreeRoundProps) {
+  const { questions, topicId, safeLevel, language, onReplay } = props;
 
   const [questionIndex, setQuestionIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -129,6 +152,13 @@ const OneOfThreePage = () => {
 
     const isCorrect = option === currentQuestion.correctOption;
     setSelectedOption(option);
+
+    if (!isCorrect) {
+      recordMistake(
+        { native: currentQuestion.prompt, foreign: currentQuestion.correctOption },
+        { nativeLang: "english", foreignLang: "deutsch" },
+      );
+    }
 
     window.setTimeout(() => {
       const nextCorrectCount = correctCount + (isCorrect ? 1 : 0);
@@ -278,12 +308,13 @@ const OneOfThreePage = () => {
                 >
                   Back to topic
                 </Link>
-                <Link
-                  href={`/games/one-of-three?topicId=${encodeURIComponent(topicId)}&level=${safeLevel}`}
+                <button
+                  type="button"
+                  onClick={onReplay}
                   className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Replay lesson
-                </Link>
+                </button>
               </div>
             </div>
           )}
@@ -291,6 +322,6 @@ const OneOfThreePage = () => {
       </div>
     </GamePage>
   );
-};
+}
 
 export default OneOfThreePage;

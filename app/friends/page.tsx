@@ -31,7 +31,6 @@ import {
   buildProfileUrl,
   createInitialFriendProfileIdentity,
   createPublicFriendProfile,
-  createReadableProfileCode,
   friendFromPublicProfile,
   getAvatarBackground,
   normalizeStoredProfileCode,
@@ -110,6 +109,10 @@ export default function FriendsPage() {
   const [profileUrl, setProfileUrl] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [codeDraft, setCodeDraft] = useState("");
+  const [codeCheckStatus, setCodeCheckStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "too-short" | "error"
+  >("idle");
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -347,6 +350,56 @@ export default function FriendsPage() {
   }, [friendSearchTag, isSignedIn, profileIdentity.profileCode]);
 
   useEffect(() => {
+    if (!isProfileEditorOpen) {
+      return;
+    }
+
+    const normalizedDraft = normalizeStoredProfileCode(codeDraft);
+    const normalizedCurrent = normalizeStoredProfileCode(
+      profileIdentity.profileCode,
+    );
+
+    if (normalizedDraft === normalizedCurrent) {
+      setCodeCheckStatus("idle");
+      return;
+    }
+
+    if (normalizedDraft.length < 3) {
+      setCodeCheckStatus("too-short");
+      return;
+    }
+
+    let active = true;
+    setCodeCheckStatus("checking");
+
+    const timeoutId = window.setTimeout(() => {
+      const checkAvailability = async () => {
+        const response = await fetch(
+          `/api/friends/profile/${encodeURIComponent(normalizedDraft)}`,
+        ).catch(() => null);
+
+        if (!active) {
+          return;
+        }
+
+        if (!response) {
+          setCodeCheckStatus("error");
+          return;
+        }
+
+        setCodeCheckStatus(response.status === 404 ? "available" : "taken");
+      };
+
+      void checkAvailability();
+    }, 400);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [codeDraft, isProfileEditorOpen, profileIdentity.profileCode]);
+
+  useEffect(() => {
     if (!isHydrated) {
       return;
     }
@@ -380,6 +433,34 @@ export default function FriendsPage() {
     setStatusMessage(
       `Nice teamwork! You both earned ${formatXp(WEEKLY_DUO_XP)} XP.`,
     );
+  };
+
+  const handleOpenProfileEditor = () => {
+    setCodeDraft(profileIdentity.profileCode);
+    setCodeCheckStatus("idle");
+    setIsProfileEditorOpen(true);
+  };
+
+  const handleSaveProfileCode = () => {
+    if (codeCheckStatus !== "available") {
+      return;
+    }
+
+    const normalizedDraft = normalizeStoredProfileCode(codeDraft);
+    const previousCode = profileIdentity.profileCode;
+
+    setProfileIdentity((previous) => ({
+      ...previous,
+      profileCode: normalizedDraft,
+      updatedAt: new Date().toISOString(),
+    }));
+    setCodeCheckStatus("idle");
+
+    if (previousCode && previousCode !== normalizedDraft) {
+      void fetch(`/api/friends/profile/${encodeURIComponent(previousCode)}`, {
+        method: "DELETE",
+      }).catch(() => undefined);
+    }
   };
 
   const isAlreadyFriend = (profileCode: string) =>
@@ -417,7 +498,7 @@ export default function FriendsPage() {
                 </h1>
                 <button
                   type="button"
-                  onClick={() => setIsProfileEditorOpen(true)}
+                  onClick={handleOpenProfileEditor}
                   className="mt-3 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/70 px-4 py-1.5 text-sm font-semibold text-rose-500 transition hover:bg-rose-50 dark:border-rose-500/20 dark:bg-white/5 dark:text-rose-300 dark:hover:bg-rose-500/10"
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -897,33 +978,42 @@ export default function FriendsPage() {
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <input
-                  value={profileIdentity.profileCode}
+                  value={codeDraft}
                   onChange={(event) =>
-                    setProfileIdentity((previous) => ({
-                      ...previous,
-                      profileCode:
-                        normalizeStoredProfileCode(event.target.value) ||
-                        createReadableProfileCode(previous.nickname),
-                      updatedAt: new Date().toISOString(),
-                    }))
+                    setCodeDraft(normalizeStoredProfileCode(event.target.value))
                   }
                   placeholder="yourtag19"
                   className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
                 <button
                   type="button"
-                  onClick={() =>
-                    setProfileIdentity((previous) => ({
-                      ...previous,
-                      profileCode: createReadableProfileCode(previous.nickname),
-                      updatedAt: new Date().toISOString(),
-                    }))
-                  }
-                  className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  disabled={codeCheckStatus !== "available"}
+                  onClick={handleSaveProfileCode}
+                  className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  Refresh code
+                  Save code
                 </button>
               </div>
+              {codeCheckStatus !== "idle" && (
+                <p
+                  className={`mt-2 text-xs font-semibold ${
+                    codeCheckStatus === "available"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : codeCheckStatus === "checking"
+                        ? "text-slate-500 dark:text-slate-400"
+                        : "text-rose-600 dark:text-rose-400"
+                  }`}
+                >
+                  {codeCheckStatus === "checking" && "Checking availability..."}
+                  {codeCheckStatus === "available" && "Available - you can save it."}
+                  {codeCheckStatus === "taken" &&
+                    "Someone already has this code."}
+                  {codeCheckStatus === "too-short" &&
+                    "Use at least 3 characters."}
+                  {codeCheckStatus === "error" &&
+                    "Couldn't check right now - try again."}
+                </p>
+              )}
             </div>
           </div>
         </div>

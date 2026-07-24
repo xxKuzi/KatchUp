@@ -6,13 +6,18 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import { useLanguage } from "@/app/_lib/languageContext";
+import { Language } from "@/app/_lib/translations";
 import {
   completeTopicLevel,
   loadTopicsState,
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
 import { getAllWords } from "../_lib/learning/wordDatabase";
-import { loadCustomDecks } from "@/app/my-decks/_lib/customDecks";
+import {
+  loadCustomDecks,
+  recordMistake,
+  MISTAKES_PRACTICE_ENERGY_COST,
+} from "@/app/my-decks/_lib/customDecks";
 import { spendEnergy } from "@/app/_lib/energy";
 
 interface PracticeWord {
@@ -72,6 +77,9 @@ const QuickGuessPage = () => {
   const safeLevel = Number.isFinite(level)
     ? Math.max(1, Math.min(5, level))
     : 1;
+  const isEnergyReview = searchParams.get("energyReview") === "1";
+
+  const [attempt, setAttempt] = useState(0);
 
   const customDeck = useMemo(() => {
     if (!deckId) {
@@ -82,8 +90,8 @@ const QuickGuessPage = () => {
 
   const allWords = useMemo(() => getAllWords("german"), []);
   const roundSeed = deckId
-    ? `deck:${deckId}:quick-guess`
-    : `${topicId || "default"}:${safeLevel}:quick-guess`;
+    ? `deck:${deckId}:quick-guess:${attempt}`
+    : `${topicId || "default"}:${safeLevel}:quick-guess:${attempt}`;
 
   const words = useMemo(() => {
     if (deckId) {
@@ -91,6 +99,48 @@ const QuickGuessPage = () => {
     }
     return buildRoundWords(allWords, roundSeed);
   }, [deckId, customDeck, allWords, roundSeed]);
+
+  const mistakeLanguagePair = customDeck
+    ? { nativeLang: customDeck.nativeLang, foreignLang: customDeck.foreignLang }
+    : { nativeLang: "english", foreignLang: "deutsch" };
+
+  return (
+    <QuickGuessRound
+      key={roundSeed}
+      words={words}
+      deckId={deckId}
+      topicId={topicId}
+      safeLevel={safeLevel}
+      language={language}
+      mistakeLanguagePair={mistakeLanguagePair}
+      isEnergyReview={isEnergyReview}
+      onReplay={() => setAttempt((value) => value + 1)}
+    />
+  );
+};
+
+interface QuickGuessRoundProps {
+  words: PracticeWord[];
+  deckId: string;
+  topicId: string;
+  safeLevel: number;
+  language: Language;
+  mistakeLanguagePair: { nativeLang: string; foreignLang: string };
+  isEnergyReview: boolean;
+  onReplay: () => void;
+}
+
+function QuickGuessRound(props: QuickGuessRoundProps) {
+  const {
+    words,
+    deckId,
+    topicId,
+    safeLevel,
+    language,
+    mistakeLanguagePair,
+    isEnergyReview,
+    onReplay,
+  } = props;
 
   const [questionIndex, setQuestionIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -125,6 +175,13 @@ const QuickGuessPage = () => {
 
     const nextCorrect = correctCount + (wasCorrect ? 1 : 0);
 
+    if (!wasCorrect && currentWord) {
+      recordMistake(
+        { native: currentWord.native, foreign: currentWord.foreign },
+        mistakeLanguagePair,
+      );
+    }
+
     setBanner(
       wasCorrect
         ? { tone: "good", text: "Correct!" }
@@ -136,40 +193,47 @@ const QuickGuessPage = () => {
           },
     );
 
-    window.setTimeout(() => {
-      const nextIndex = questionIndex + 1;
+    window.setTimeout(
+      () => {
+        const nextIndex = questionIndex + 1;
 
-      if (nextIndex >= totalWords) {
-        const finalScore =
-          totalWords > 0 ? Math.round((nextCorrect / totalWords) * 100) : 0;
-        const passed = finalScore >= 70;
+        if (nextIndex >= totalWords) {
+          const finalScore =
+            totalWords > 0 ? Math.round((nextCorrect / totalWords) * 100) : 0;
+          const passed = finalScore >= 70;
 
-        spendEnergy();
-        setCorrectCount(nextCorrect);
-        setLessonPassed(passed);
-        setIsFinished(true);
+          spendEnergy(isEnergyReview ? MISTAKES_PRACTICE_ENERGY_COST : 1);
+          setCorrectCount(nextCorrect);
+          setLessonPassed(passed);
+          setIsFinished(true);
 
-        if (
-          passed &&
-          topicId &&
-          !deckId &&
-          !completionSaved.current &&
-          totalWords > 0
-        ) {
-          const state = loadTopicsState(language);
-          const { nextState } = completeTopicLevel(state, topicId, safeLevel);
-          saveTopicsState(language, nextState);
-          completionSaved.current = true;
+          if (
+            passed &&
+            topicId &&
+            !deckId &&
+            !completionSaved.current &&
+            totalWords > 0
+          ) {
+            const state = loadTopicsState(language);
+            const { nextState } = completeTopicLevel(
+              state,
+              topicId,
+              safeLevel,
+            );
+            saveTopicsState(language, nextState);
+            completionSaved.current = true;
+          }
+
+          return;
         }
 
-        return;
-      }
-
-      setCorrectCount(nextCorrect);
-      lockedRef.current = false;
-      setIsLocked(false);
-      setQuestionIndex(nextIndex);
-    }, wasCorrect ? CORRECT_ADVANCE_DELAY_MS : REVEAL_ADVANCE_DELAY_MS);
+        setCorrectCount(nextCorrect);
+        lockedRef.current = false;
+        setIsLocked(false);
+        setQuestionIndex(nextIndex);
+      },
+      wasCorrect ? CORRECT_ADVANCE_DELAY_MS : REVEAL_ADVANCE_DELAY_MS,
+    );
   };
 
   useEffect(() => {
@@ -235,11 +299,6 @@ const QuickGuessPage = () => {
     : topicId
       ? "Back to topic"
       : "Back to games";
-  const replayHref = deckId
-    ? `/games/quick-guess?deck=${encodeURIComponent(deckId)}`
-    : topicId
-      ? `/games/quick-guess?topicId=${encodeURIComponent(topicId)}&level=${safeLevel}`
-      : "/games/quick-guess";
 
   return (
     <GamePage
@@ -377,12 +436,13 @@ const QuickGuessPage = () => {
                 >
                   {backLabel}
                 </Link>
-                <Link
-                  href={replayHref}
+                <button
+                  type="button"
+                  onClick={onReplay}
                   className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Play again
-                </Link>
+                </button>
               </div>
             </div>
           )}
@@ -390,6 +450,6 @@ const QuickGuessPage = () => {
       </div>
     </GamePage>
   );
-};
+}
 
 export default QuickGuessPage;

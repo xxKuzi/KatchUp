@@ -19,10 +19,10 @@ export default function LoginPage() {
     () => {
       // Entrance animation
       gsap.from(".animate-item", {
-        y: 30,
+        y: 16,
         opacity: 0,
-        duration: 0.8,
-        stagger: 0.1,
+        duration: 0.35,
+        stagger: 0.035,
         ease: "power3.out",
         clearProps: "opacity,transform", // Ensures opacity and transforms are reset to allow clicks
       });

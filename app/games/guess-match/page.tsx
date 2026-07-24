@@ -13,7 +13,10 @@ import {
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
 import { getAllWords } from "../_lib/learning/wordDatabase";
-import { loadCustomDecks } from "@/app/my-decks/_lib/customDecks";
+import {
+  loadCustomDecks,
+  MISTAKES_PRACTICE_ENERGY_COST,
+} from "@/app/my-decks/_lib/customDecks";
 import { spendEnergy } from "@/app/_lib/energy";
 
 interface PracticeWord {
@@ -70,6 +73,9 @@ const GuessMatchPage = () => {
   const safeLevel = Number.isFinite(level)
     ? Math.max(1, Math.min(5, level))
     : 1;
+  const isEnergyReview = searchParams.get("energyReview") === "1";
+
+  const [attempt, setAttempt] = useState(0);
 
   const customDeck = useMemo(() => {
     if (!deckId) {
@@ -80,8 +86,8 @@ const GuessMatchPage = () => {
 
   const allWords = useMemo(() => getAllWords("german"), []);
   const roundSeed = deckId
-    ? `deck:${deckId}:guess-match`
-    : `${topicId || "default"}:${safeLevel}:guess-match`;
+    ? `deck:${deckId}:guess-match:${attempt}`
+    : `${topicId || "default"}:${safeLevel}:guess-match:${attempt}`;
 
   const pairs = useMemo(() => {
     if (deckId) {
@@ -109,6 +115,8 @@ const GuessMatchPage = () => {
       topicId={topicId}
       safeLevel={safeLevel}
       language={language}
+      isEnergyReview={isEnergyReview}
+      onReplay={() => setAttempt((value) => value + 1)}
     />
   );
 };
@@ -121,11 +129,22 @@ interface GuessMatchRoundProps {
   topicId: string;
   safeLevel: number;
   language: Language;
+  isEnergyReview: boolean;
+  onReplay: () => void;
 }
 
 function GuessMatchRound(props: GuessMatchRoundProps) {
-  const { pairs, leftTiles, rightTiles, deckId, topicId, safeLevel, language } =
-    props;
+  const {
+    pairs,
+    leftTiles,
+    rightTiles,
+    deckId,
+    topicId,
+    safeLevel,
+    language,
+    isEnergyReview,
+    onReplay,
+  } = props;
   const totalPairs = pairs.length;
 
   const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
@@ -160,7 +179,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     );
     const passed = scorePercent >= 70;
 
-    spendEnergy();
+    spendEnergy(isEnergyReview ? MISTAKES_PRACTICE_ENERGY_COST : 1);
     setLessonPassed(passed);
     setIsFinished(true);
 
@@ -247,11 +266,6 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     : topicId
       ? "Back to topic"
       : "Back to games";
-  const replayHref = deckId
-    ? `/games/guess-match?deck=${encodeURIComponent(deckId)}`
-    : topicId
-      ? `/games/guess-match?topicId=${encodeURIComponent(topicId)}&level=${safeLevel}`
-      : "/games/guess-match";
 
   const tileClass = (
     isMatched: boolean,
@@ -383,12 +397,13 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
                 >
                   {backLabel}
                 </Link>
-                <Link
-                  href={replayHref}
+                <button
+                  type="button"
+                  onClick={onReplay}
                   className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Play again
-                </Link>
+                </button>
               </div>
             </div>
           )}

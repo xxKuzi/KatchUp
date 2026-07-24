@@ -100,3 +100,13 @@ export async function PUT(
 
   return NextResponse.json(storedProfile);
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ profileCode: string }> },
+) {
+  const { profileCode } = await context.params;
+  await redis.del(profileKey(profileCode));
+
+  return NextResponse.json({ ok: true });
+}

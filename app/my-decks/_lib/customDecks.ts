@@ -149,6 +149,88 @@ export function saveCustomDecks(decks: CustomDeck[]): void {
   window.localStorage.setItem(CUSTOM_DECKS_STORAGE_KEY, JSON.stringify(decks));
 }
 
+const MISTAKES_DECK_PREFIX = "auto-mistakes";
+export const MISTAKES_DECK_NAME = "Words to review - mistakes";
+export const MISTAKES_PRACTICE_ENERGY_COST = 5;
+
+function mistakesDeckId(nativeLang: string, foreignLang: string): string {
+  return `${MISTAKES_DECK_PREFIX}:${nativeLang}:${foreignLang}`;
+}
+
+export function isMistakesDeck(deck: CustomDeck): boolean {
+  return deck.id.startsWith(`${MISTAKES_DECK_PREFIX}:`);
+}
+
+export function getMistakesDeck(
+  nativeLang: string,
+  foreignLang: string,
+): CustomDeck | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const deckId = mistakesDeckId(nativeLang, foreignLang);
+  return loadCustomDecks().find((deck) => deck.id === deckId) ?? null;
+}
+
+/**
+ * Adds a missed word to the auto-collected "Words to review" deck for that
+ * language pair, creating the deck on first miss. Silently dedupes and no-ops
+ * outside the browser.
+ */
+export function recordMistake(
+  word: { native: string; foreign: string },
+  languagePair: { nativeLang: string; foreignLang: string },
+): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const native = word.native.trim();
+  const foreign = word.foreign.trim();
+
+  if (!native || !foreign) {
+    return;
+  }
+
+  const deckId = mistakesDeckId(
+    languagePair.nativeLang,
+    languagePair.foreignLang,
+  );
+  const decks = loadCustomDecks();
+  const existingDeck = decks.find((deck) => deck.id === deckId);
+
+  if (!existingDeck) {
+    const newDeck: CustomDeck = {
+      id: deckId,
+      name: MISTAKES_DECK_NAME,
+      nativeLang: languagePair.nativeLang,
+      foreignLang: languagePair.foreignLang,
+      lastPracticed: new Date(0).toISOString(),
+      words: [createWord(native, foreign)],
+    };
+    saveCustomDecks([newDeck, ...decks]);
+    return;
+  }
+
+  const alreadyTracked = existingDeck.words.some(
+    (existing) =>
+      existing.native.trim().toLowerCase() === native.toLowerCase() &&
+      existing.foreign.trim().toLowerCase() === foreign.toLowerCase(),
+  );
+
+  if (alreadyTracked) {
+    return;
+  }
+
+  const updatedDecks = decks.map((deck) =>
+    deck.id === deckId
+      ? { ...deck, words: [...deck.words, createWord(native, foreign)] }
+      : deck,
+  );
+  saveCustomDecks(updatedDecks);
+}
+
 export function groupDecksByLanguages(
   decks: CustomDeck[],
 ): Record<string, CustomDeck[]> {
