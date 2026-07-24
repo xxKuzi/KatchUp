@@ -6,13 +6,22 @@ export const LEAGUE_TIERS = [
   { name: "Diamond", accent: "from-fuchsia-400 to-violet-500" },
 ] as const;
 
-const LEAGUE_PLAYERS = [
-  ["Milo", "Nia", "Rex", "Lena", "Zed", "Nora", "Ivo", "Sia"],
-  ["Kian", "Luca", "Mira", "Vera", "Noa", "Tara", "Jett", "Lyra"],
-  ["Atlas", "Rina", "Nico", "Elio", "Sage", "Cora", "Timo", "Nell"],
-  ["Orion", "Aria", "Pax", "Mika", "Zara", "Ona", "Rin", "Vito"],
-  ["Nova", "Kora", "Ezra", "Sera", "Nash", "Elsa", "Kobe", "Yara"],
+export const WEEKLY_DUO_XP = 2000;
+
+const DUO_TASK_POOL = [
+  "Complete 3 practice sessions each",
+  "Score 500+ XP together in Flip Cards",
+  "Study on the same day at least twice",
+  "Beat your previous week's best score",
+  "Review 50 flashcards each",
+  "Keep a shared 3-day streak",
+  "Finish a full deck without a mistake",
+  "Try a brand new subject together",
+  "Send each other one hard question",
+  "Practice for 20 minutes back to back",
 ] as const;
+
+const DUO_TASKS_PER_WEEK = 4;
 
 export interface FriendPlayer {
   id: string;
@@ -23,15 +32,18 @@ export interface FriendPlayer {
   avatarIndex?: number;
 }
 
-export interface LeagueMatchRecord {
+export interface FriendTask {
   id: string;
-  result: "win" | "loss";
-  yourTeamXp: number;
-  rivalTeamXp: number;
+  label: string;
+  done: boolean;
+}
+
+export interface FriendTaskState {
   weekKey: string;
-  leagueName: string;
-  promoted: boolean;
-  playedAt: string;
+  partnerId: string | null;
+  partnerName: string | null;
+  tasks: FriendTask[];
+  claimed: boolean;
 }
 
 export interface FriendsLeagueState {
@@ -39,32 +51,9 @@ export interface FriendsLeagueState {
   userXp: number;
   friends: FriendPlayer[];
   currentLeagueIndex: number;
-  matchHistory: LeagueMatchRecord[];
-}
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  xp: number;
-  role: "you" | "ally" | "opponent";
-}
-
-export interface TeamSnapshot {
-  yourTeam: TeamMember[];
-  rivalTeam: TeamMember[];
-}
-
-export interface LeagueRoundResult {
-  nextState: FriendsLeagueState;
-  weekKey: string;
-  weekLabel: string;
-  result: "win" | "loss";
-  alreadyPlayed: boolean;
-  promoted: boolean;
-  yourTeamXp: number;
-  rivalTeamXp: number;
-  message: string;
-  snapshot: TeamSnapshot;
+  taskXp: number;
+  completedWeeks: number;
+  friendTasks: FriendTaskState;
 }
 
 export interface FriendSeed {
@@ -75,6 +64,14 @@ export interface FriendSeed {
 }
 
 function clampXp(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(value));
+}
+
+function clampCount(value: number): number {
   if (!Number.isFinite(value)) {
     return 0;
   }
@@ -117,32 +114,6 @@ function seededRandom(seed: string): () => number {
   };
 }
 
-function pickUniqueNames(
-  source: string[],
-  count: number,
-  random: () => number,
-): string[] {
-  const available = [...new Set(source)];
-  const selected: string[] = [];
-
-  while (selected.length < count && available.length > 0) {
-    const pickIndex = Math.floor(random() * available.length);
-    const [name] = available.splice(pickIndex, 1);
-    selected.push(name);
-  }
-
-  return selected;
-}
-
-function getWeekStart(date: Date): Date {
-  const value = new Date(date);
-  value.setHours(0, 0, 0, 0);
-  const day = value.getDay();
-  const daysSinceWednesday = (day + 7 - 3) % 7;
-  value.setDate(value.getDate() - daysSinceWednesday);
-  return value;
-}
-
 function formatDateLabel(value: Date): string {
   return value.toLocaleDateString(undefined, {
     month: "short",
@@ -150,40 +121,38 @@ function formatDateLabel(value: Date): string {
   });
 }
 
-const CYCLE_LENGTH_DAYS = 4;
-const CYCLE_LENGTH_MS = CYCLE_LENGTH_DAYS * 24 * 60 * 60 * 1000;
-const CYCLE_ANCHOR_UTC_MS = Date.UTC(2026, 0, 1, 0, 0, 0, 0);
+const WEEK_LENGTH_MS = 7 * 24 * 60 * 60 * 1000;
 
-function getCycleStart(date: Date): Date {
-  const nowMs = date.getTime();
-  const offsetMs = nowMs - CYCLE_ANCHOR_UTC_MS;
-  const cycleIndex = Math.floor(offsetMs / CYCLE_LENGTH_MS);
-  return new Date(CYCLE_ANCHOR_UTC_MS + cycleIndex * CYCLE_LENGTH_MS);
+function getWeekStart(date: Date): Date {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  const day = value.getDay();
+  const daysSinceMonday = (day + 6) % 7;
+  value.setDate(value.getDate() - daysSinceMonday);
+  return value;
 }
 
-function getCycleEnd(date: Date): Date {
-  const cycleStart = getCycleStart(date);
-  return new Date(cycleStart.getTime() + CYCLE_LENGTH_MS);
+function getWeekEnd(date: Date): Date {
+  return new Date(getWeekStart(date).getTime() + WEEK_LENGTH_MS);
 }
 
-export function getFourDayCycleKey(date = new Date()): string {
-  const cycleStart = getCycleStart(date);
-  return cycleStart.toISOString().slice(0, 10);
+export function getWeekKey(date = new Date()): string {
+  return getWeekStart(date).toISOString().slice(0, 10);
 }
 
-export function getFourDayCycleLabel(date = new Date()): string {
-  const cycleStart = getCycleStart(date);
-  const cycleEnd = getCycleEnd(date);
-  return `${formatDateLabel(cycleStart)} - ${formatDateLabel(cycleEnd)}`;
+export function getWeekLabel(date = new Date()): string {
+  const weekStart = getWeekStart(date);
+  const weekEnd = new Date(weekStart.getTime() + WEEK_LENGTH_MS - 1);
+  return `${formatDateLabel(weekStart)} - ${formatDateLabel(weekEnd)}`;
 }
 
-export function getCycleTimeRemaining(date = new Date()): {
+export function getWeeklyTimeRemaining(date = new Date()): {
   days: number;
   hours: number;
   totalMs: number;
 } {
-  const cycleEnd = getCycleEnd(date).getTime();
-  const remainingMs = Math.max(0, cycleEnd - date.getTime());
+  const weekEnd = getWeekEnd(date).getTime();
+  const remainingMs = Math.max(0, weekEnd - date.getTime());
   const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
   const hours = Math.floor(
     (remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000),
@@ -196,16 +165,36 @@ export function getCycleTimeRemaining(date = new Date()): {
   };
 }
 
-export function getWeekKey(date = new Date()): string {
-  return getFourDayCycleKey(date);
-}
-
-export function getWeekLabel(date = new Date()): string {
-  return getFourDayCycleLabel(date);
-}
-
 export function getCurrentLeague(state: FriendsLeagueState) {
   return LEAGUE_TIERS[clampLeagueIndex(state.currentLeagueIndex)];
+}
+
+function buildDuoTasks(weekKey: string, partnerId: string): FriendTask[] {
+  const random = seededRandom(`${weekKey}:${partnerId}`);
+  const available = [...DUO_TASK_POOL];
+  const tasks: FriendTask[] = [];
+
+  while (tasks.length < DUO_TASKS_PER_WEEK && available.length > 0) {
+    const pickIndex = Math.floor(random() * available.length);
+    const [label] = available.splice(pickIndex, 1);
+    tasks.push({
+      id: `task-${tasks.length}-${weekKey}`,
+      label,
+      done: false,
+    });
+  }
+
+  return tasks;
+}
+
+export function createEmptyFriendTaskState(weekKey: string): FriendTaskState {
+  return {
+    weekKey,
+    partnerId: null,
+    partnerName: null,
+    tasks: [],
+    claimed: false,
+  };
 }
 
 export function createInitialFriendsLeagueState(
@@ -216,7 +205,41 @@ export function createInitialFriendsLeagueState(
     userXp: 0,
     friends: [],
     currentLeagueIndex: 1,
-    matchHistory: [],
+    taskXp: 0,
+    completedWeeks: 0,
+    friendTasks: createEmptyFriendTaskState(getWeekKey()),
+  };
+}
+
+function parseFriendTaskState(
+  raw: unknown,
+  fallbackWeekKey: string,
+): FriendTaskState {
+  if (!raw || typeof raw !== "object") {
+    return createEmptyFriendTaskState(fallbackWeekKey);
+  }
+
+  const value = raw as Partial<FriendTaskState>;
+  const tasks = Array.isArray(value.tasks)
+    ? value.tasks
+        .filter(
+          (task): task is FriendTask =>
+            Boolean(task) &&
+            typeof task.id === "string" &&
+            typeof task.label === "string" &&
+            typeof task.done === "boolean",
+        )
+        .map((task) => ({ id: task.id, label: task.label, done: task.done }))
+    : [];
+
+  return {
+    weekKey:
+      typeof value.weekKey === "string" ? value.weekKey : fallbackWeekKey,
+    partnerId: typeof value.partnerId === "string" ? value.partnerId : null,
+    partnerName:
+      typeof value.partnerName === "string" ? value.partnerName : null,
+    tasks,
+    claimed: value.claimed === true,
   };
 }
 
@@ -234,8 +257,7 @@ export function parseFriendsLeagueState(
     if (
       typeof parsed.userName !== "string" ||
       typeof parsed.userXp !== "number" ||
-      !Array.isArray(parsed.friends) ||
-      !Array.isArray(parsed.matchHistory)
+      !Array.isArray(parsed.friends)
     ) {
       return null;
     }
@@ -264,30 +286,6 @@ export function parseFriendsLeagueState(
             : undefined,
       }));
 
-    const matchHistory = parsed.matchHistory
-      .filter(
-        (record): record is LeagueMatchRecord =>
-          Boolean(record) &&
-          typeof record.id === "string" &&
-          (record.result === "win" || record.result === "loss") &&
-          typeof record.yourTeamXp === "number" &&
-          typeof record.rivalTeamXp === "number" &&
-          typeof record.weekKey === "string" &&
-          typeof record.leagueName === "string" &&
-          typeof record.promoted === "boolean" &&
-          typeof record.playedAt === "string",
-      )
-      .map((record) => ({
-        id: record.id,
-        result: record.result,
-        yourTeamXp: clampXp(record.yourTeamXp),
-        rivalTeamXp: clampXp(record.rivalTeamXp),
-        weekKey: record.weekKey,
-        leagueName: record.leagueName,
-        promoted: record.promoted,
-        playedAt: record.playedAt,
-      }));
-
     return {
       userName: parsed.userName.trim() || fallbackUserName,
       userXp: clampXp(parsed.userXp),
@@ -297,7 +295,13 @@ export function parseFriendsLeagueState(
           ? parsed.currentLeagueIndex
           : 1,
       ),
-      matchHistory,
+      taskXp: clampXp(
+        typeof parsed.taskXp === "number" ? parsed.taskXp : 0,
+      ),
+      completedWeeks: clampCount(
+        typeof parsed.completedWeeks === "number" ? parsed.completedWeeks : 0,
+      ),
+      friendTasks: parseFriendTaskState(parsed.friendTasks, getWeekKey()),
     };
   } catch {
     return null;
@@ -350,149 +354,109 @@ export function awardXpToState(
   };
 }
 
-export function buildWeeklyTeamSnapshot(
+/**
+ * Keeps the weekly duo challenge aligned with the current week. When a new week
+ * starts the chosen partner is kept (if still a friend) but fresh tasks are
+ * generated and the reward becomes claimable again.
+ */
+export function syncWeeklyDuoTasks(
   state: FriendsLeagueState,
   weekKey: string,
-  profileCode: string,
-): TeamSnapshot {
-  const leagueIndex = clampLeagueIndex(state.currentLeagueIndex);
-  const leaguePool = LEAGUE_PLAYERS[leagueIndex];
-  const friendPool = state.friends.map((friend) => friend.name);
-  const pool = [...friendPool, ...leaguePool].filter(
-    (name) => name.trim().toLowerCase() !== state.userName.trim().toLowerCase(),
-  );
-  const random = seededRandom(`${profileCode}:${weekKey}:${leagueIndex}`);
+): FriendsLeagueState {
+  const current = state.friendTasks;
 
-  const allyNames = pickUniqueNames(pool, 3, random);
-  while (allyNames.length < 3) {
-    allyNames.push(`Ally ${allyNames.length + 1}`);
+  if (current.weekKey === weekKey) {
+    return state;
   }
 
-  const opponentSource = [...leaguePool, ...RIVAL_FALLBACK].filter(
-    (name) => !allyNames.includes(name),
-  );
-  const opponentNames = pickUniqueNames(opponentSource, 4, random);
-  while (opponentNames.length < 4) {
-    opponentNames.push(`Rival ${opponentNames.length + 1}`);
-  }
+  const partnerStillFriend =
+    current.partnerId !== null &&
+    state.friends.some((friend) => friend.id === current.partnerId);
 
-  const yourTeam: TeamMember[] = [
-    {
-      id: "you",
-      name: state.userName,
-      xp: Math.max(50, state.userXp),
-      role: "you",
-    },
-    ...allyNames.map((name, index) => ({
-      id: `ally-${index}-${name}`,
-      name,
-      xp: clampXp(120 + random() * 220 + state.userXp * 0.08),
-      role: "ally" as const,
-    })),
-  ];
-
-  const rivalTeam: TeamMember[] = opponentNames.map((name, index) => ({
-    id: `opponent-${index}-${name}`,
-    name,
-    xp: clampXp(130 + random() * 240 + state.userXp * 0.08),
-    role: "opponent",
-  }));
-
-  return { yourTeam, rivalTeam };
-}
-
-const RIVAL_FALLBACK = [
-  "Nova",
-  "Atlas",
-  "Mika",
-  "Orion",
-  "Lyra",
-  "Jett",
-  "Sage",
-  "Zara",
-  "Kian",
-  "Vera",
-];
-
-function sumTeamXp(team: TeamMember[]): number {
-  return team.reduce((total, member) => total + member.xp, 0);
-}
-
-export function resolveWeeklyLeagueFight(
-  state: FriendsLeagueState,
-  profileCode: string,
-  now = new Date(),
-): LeagueRoundResult {
-  const weekKey = getFourDayCycleKey(now);
-  const weekLabel = getFourDayCycleLabel(now);
-  const alreadyPlayed = state.matchHistory.some(
-    (record) => record.weekKey === weekKey,
-  );
-  const snapshot = buildWeeklyTeamSnapshot(state, weekKey, profileCode);
-  const yourTeamXp = sumTeamXp(snapshot.yourTeam);
-  const rivalTeamXp = sumTeamXp(snapshot.rivalTeam);
-  const result = yourTeamXp >= rivalTeamXp ? "win" : "loss";
-  const canPromote = result === "win";
-  const currentLeague =
-    LEAGUE_TIERS[clampLeagueIndex(state.currentLeagueIndex)];
-  const promotedLeagueIndex = canPromote
-    ? Math.min(
-        clampLeagueIndex(state.currentLeagueIndex) + 1,
-        LEAGUE_TIERS.length - 1,
-      )
-    : clampLeagueIndex(state.currentLeagueIndex);
-  const promoted =
-    promotedLeagueIndex > clampLeagueIndex(state.currentLeagueIndex);
-
-  if (alreadyPlayed) {
+  if (!partnerStillFriend || current.partnerId === null) {
     return {
-      nextState: state,
-      weekKey,
-      weekLabel,
-      result,
-      alreadyPlayed: true,
-      promoted: false,
-      yourTeamXp,
-      rivalTeamXp,
-      message: `Cycle fight already completed for ${weekLabel}. Next reset starts in 4 days.`,
-      snapshot,
+      ...state,
+      friendTasks: createEmptyFriendTaskState(weekKey),
     };
   }
 
-  const nextState: FriendsLeagueState = {
+  return {
     ...state,
-    currentLeagueIndex: promotedLeagueIndex,
-    matchHistory: [
-      {
-        id: createId("match"),
-        result,
-        yourTeamXp,
-        rivalTeamXp,
-        weekKey,
-        leagueName: currentLeague.name,
-        promoted,
-        playedAt: new Date().toISOString(),
-      } satisfies LeagueMatchRecord,
-      ...state.matchHistory,
-    ].slice(0, 8),
+    friendTasks: {
+      weekKey,
+      partnerId: current.partnerId,
+      partnerName: current.partnerName,
+      tasks: buildDuoTasks(weekKey, current.partnerId),
+      claimed: false,
+    },
   };
+}
+
+export function selectDuoPartner(
+  state: FriendsLeagueState,
+  friend: FriendPlayer,
+  weekKey: string,
+): FriendsLeagueState {
+  return {
+    ...state,
+    friendTasks: {
+      weekKey,
+      partnerId: friend.id,
+      partnerName: friend.name,
+      tasks: buildDuoTasks(weekKey, friend.id),
+      claimed: false,
+    },
+  };
+}
+
+export function clearDuoPartner(
+  state: FriendsLeagueState,
+  weekKey: string,
+): FriendsLeagueState {
+  return {
+    ...state,
+    friendTasks: createEmptyFriendTaskState(weekKey),
+  };
+}
+
+export function toggleDuoTask(
+  state: FriendsLeagueState,
+  taskId: string,
+): FriendsLeagueState {
+  if (state.friendTasks.claimed) {
+    return state;
+  }
 
   return {
-    nextState,
-    weekKey,
-    weekLabel,
-    result,
-    alreadyPlayed: false,
-    promoted,
-    yourTeamXp,
-    rivalTeamXp,
-    message:
-      result === "win"
-        ? promoted
-          ? `Win in ${weekLabel}. Promotion unlocked! You move to ${LEAGUE_TIERS[promotedLeagueIndex].name} league.`
-          : `Win in ${weekLabel}. You are already in the highest league.`
-        : `Loss in ${weekLabel}. Stay sharp and try again next 4-day cycle.`,
-    snapshot,
+    ...state,
+    friendTasks: {
+      ...state.friendTasks,
+      tasks: state.friendTasks.tasks.map((task) =>
+        task.id === taskId ? { ...task, done: !task.done } : task,
+      ),
+    },
+  };
+}
+
+export function areAllDuoTasksDone(taskState: FriendTaskState): boolean {
+  return taskState.tasks.length > 0 && taskState.tasks.every((task) => task.done);
+}
+
+export function claimDuoReward(state: FriendsLeagueState): FriendsLeagueState {
+  const taskState = state.friendTasks;
+
+  if (taskState.claimed || !areAllDuoTasksDone(taskState)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    taskXp: clampXp(state.taskXp + WEEKLY_DUO_XP),
+    completedWeeks: state.completedWeeks + 1,
+    friendTasks: {
+      ...taskState,
+      claimed: true,
+    },
   };
 }
 

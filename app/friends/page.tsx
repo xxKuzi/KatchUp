@@ -9,16 +9,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   addFriendToState,
-  buildWeeklyTeamSnapshot,
+  areAllDuoTasksDone,
+  claimDuoReward,
+  clearDuoPartner,
   createInitialFriendsLeagueState,
   formatTimestamp,
-  getCycleTimeRemaining,
-  getFourDayCycleKey,
+  getWeeklyTimeRemaining,
+  getWeekKey,
   getCurrentLeague,
   parseFriendsLeagueState,
-  resolveWeeklyLeagueFight,
+  selectDuoPartner,
+  syncWeeklyDuoTasks,
+  toggleDuoTask,
+  WEEKLY_DUO_XP,
+  type FriendPlayer,
   type FriendsLeagueState,
-  type TeamMember,
 } from "./_lib/league";
 import {
   AVATAR_BACKGROUNDS,
@@ -76,44 +81,6 @@ function readPracticeXp(): number {
   }
 }
 
-function TeamCard({
-  title,
-  members,
-}: {
-  title: string;
-  members: TeamMember[];
-}) {
-  const totalXp = members.reduce((sum, member) => sum + member.xp, 0);
-
-  return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950/80">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-          {title}
-        </h3>
-        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-          {formatXp(totalXp)} XP
-        </p>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        {members.map((member) => (
-          <div
-            key={member.id}
-            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900/70"
-          >
-            <p className="font-medium text-slate-900 dark:text-slate-100">
-              {member.name}
-            </p>
-            <p className="text-slate-500 dark:text-slate-300">
-              {formatXp(member.xp)}
-            </p>
-          </div>
-        ))}
-      </div>
-    </article>
-  );
-}
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -134,7 +101,7 @@ export default function FriendsPage() {
     "Type at least 2 letters of a tag to search.",
   );
   const [statusMessage, setStatusMessage] = useState(
-    "4-day cycles decide promotion.",
+    "Pick a friend and tackle this week's tasks together.",
   );
   const [profileIdentity, setProfileIdentity] = useState<FriendProfileIdentity>(
     () => createInitialFriendProfileIdentity(displayName),
@@ -264,23 +231,14 @@ export default function FriendsPage() {
   }, []);
 
   const currentLeague = getCurrentLeague(state);
-  const cycleKey = getFourDayCycleKey(now);
-  const cycleRemaining = getCycleTimeRemaining(now);
-  const snapshot = useMemo(
-    () => buildWeeklyTeamSnapshot(state, cycleKey, profileIdentity.profileCode),
-    [cycleKey, profileIdentity.profileCode, state],
-  );
-  const yourTeamXp = snapshot.yourTeam.reduce(
-    (sum, member) => sum + member.xp,
-    0,
-  );
-  const rivalTeamXp = snapshot.rivalTeam.reduce(
-    (sum, member) => sum + member.xp,
-    0,
-  );
-  const cyclePlayed = state.matchHistory.some(
-    (match) => match.weekKey === cycleKey,
-  );
+  const weekKey = getWeekKey(now);
+  const weeklyRemaining = getWeeklyTimeRemaining(now);
+  const duoTasks = state.friendTasks;
+  const duoPartner = duoTasks.partnerId
+    ? state.friends.find((friend) => friend.id === duoTasks.partnerId) ?? null
+    : null;
+  const completedTaskCount = duoTasks.tasks.filter((task) => task.done).length;
+  const allTasksDone = areAllDuoTasksDone(duoTasks);
   const avatarBackground = getAvatarBackground(
     profileIdentity.avatarBackgroundId,
   );
@@ -292,13 +250,13 @@ export default function FriendsPage() {
         currentXp: state.userXp,
         leagueName: currentLeague.name,
         friendsCount: state.friends.length,
-        matchesPlayed: state.matchHistory.length,
+        matchesPlayed: state.completedWeeks,
       }),
     [
       currentLeague.name,
       profileIdentity,
       state.friends.length,
-      state.matchHistory.length,
+      state.completedWeeks,
       state.userXp,
     ],
   );
@@ -389,35 +347,39 @@ export default function FriendsPage() {
   }, [friendSearchTag, isSignedIn, profileIdentity.profileCode]);
 
   useEffect(() => {
-    if (!isHydrated || !profileHydrated) {
+    if (!isHydrated) {
       return;
     }
 
-    if (state.matchHistory.some((match) => match.weekKey === cycleKey)) {
-      return;
-    }
-
-    const result = resolveWeeklyLeagueFight(
-      state,
-      profileIdentity.profileCode,
-      now,
-    );
-    setState(result.nextState);
-    setStatusMessage(result.message);
-  }, [
-    cycleKey,
-    isHydrated,
-    now,
-    profileHydrated,
-    profileIdentity.profileCode,
-    state,
-  ]);
+    setState((previous) => syncWeeklyDuoTasks(previous, weekKey));
+  }, [isHydrated, weekKey]);
 
   const handleAddFriendFromProfile = (profile: PublicFriendProfile) => {
     setState((previous) =>
       addFriendToState(previous, friendFromPublicProfile(profile)),
     );
     setStatusMessage(`${profile.nickname} was added to your friends.`);
+  };
+
+  const handleSelectPartner = (friend: FriendPlayer) => {
+    setState((previous) => selectDuoPartner(previous, friend, weekKey));
+    setStatusMessage(`You teamed up with ${friend.name} for this week.`);
+  };
+
+  const handleClearPartner = () => {
+    setState((previous) => clearDuoPartner(previous, weekKey));
+    setStatusMessage("Duo partner cleared. Pick a friend to start again.");
+  };
+
+  const handleToggleTask = (taskId: string) => {
+    setState((previous) => toggleDuoTask(previous, taskId));
+  };
+
+  const handleClaimReward = () => {
+    setState((previous) => claimDuoReward(previous));
+    setStatusMessage(
+      `Nice teamwork! You both earned ${formatXp(WEEKLY_DUO_XP)} XP.`,
+    );
   };
 
   const isAlreadyFriend = (profileCode: string) =>
@@ -492,10 +454,10 @@ export default function FriendsPage() {
               </div>
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  Weekly fights
+                  Duo tasks XP
                 </p>
                 <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-                  {state.matchHistory.length}
+                  {formatXp(state.taskXp)}
                 </p>
               </div>
             </div>
@@ -637,33 +599,144 @@ export default function FriendsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">
-                  Team battle
+                  Friend tasks
                 </h2>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  You get 3 random teammates from your current league. Results
-                  are auto-completed every 4 days.
+                  Team up with one friend and finish this week&apos;s tasks
+                  together. Complete them all and you both earn{" "}
+                  {formatXp(WEEKLY_DUO_XP)} XP.
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Next cycle in {cycleRemaining.days}d {cycleRemaining.hours}h
+                  New tasks in {weeklyRemaining.days}d {weeklyRemaining.hours}h
                 </p>
               </div>
               <span className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200">
-                {cyclePlayed ? "Cycle completed" : "Cycle in progress"}
+                {duoTasks.claimed
+                  ? `${formatXp(WEEKLY_DUO_XP)} XP earned`
+                  : duoPartner
+                    ? `${completedTaskCount}/${duoTasks.tasks.length} done`
+                    : "Pick a partner"}
               </span>
             </div>
 
-            <div className="mt-6 grid gap-5 xl:grid-cols-2">
-              <TeamCard title="Your team" members={snapshot.yourTeam} />
-              <TeamCard title="Opponent team" members={snapshot.rivalTeam} />
-            </div>
+            {!duoPartner ? (
+              <div className="mt-6">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Choose the friend you want to complete this week&apos;s tasks
+                  with.
+                </p>
+                {state.friends.length === 0 ? (
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                    Add a friend first, then pick them here to start your weekly
+                    duo tasks.
+                  </div>
+                ) : (
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {state.friends.map((friend) => (
+                      <button
+                        key={friend.id}
+                        type="button"
+                        onClick={() => handleSelectPartner(friend)}
+                        className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition hover:border-sky-400 hover:bg-sky-50 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-sky-600 dark:hover:bg-sky-950/40"
+                      >
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
+                          {friend.name}
+                        </span>
+                        <span className="rounded-xl bg-sky-600 px-3 py-1 text-xs font-semibold text-white dark:bg-sky-500">
+                          Choose
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-6 space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                      This week with
+                    </p>
+                    <p className="mt-1 text-lg font-black text-slate-900 dark:text-slate-100">
+                      {duoTasks.partnerName ?? duoPartner.name}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearPartner}
+                    className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Change partner
+                  </button>
+                </div>
 
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200">
-              <p>
-                Team score: {formatXp(yourTeamXp)} vs {formatXp(rivalTeamXp)}
-              </p>
-              <p className="mt-1 text-slate-500 dark:text-slate-400">
-                {statusMessage}
-              </p>
+                <div className="space-y-2">
+                  {duoTasks.tasks.map((task) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => handleToggleTask(task.id)}
+                      disabled={duoTasks.claimed}
+                      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition disabled:cursor-not-allowed ${
+                        task.done
+                          ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40"
+                          : "border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-slate-700"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${
+                          task.done
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : "border-slate-300 text-transparent dark:border-slate-600"
+                        }`}
+                      >
+                        ✓
+                      </span>
+                      <span
+                        className={`text-sm font-medium ${
+                          task.done
+                            ? "text-emerald-700 line-through dark:text-emerald-300"
+                            : "text-slate-900 dark:text-slate-100"
+                        }`}
+                      >
+                        {task.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-linear-to-r from-emerald-400 to-sky-500 transition-all"
+                    style={{
+                      width: `${
+                        duoTasks.tasks.length === 0
+                          ? 0
+                          : Math.round(
+                              (completedTaskCount / duoTasks.tasks.length) * 100,
+                            )
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleClaimReward}
+                  disabled={!allTasksDone || duoTasks.claimed}
+                  className="w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+                >
+                  {duoTasks.claimed
+                    ? `Claimed ${formatXp(WEEKLY_DUO_XP)} XP`
+                    : allTasksDone
+                      ? `Claim ${formatXp(WEEKLY_DUO_XP)} XP together`
+                      : `Finish all tasks to claim ${formatXp(WEEKLY_DUO_XP)} XP`}
+                </button>
+              </div>
+            )}
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
+              {statusMessage}
             </div>
           </section>
         </div>
