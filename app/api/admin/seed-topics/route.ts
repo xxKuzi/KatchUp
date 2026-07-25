@@ -1,64 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { seedTopicDecks } from "@/app/api/decks/_lib/deckStore";
-import { db } from "@/lib/db";
-import { globalWords } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
-import fs from "fs";
-import path from "path";
-
-async function seedGlobalWords() {
-  let createdCount = 0;
-  const languages = ["german", "spanish", "czech"];
-
-  for (const lang of languages) {
-    const [existingLang] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(globalWords)
-      .where(eq(globalWords.language, lang));
-
-    if (existingLang && existingLang.count > 0) {
-      console.log(`Already seeded globalWords for ${lang}, skipping...`);
-      continue;
-    }
-    const filePath = path.resolve(process.cwd(), "public", "data", `words-${lang}.json`);
-    if (!fs.existsSync(filePath)) {
-      console.warn(`Seed file not found: ${filePath}`);
-      continue;
-    }
-
-    const raw = fs.readFileSync(filePath, "utf8");
-    const words = JSON.parse(raw) as Array<{
-      native: string;
-      foreign: string;
-      category: string;
-      level: string;
-    }>;
-
-    if (words.length === 0) continue;
-
-    // Batch insert into database
-    const batchSize = 100;
-    for (let i = 0; i < words.length; i += batchSize) {
-      const chunk = words.slice(i, i + batchSize);
-      await db.insert(globalWords).values(
-        chunk.map((w) => ({
-          language: lang,
-          level: w.level,
-          category: w.category || "general",
-          native: w.native,
-          foreign: w.foreign,
-        }))
-      );
-      createdCount += chunk.length;
-    }
-  }
-
-  return { globalWordsCreated: createdCount };
-}
 
 // Idempotent: creates the canonical topic decks + words if missing, no-ops
 // otherwise. Any signed-in user may trigger it; re-running is harmless.
+//
+// Vocabulary seeding used to live here too, reading public/data/words-*.json
+// into the retired `global_words` table. The unified corpus is seeded from the
+// CLI instead (scripts/seed-concepts.ts), since data/concepts.json isn't served
+// as a static asset and a ~4000-row load has no business behind a web request.
 export async function POST() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -66,11 +16,6 @@ export async function POST() {
   }
 
   const deckResult = await seedTopicDecks();
-  const wordResult = await seedGlobalWords();
 
-  return NextResponse.json({
-    ok: true,
-    ...deckResult,
-    ...wordResult,
-  });
+  return NextResponse.json({ ok: true, ...deckResult });
 }

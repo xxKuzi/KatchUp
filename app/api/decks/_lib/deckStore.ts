@@ -32,6 +32,7 @@ export interface DeckWithWords extends DeckRecord {
 }
 
 export interface WordInput {
+  id?: string;
   native: string;
   foreign: string;
 }
@@ -73,7 +74,8 @@ async function countWordsByDeck(
 
 /**
  * Creates the canonical topic decks and their words if they do not yet exist.
- * Idempotent: an existing topic deck (matched by topicKey + foreignLang) is
+ * Idempotent: an existing topic deck (matched by topicKey + native/foreign
+ * language pair) is
  * left untouched so re-running never duplicates words or disturbs user stats.
  */
 export async function seedTopicDecks(): Promise<{
@@ -91,6 +93,7 @@ export async function seedTopicDecks(): Promise<{
         .where(
           and(
             eq(decks.topicKey, seed.topicKey),
+            eq(decks.nativeLang, TOPIC_NATIVE_LANG),
             eq(decks.foreignLang, foreignLang),
           ),
         )
@@ -196,10 +199,15 @@ export async function getDeckForUser(
   return { ...toDeckRecord(row, words.length), words };
 }
 
-/** Looks up a topic deck by its stable key + foreign language. */
+/**
+ * Looks up a topic deck by its stable key + foreign language, optionally
+ * narrowed to a native language. Omitting `nativeLang` returns whichever
+ * variant exists, which keeps callers that only know the target working.
+ */
 export async function getTopicDeck(
   topicKey: string,
   foreignLang: string,
+  nativeLang?: string,
 ): Promise<DeckWithWords | null> {
   const [row] = await db
     .select()
@@ -209,6 +217,7 @@ export async function getTopicDeck(
         eq(decks.kind, "topic"),
         eq(decks.topicKey, topicKey),
         eq(decks.foreignLang, foreignLang),
+        ...(nativeLang ? [eq(decks.nativeLang, nativeLang)] : []),
       ),
     )
     .limit(1);
@@ -325,10 +334,14 @@ export async function deleteCustomDeck(
 }
 
 /**
- * Replaces the full word list of a custom deck (used by the editor). Deletes
- * existing words and inserts the new set. Cascades remove orphaned stats.
+ * Syncs a custom deck's word list against what's stored (used by the
+ * editor's Save). Words matched by id with unchanged text keep their row
+ * (and therefore their `user_word_stats` progress) untouched; words that no
+ * longer appear are deleted; new words are inserted. A word whose id matches
+ * but whose text changed is treated as removed-then-reinserted, so editing a
+ * word intentionally resets its practice stats via the FK cascade.
  */
-export async function replaceDeckWords(
+export async function syncDeckWords(
   userId: string,
   deckId: string,
   words: WordInput[],
@@ -337,17 +350,59 @@ export async function replaceDeckWords(
     return null;
   }
 
-  await db.delete(deckWords).where(eq(deckWords.deckId, deckId));
+  const existing = await db
+    .select({
+      id: deckWords.id,
+      native: deckWords.native,
+      foreign: deckWords.foreign,
+    })
+    .from(deckWords)
+    .where(eq(deckWords.deckId, deckId));
 
-  if (words.length > 0) {
-    await db.insert(deckWords).values(
-      words.map((word, index) => ({
-        deckId,
-        native: word.native,
-        foreign: word.foreign,
-        orderIndex: index,
-      })),
-    );
+  const existingById = new Map(existing.map((row) => [row.id, row]));
+
+  const unchangedIds = new Set<string>();
+  const orderUpdates: { id: string; orderIndex: number }[] = [];
+  const toInsert: {
+    deckId: string;
+    native: string;
+    foreign: string;
+    orderIndex: number;
+  }[] = [];
+
+  words.forEach((word, index) => {
+    const native = word.native.trim();
+    const foreign = word.foreign.trim();
+    const match = word.id ? existingById.get(word.id) : undefined;
+
+    if (match && match.native === native && match.foreign === foreign) {
+      unchangedIds.add(match.id);
+      orderUpdates.push({ id: match.id, orderIndex: index });
+    } else {
+      toInsert.push({ deckId, native, foreign, orderIndex: index });
+    }
+  });
+
+  // Rows not carried over unchanged: either edited (replaced below with a
+  // fresh row) or actually removed. Either way the old row—and its cascaded
+  // stats—goes away.
+  const idsToDelete = existing
+    .map((row) => row.id)
+    .filter((id) => !unchangedIds.has(id));
+
+  if (idsToDelete.length > 0) {
+    await db.delete(deckWords).where(inArray(deckWords.id, idsToDelete));
+  }
+
+  if (toInsert.length > 0) {
+    await db.insert(deckWords).values(toInsert);
+  }
+
+  for (const update of orderUpdates) {
+    await db
+      .update(deckWords)
+      .set({ orderIndex: update.orderIndex })
+      .where(eq(deckWords.id, update.id));
   }
 
   await db

@@ -1,15 +1,10 @@
 import { redis } from "@/lib/redis";
+import { isLang, LANG_ENGLISH_NAMES, type Lang } from "@/app/_lib/languages";
 
 export const DAILY_DECK_LIMIT = 2;
 
-export type DeckLanguage = "english" | "czech" | "deutsch";
-
-// Human-readable names Gemini understands unambiguously in the prompt.
-const LANGUAGE_NAMES: Record<DeckLanguage, string> = {
-  english: "English",
-  czech: "Czech",
-  deutsch: "German",
-};
+/** @deprecated Use `Lang` — kept as an alias while call sites migrate. */
+export type DeckLanguage = Lang;
 
 export interface GeneratedWord {
   native: string;
@@ -17,7 +12,7 @@ export interface GeneratedWord {
 }
 
 export function isDeckLanguage(value: unknown): value is DeckLanguage {
-  return value === "english" || value === "czech" || value === "deutsch";
+  return isLang(value);
 }
 
 function utcDateKey(): string {
@@ -96,8 +91,8 @@ export async function generateDeckWords(params: {
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  const nativeName = LANGUAGE_NAMES[params.nativeLang];
-  const foreignName = LANGUAGE_NAMES[params.foreignLang];
+  const nativeName = LANG_ENGLISH_NAMES[params.nativeLang];
+  const foreignName = LANG_ENGLISH_NAMES[params.foreignLang];
   const count = Math.min(30, Math.max(4, Math.round(params.count)));
 
   const prompt = [

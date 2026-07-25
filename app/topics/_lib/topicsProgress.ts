@@ -1,6 +1,7 @@
 "use client";
 
 import { Language } from "@/app/_lib/translations";
+import type { Lang } from "@/app/_lib/languages";
 
 export type GameMode = "flip-cards" | "one-of-three";
 
@@ -149,7 +150,7 @@ function createDefaultState(): TopicsState {
   };
 }
 
-function getStorageKey(language: Language): string {
+function getStorageKey(language: Lang): string {
   return `${STORAGE_KEY}-${language}`;
 }
 
@@ -193,7 +194,7 @@ function normalizeState(raw: unknown): TopicsState {
   };
 }
 
-export function loadTopicsState(language: Language): TopicsState {
+export function loadTopicsState(language: Lang): TopicsState {
   if (typeof window === "undefined") {
     return createDefaultState();
   }
@@ -215,7 +216,7 @@ export function loadTopicsState(language: Language): TopicsState {
   }
 }
 
-export function saveTopicsState(language: Language, state: TopicsState): void {
+export function saveTopicsState(language: Lang, state: TopicsState): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -309,4 +310,20 @@ export function ascendTopic(state: TopicsState, topicId: string): TopicsState {
       },
     },
   };
+}
+
+// Topic display copy is only written for the three UI languages; anything else
+// (Spanish) reads it in English rather than rendering undefined.
+const LANG_TO_UI: Partial<Record<Lang, Language>> = {
+  en: "english",
+  cs: "czech",
+  de: "deutsch",
+};
+
+export function topicName(topic: TopicDefinition, lang: Lang): string {
+  return topic.names[LANG_TO_UI[lang] ?? "english"];
+}
+
+export function topicDescription(topic: TopicDefinition, lang: Lang): string {
+  return topic.descriptions[LANG_TO_UI[lang] ?? "english"];
 }

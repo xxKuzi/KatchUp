@@ -2,12 +2,12 @@
 // "native" word with its German and Spanish translations. The seed builds one
 // topic deck per (topicKey, foreignLang) from this data.
 
-export type SeedLanguage = "german" | "spanish";
+export type SeedLanguage = "de" | "es";
 
 export interface TopicSeedWord {
   native: string; // English
-  german: string;
-  spanish: string;
+  de: string;
+  es: string;
 }
 
 export interface TopicSeed {
@@ -20,85 +20,85 @@ export interface TopicSeed {
 export const TOPIC_SEEDS: TopicSeed[] = [
   {
     topicKey: "autos",
-    name: { german: "Autos", spanish: "Coches" },
+    name: { de: "Autos", es: "Coches" },
     words: [
-      { native: "car", german: "Auto", spanish: "coche" },
-      { native: "road", german: "Strasse", spanish: "carretera" },
-      { native: "wheel", german: "Rad", spanish: "rueda" },
-      { native: "engine", german: "Motor", spanish: "motor" },
-      { native: "brake", german: "Bremse", spanish: "freno" },
-      { native: "driver", german: "Fahrer", spanish: "conductor" },
-      { native: "fuel", german: "Kraftstoff", spanish: "combustible" },
-      { native: "traffic", german: "Verkehr", spanish: "trafico" },
-      { native: "speed", german: "Geschwindigkeit", spanish: "velocidad" },
-      { native: "highway", german: "Autobahn", spanish: "autopista" },
+      { native: "car", de: "Auto", es: "coche" },
+      { native: "road", de: "Strasse", es: "carretera" },
+      { native: "wheel", de: "Rad", es: "rueda" },
+      { native: "engine", de: "Motor", es: "motor" },
+      { native: "brake", de: "Bremse", es: "freno" },
+      { native: "driver", de: "Fahrer", es: "conductor" },
+      { native: "fuel", de: "Kraftstoff", es: "combustible" },
+      { native: "traffic", de: "Verkehr", es: "trafico" },
+      { native: "speed", de: "Geschwindigkeit", es: "velocidad" },
+      { native: "highway", de: "Autobahn", es: "autopista" },
     ],
   },
   {
     topicKey: "essen",
-    name: { german: "Essen", spanish: "Comida" },
+    name: { de: "Essen", es: "Comida" },
     words: [
-      { native: "bread", german: "Brot", spanish: "pan" },
-      { native: "water", german: "Wasser", spanish: "agua" },
-      { native: "meat", german: "Fleisch", spanish: "carne" },
-      { native: "cheese", german: "Kaese", spanish: "queso" },
-      { native: "soup", german: "Suppe", spanish: "sopa" },
-      { native: "breakfast", german: "Fruehstueck", spanish: "desayuno" },
-      { native: "dinner", german: "Abendessen", spanish: "cena" },
-      { native: "coffee", german: "Kaffee", spanish: "cafe" },
-      { native: "sugar", german: "Zucker", spanish: "azucar" },
-      { native: "plate", german: "Teller", spanish: "plato" },
+      { native: "bread", de: "Brot", es: "pan" },
+      { native: "water", de: "Wasser", es: "agua" },
+      { native: "meat", de: "Fleisch", es: "carne" },
+      { native: "cheese", de: "Kaese", es: "queso" },
+      { native: "soup", de: "Suppe", es: "sopa" },
+      { native: "breakfast", de: "Fruehstueck", es: "desayuno" },
+      { native: "dinner", de: "Abendessen", es: "cena" },
+      { native: "coffee", de: "Kaffee", es: "cafe" },
+      { native: "sugar", de: "Zucker", es: "azucar" },
+      { native: "plate", de: "Teller", es: "plato" },
     ],
   },
   {
     topicKey: "obst-gemuese",
-    name: { german: "Obst & Gemuese", spanish: "Frutas y verduras" },
+    name: { de: "Obst & Gemuese", es: "Frutas y verduras" },
     words: [
-      { native: "apple", german: "Apfel", spanish: "manzana" },
-      { native: "banana", german: "Banane", spanish: "platano" },
-      { native: "orange", german: "Orange", spanish: "naranja" },
-      { native: "tomato", german: "Tomate", spanish: "tomate" },
-      { native: "potato", german: "Kartoffel", spanish: "patata" },
-      { native: "carrot", german: "Karotte", spanish: "zanahoria" },
-      { native: "onion", german: "Zwiebel", spanish: "cebolla" },
-      { native: "lemon", german: "Zitrone", spanish: "limon" },
-      { native: "grape", german: "Traube", spanish: "uva" },
-      { native: "salad", german: "Salat", spanish: "ensalada" },
+      { native: "apple", de: "Apfel", es: "manzana" },
+      { native: "banana", de: "Banane", es: "platano" },
+      { native: "orange", de: "Orange", es: "naranja" },
+      { native: "tomato", de: "Tomate", es: "tomate" },
+      { native: "potato", de: "Kartoffel", es: "patata" },
+      { native: "carrot", de: "Karotte", es: "zanahoria" },
+      { native: "onion", de: "Zwiebel", es: "cebolla" },
+      { native: "lemon", de: "Zitrone", es: "limon" },
+      { native: "grape", de: "Traube", es: "uva" },
+      { native: "salad", de: "Salat", es: "ensalada" },
     ],
   },
   {
     topicKey: "reisen",
-    name: { german: "Reisen", spanish: "Viajes" },
+    name: { de: "Reisen", es: "Viajes" },
     words: [
-      { native: "airport", german: "Flughafen", spanish: "aeropuerto" },
-      { native: "ticket", german: "Fahrkarte", spanish: "billete" },
-      { native: "hotel", german: "Hotel", spanish: "hotel" },
-      { native: "luggage", german: "Gepaeck", spanish: "equipaje" },
-      { native: "passport", german: "Reisepass", spanish: "pasaporte" },
-      { native: "train", german: "Zug", spanish: "tren" },
-      { native: "map", german: "Karte", spanish: "mapa" },
-      { native: "beach", german: "Strand", spanish: "playa" },
-      { native: "station", german: "Bahnhof", spanish: "estacion" },
-      { native: "journey", german: "Reise", spanish: "viaje" },
+      { native: "airport", de: "Flughafen", es: "aeropuerto" },
+      { native: "ticket", de: "Fahrkarte", es: "billete" },
+      { native: "hotel", de: "Hotel", es: "hotel" },
+      { native: "luggage", de: "Gepaeck", es: "equipaje" },
+      { native: "passport", de: "Reisepass", es: "pasaporte" },
+      { native: "train", de: "Zug", es: "tren" },
+      { native: "map", de: "Karte", es: "mapa" },
+      { native: "beach", de: "Strand", es: "playa" },
+      { native: "station", de: "Bahnhof", es: "estacion" },
+      { native: "journey", de: "Reise", es: "viaje" },
     ],
   },
   {
     topicKey: "alltag",
-    name: { german: "Alltag", spanish: "Vida diaria" },
+    name: { de: "Alltag", es: "Vida diaria" },
     words: [
-      { native: "morning", german: "Morgen", spanish: "manana" },
-      { native: "work", german: "Arbeit", spanish: "trabajo" },
-      { native: "house", german: "Haus", spanish: "casa" },
-      { native: "money", german: "Geld", spanish: "dinero" },
-      { native: "friend", german: "Freund", spanish: "amigo" },
-      { native: "phone", german: "Telefon", spanish: "telefono" },
-      { native: "time", german: "Zeit", spanish: "tiempo" },
-      { native: "week", german: "Woche", spanish: "semana" },
-      { native: "sleep", german: "Schlaf", spanish: "sueno" },
-      { native: "shopping", german: "Einkaufen", spanish: "compras" },
+      { native: "morning", de: "Morgen", es: "manana" },
+      { native: "work", de: "Arbeit", es: "trabajo" },
+      { native: "house", de: "Haus", es: "casa" },
+      { native: "money", de: "Geld", es: "dinero" },
+      { native: "friend", de: "Freund", es: "amigo" },
+      { native: "phone", de: "Telefon", es: "telefono" },
+      { native: "time", de: "Zeit", es: "tiempo" },
+      { native: "week", de: "Woche", es: "semana" },
+      { native: "sleep", de: "Schlaf", es: "sueno" },
+      { native: "shopping", de: "Einkaufen", es: "compras" },
     ],
   },
 ];
 
-export const SEED_FOREIGN_LANGUAGES: SeedLanguage[] = ["german", "spanish"];
-export const TOPIC_NATIVE_LANG = "english";
+export const SEED_FOREIGN_LANGUAGES: SeedLanguage[] = ["de", "es"];
+export const TOPIC_NATIVE_LANG = "en";

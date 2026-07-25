@@ -4,7 +4,7 @@ import {
   WordInput,
   deleteCustomDeck,
   getDeckForUser,
-  replaceDeckWords,
+  syncDeckWords,
   updateCustomDeck,
 } from "../_lib/deckStore";
 
@@ -21,6 +21,7 @@ function sanitizeWords(value: unknown): WordInput[] {
     .map((item) => {
       const word = (item ?? {}) as Partial<WordInput>;
       return {
+        id: typeof word.id === "string" ? word.id : undefined,
         native: typeof word.native === "string" ? word.native.trim() : "",
         foreign: typeof word.foreign === "string" ? word.foreign.trim() : "",
       };
@@ -79,9 +80,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  // If the caller sent a word list, replace the deck's words wholesale.
+  // If the caller sent a word list, sync it against what's stored so
+  // unedited words keep their practice stats.
   if (body.words !== undefined) {
-    updated = await replaceDeckWords(
+    updated = await syncDeckWords(
       session.user.id,
       deckId,
       sanitizeWords(body.words),

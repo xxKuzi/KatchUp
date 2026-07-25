@@ -35,10 +35,14 @@ function DeckEditorPage() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [newDeckName, setNewDeckName] = useState("New Custom Deck");
-  const [newDeckNativeLang, setNewDeckNativeLang] = useState(language);
-  const [newDeckForeignLang, setNewDeckForeignLang] =
-    useState(learningLanguage);
+  const [creatingDeck, setCreatingDeck] = useState(false);
+  const [quickDeckName, setQuickDeckName] = useState("");
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [deckPendingDelete, setDeckPendingDelete] = useState<DeckMeta | null>(
+    null,
+  );
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingDeck, setDeletingDeck] = useState(false);
   const [newNativeWord, setNewNativeWord] = useState("");
   const [newForeignWord, setNewForeignWord] = useState("");
 
@@ -81,11 +85,6 @@ function DeckEditorPage() {
       cancelled = true;
     };
   }, [isSignedIn, refreshDecks, searchParams, language, learningLanguage]);
-
-  useEffect(() => {
-    setNewDeckNativeLang(language);
-    setNewDeckForeignLang(learningLanguage);
-  }, [language, learningLanguage]);
 
   // Load the selected deck's words into an editable draft.
   useEffect(() => {
@@ -156,13 +155,17 @@ function DeckEditorPage() {
 
   const handleCreateDeck = async (event: React.FormEvent) => {
     event.preventDefault();
+    const name = quickDeckName.trim();
+    if (!name) return;
     const { deck } = await createDeck({
-      name: newDeckName.trim() || "New Custom Deck",
-      nativeLang: newDeckNativeLang.trim() || language,
-      foreignLang: newDeckForeignLang.trim() || learningLanguage,
+      name,
+      nativeLang: language,
+      foreignLang: learningLanguage,
     });
     await refreshDecks();
     setSelectedDeckId(deck.id);
+    setQuickDeckName("");
+    setCreatingDeck(false);
   };
 
   const handleGenerateDeck = async (event: React.FormEvent) => {
@@ -181,8 +184,8 @@ function DeckEditorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topic,
-          nativeLang: newDeckNativeLang,
-          foreignLang: newDeckForeignLang,
+          nativeLang: language,
+          foreignLang: learningLanguage,
           count: aiCount,
         }),
       });
@@ -207,8 +210,8 @@ function DeckEditorPage() {
 
       const { deck } = await createDeck({
         name: topic,
-        nativeLang: newDeckNativeLang.trim() || language,
-        foreignLang: newDeckForeignLang.trim() || learningLanguage,
+        nativeLang: language,
+        foreignLang: learningLanguage,
         words,
       });
       await refreshDecks();
@@ -231,6 +234,7 @@ function DeckEditorPage() {
         nativeLang: draft.nativeLang,
         foreignLang: draft.foreignLang,
         words: draft.words.map((word) => ({
+          id: word.id,
           native: word.native,
           foreign: word.foreign,
         })),
@@ -244,17 +248,27 @@ function DeckEditorPage() {
     }
   };
 
-  const handleDeleteDeck = async () => {
-    if (!draft) return;
-    await deleteDeck(draft.id);
-    const remaining = await refreshDecks();
-    const nextPair = remaining.filter(
-      (deck) =>
-        deck.nativeLang.trim().toLowerCase() === language &&
-        deck.foreignLang.trim().toLowerCase() === learningLanguage,
-    );
-    setSelectedDeckId(nextPair[0]?.id ?? "");
-    setDraft(null);
+  const handleConfirmDeleteDeck = async () => {
+    if (!deckPendingDelete) return;
+    if (deleteConfirmText.trim() !== deckPendingDelete.name.trim()) return;
+    setDeletingDeck(true);
+    try {
+      await deleteDeck(deckPendingDelete.id);
+      const remaining = await refreshDecks();
+      if (selectedDeckId === deckPendingDelete.id) {
+        const nextPair = remaining.filter(
+          (deck) =>
+            deck.nativeLang.trim().toLowerCase() === language &&
+            deck.foreignLang.trim().toLowerCase() === learningLanguage,
+        );
+        setSelectedDeckId(nextPair[0]?.id ?? "");
+        setDraft(null);
+      }
+      setDeckPendingDelete(null);
+      setDeleteConfirmText("");
+    } finally {
+      setDeletingDeck(false);
+    }
   };
 
   const handleAddWord = (event: React.FormEvent) => {
@@ -335,53 +349,6 @@ function DeckEditorPage() {
             </p>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              New Deck
-            </h2>
-            <form className="mt-4 space-y-3" onSubmit={handleCreateDeck}>
-              <input
-                type="text"
-                value={newDeckName}
-                onChange={(event) => setNewDeckName(event.target.value)}
-                placeholder="Deck name"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-              <select
-                value={newDeckNativeLang}
-                onChange={(event) =>
-                  setNewDeckNativeLang(event.target.value as Language)
-                }
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {Object.entries(LANGUAGES).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={newDeckForeignLang}
-                onChange={(event) =>
-                  setNewDeckForeignLang(event.target.value as Language)
-                }
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {Object.entries(LANGUAGES).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
-              >
-                Create Deck
-              </button>
-            </form>
-          </section>
-
           <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm dark:border-violet-900/60 dark:from-violet-950/40 dark:to-slate-950">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -395,8 +362,8 @@ function DeckEditorPage() {
             </div>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Describe a topic and let AI build a deck for{" "}
-              {LANGUAGES[newDeckNativeLang as Language]} →{" "}
-              {LANGUAGES[newDeckForeignLang as Language]}.
+              {LANGUAGES[language as Language]} →{" "}
+              {LANGUAGES[learningLanguage as Language]}.
             </p>
 
             {!isReady ? null : !isSignedIn ? (
@@ -450,26 +417,113 @@ function DeckEditorPage() {
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              Decks
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Decks
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteMode(false);
+                    setCreatingDeck((current) => !current);
+                  }}
+                  aria-label="New deck"
+                  title="New deck"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-lg font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  +
+                </button>
+                {groupEntries.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreatingDeck(false);
+                      setDeleteMode((current) => !current);
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                      deleteMode
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-200"
+                        : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
+                    }`}
+                  >
+                    {deleteMode ? "Done" : "Delete"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {creatingDeck && (
+              <form
+                className="mt-4 flex items-center gap-2"
+                onSubmit={handleCreateDeck}
+              >
+                <input
+                  type="text"
+                  autoFocus
+                  value={quickDeckName}
+                  onChange={(event) => setQuickDeckName(event.target.value)}
+                  placeholder={`Deck name (${LANGUAGES[language as Language]} → ${LANGUAGES[learningLanguage as Language]})`}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+                <button
+                  type="submit"
+                  disabled={!quickDeckName.trim()}
+                  className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400"
+                >
+                  Create
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreatingDeck(false);
+                    setQuickDeckName("");
+                  }}
+                  aria-label="Cancel"
+                  className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  ✕
+                </button>
+              </form>
+            )}
+
             <div className="mt-4 space-y-3">
+              {groupEntries.length === 0 && (
+                <p className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  No decks yet — tap + to create one.
+                </p>
+              )}
               {groupEntries.map(([groupName, groupDecks]) => (
                 <div key={groupName} className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     {groupName}
                   </p>
-                  {groupDecks.map((deck) => (
+                  {groupDecks.map((deck, index) => (
                     <button
                       key={deck.id}
                       type="button"
-                      onClick={() => setSelectedDeckId(deck.id)}
-                      className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                        selectedDeckId === deck.id
+                      onClick={() =>
+                        deleteMode
+                          ? setDeckPendingDelete(deck)
+                          : setSelectedDeckId(deck.id)
+                      }
+                      className={`relative w-full rounded-lg border px-3 py-2 text-left transition ${
+                        selectedDeckId === deck.id && !deleteMode
                           ? "border-blue-500 bg-blue-50 text-blue-800 dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-200"
                           : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                      } ${
+                        deleteMode
+                          ? index % 2 === 0
+                            ? "animate-deck-jiggle"
+                            : "animate-deck-jiggle-alt"
+                          : ""
                       }`}
                     >
+                      {deleteMode && (
+                        <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold leading-none text-white shadow">
+                          −
+                        </span>
+                      )}
                       <p className="text-sm font-semibold">{deck.name}</p>
                       <p className="text-xs opacity-80">
                         {deck.wordCount} words
@@ -548,16 +602,6 @@ function DeckEditorPage() {
                     />
                   </label>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-end rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                <button
-                  type="button"
-                  onClick={handleDeleteDeck}
-                  className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 font-medium text-red-700 transition hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
-                >
-                  Delete Deck
-                </button>
               </div>
 
               <form
@@ -648,6 +692,63 @@ function DeckEditorPage() {
           )}
         </section>
       </div>
+
+      {deckPendingDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4"
+          onClick={() => {
+            setDeckPendingDelete(null);
+            setDeleteConfirmText("");
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-950"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              Delete deck?
+            </h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              This will permanently delete{" "}
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                {deckPendingDelete.name}
+              </span>{" "}
+              and all its words. Type its name to confirm.
+            </p>
+            <input
+              type="text"
+              autoFocus
+              value={deleteConfirmText}
+              onChange={(event) => setDeleteConfirmText(event.target.value)}
+              placeholder={deckPendingDelete.name}
+              className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeckPendingDelete(null);
+                  setDeleteConfirmText("");
+                }}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteDeck}
+                disabled={
+                  deleteConfirmText.trim() !== deckPendingDelete.name.trim() ||
+                  deletingDeck
+                }
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-400"
+              >
+                {deletingDeck ? "Deleting…" : "Delete Deck"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

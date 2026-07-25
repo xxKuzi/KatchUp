@@ -57,6 +57,7 @@ export interface DeckWithWords extends DeckMeta {
 }
 
 export interface WordInput {
+  id?: string;
   native: string;
   foreign: string;
 }

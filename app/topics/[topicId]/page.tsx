@@ -12,8 +12,9 @@ import {
   loadTopicsState,
   saveTopicsState,
   TOPICS,
+  topicName,
+  topicDescription,
 } from "../_lib/topicsProgress";
-import { uiLangToForeignLang } from "../_lib/topicDeckMapping";
 
 export default function TopicDetailPage() {
   const params = useParams<{ topicId: string }>();
@@ -36,7 +37,7 @@ export default function TopicDetailPage() {
 
   // Resolve the DB topic deck for (topicKey, foreignLang) so levels can link
   // with a real deck ID and use DB words + spaced-repetition tracking.
-  const foreignLang = uiLangToForeignLang(learningLanguage);
+  const foreignLang = learningLanguage;
   const fetchDeckId = useCallback(async () => {
     if (!topic) return;
     try {
@@ -105,10 +106,10 @@ export default function TopicDetailPage() {
               ← {t("topics.back", "Back to topics")}
             </Link>
             <h1 className="mt-4 text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">
-              {topic.icon} - {topic.names[language]}
+              {topic.icon} - {topicName(topic, language)}
             </h1>
             <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
-              {topic.descriptions[language]}
+              {topicDescription(topic, language)}
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
               {t("topics.progress", "Progress")}:{" "}

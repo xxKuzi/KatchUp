@@ -1,6 +1,7 @@
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { deckWords, decks, userWordStats } from "@/db/schema";
+import { LANG_ENGLISH_NAMES, normalizeLang } from "@/app/_lib/languages";
 import {
   DeckWithWords,
   DeckWordRecord,
@@ -370,6 +371,47 @@ export async function getDeckProgress(
     return null;
   }
   return buildSummary(await enrichDeck(userId, deck));
+}
+
+/**
+ * Counts the user's known words for a language they're learning. Drives the
+ * navbar's CEFR-style level badge.
+ *
+ * A deck always teaches its `foreignLang` — "learn English from German" is
+ * stored as nativeLang=german/foreignLang=english — so the foreign slot is the
+ * right one to match on. It may however still hold a legacy name ("german")
+ * while callers now pass a canonical code ("de"), so every accepted spelling
+ * of the requested language is matched.
+ */
+export async function countKnownWordsForLanguage(
+  userId: string,
+  language: string,
+): Promise<number> {
+  const canonical = normalizeLang(language);
+  const accepted = Array.from(
+    new Set(
+      [
+        language.toLowerCase(),
+        canonical,
+        canonical ? LANG_ENGLISH_NAMES[canonical].toLowerCase() : null,
+      ].filter((value): value is string => Boolean(value)),
+    ),
+  );
+
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(userWordStats)
+    .innerJoin(deckWords, eq(userWordStats.deckWordId, deckWords.id))
+    .innerJoin(decks, eq(deckWords.deckId, decks.id))
+    .where(
+      and(
+        eq(userWordStats.userId, userId),
+        eq(userWordStats.known, true),
+        inArray(sql`lower(${decks.foreignLang})`, accepted),
+      ),
+    );
+
+  return Number(row?.count ?? 0);
 }
 
 /**

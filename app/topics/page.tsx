@@ -8,6 +8,8 @@ import {
   saveTopicsState,
   TOPICS,
   unlockTopic,
+  topicName,
+  topicDescription,
 } from "./_lib/topicsProgress";
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
@@ -112,8 +114,8 @@ export default function TopicsPage() {
                   <TopicCard
                     key={topic.id}
                     topic={topic}
-                    title={`${topic.icon} - ${topic.names[language]}`}
-                    description={topic.descriptions[language]}
+                    title={`${topic.icon} - ${topicName(topic, language)}`}
+                    description={topicDescription(topic, language)}
                     levelCount={levelCount}
                     unlocked={unlocked}
                     justCompleted={justCompleted}
