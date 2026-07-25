@@ -63,13 +63,13 @@ export default function Games() {
 
         <section className="mt-12 w-full max-w-6xl">
           <h2 className="mb-8 flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
-            <span>Top picks</span>
+            <span>Top picks - online</span>
             <Star className="h-7 w-7" />
           </h2>
 
           <div className="flex flex-col gap-8">
             <GameBanner
-              name="Live Online Duel"
+              name="Live Duel "
               url="/games/choose-one-multiplayer?mode=live"
               img="flip_cards.png"
               tagline="Live 1v1 · Race to 10"

@@ -19,7 +19,7 @@ export const LANGUAGE_FLAGS: Record<Language, string> = {
 export const translations: Record<Language, Translations> = {
   english: {
     navbar: {
-      games: "Online Games",
+      games: "Games",
       topics: "Topics",
       myDecks: "My Decks",
       friends: "Me & Friends",

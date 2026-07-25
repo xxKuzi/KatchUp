@@ -54,7 +54,7 @@ function GameCarousel() {
       featureColor: "blue",
     },
     {
-      name: "Live Online Duel",
+      name: "Live Duel",
       url: "/games/choose-one-multiplayer?mode=live",
       img: "flip_cards.png",
       color: "blue",
