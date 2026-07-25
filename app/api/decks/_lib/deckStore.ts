@@ -5,6 +5,7 @@ import {
   conceptTranslations,
   deckWords,
   decks,
+  userWordStats,
   wordConcepts,
 } from "@/db/schema";
 import {
@@ -31,6 +32,8 @@ export interface DeckRecord {
   nativeLang: string;
   foreignLang: string;
   wordCount: number;
+  /** Words the user has mastered in this deck. 0 when signed out. */
+  knownCount: number;
 }
 
 export interface DeckWithWords extends DeckRecord {
@@ -46,6 +49,7 @@ export interface WordInput {
 function toDeckRecord(
   row: typeof decks.$inferSelect,
   wordCount = 0,
+  knownCount = 0,
 ): DeckRecord {
   return {
     id: row.id,
@@ -56,9 +60,42 @@ function toDeckRecord(
     nativeLang: row.nativeLang,
     foreignLang: row.foreignLang,
     wordCount,
+    knownCount,
   };
 }
 
+/**
+ * Returns a map of deckId -> mastered word count for one user.
+ *
+ * Batched on purpose: `getDeckProgress` loads every word and stat for a single
+ * deck, which is far too heavy to call once per row on a list page.
+ */
+async function countKnownByDeck(
+  userId: string,
+  deckIds: string[],
+): Promise<Map<string, number>> {
+  if (deckIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({
+      deckId: deckWords.deckId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(userWordStats)
+    .innerJoin(deckWords, eq(deckWords.id, userWordStats.deckWordId))
+    .where(
+      and(
+        eq(userWordStats.userId, userId),
+        eq(userWordStats.known, true),
+        inArray(deckWords.deckId, deckIds),
+      ),
+    )
+    .groupBy(deckWords.deckId);
+
+  return new Map(rows.map((row) => [row.deckId, row.count]));
+}
 
 /** Returns a map of deckId -> word count for the given deck ids. */
 async function countWordsByDeck(
@@ -292,8 +329,12 @@ export async function listDecksForUser(userId: string): Promise<DeckRecord[]> {
     .where(or(eq(decks.kind, "topic"), eq(decks.ownerUserId, userId)))
     .orderBy(desc(decks.updatedAt));
 
-  const counts = await countWordsByDeck(rows.map((row) => row.id));
-  return rows.map((row) => toDeckRecord(row, counts.get(row.id) ?? 0));
+  const deckIds = rows.map((row) => row.id);
+  const counts = await countWordsByDeck(deckIds);
+  const known = await countKnownByDeck(userId, deckIds);
+  return rows.map((row) =>
+    toDeckRecord(row, counts.get(row.id) ?? 0, known.get(row.id) ?? 0),
+  );
 }
 
 /** Only the user's own custom decks. */
@@ -304,8 +345,12 @@ export async function listCustomDecks(userId: string): Promise<DeckRecord[]> {
     .where(and(eq(decks.kind, "custom"), eq(decks.ownerUserId, userId)))
     .orderBy(desc(decks.updatedAt));
 
-  const counts = await countWordsByDeck(rows.map((row) => row.id));
-  return rows.map((row) => toDeckRecord(row, counts.get(row.id) ?? 0));
+  const deckIds = rows.map((row) => row.id);
+  const counts = await countWordsByDeck(deckIds);
+  const known = await countKnownByDeck(userId, deckIds);
+  return rows.map((row) =>
+    toDeckRecord(row, counts.get(row.id) ?? 0, known.get(row.id) ?? 0),
+  );
 }
 
 /**

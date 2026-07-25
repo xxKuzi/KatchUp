@@ -17,6 +17,7 @@ import { useFallbackWords } from "../_lib/useFallbackWords";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
+import DeckRoundProgress from "../_components/DeckRoundProgress";
 
 interface PracticeWord {
   id: string;
@@ -511,6 +512,9 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
               <p className="mt-3 text-slate-600 dark:text-slate-300">
                 Score: {scorePercent}% ({correctCount}/{totalWords})
               </p>
+              {deckId && (
+                <DeckRoundProgress deckId={deckId} className="mt-5" />
+              )}
               <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold">
                 {lessonPassed ? (
                   <>

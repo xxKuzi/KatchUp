@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../_lib/languageContext";
 import { useAuthState } from "../_lib/auth";
 import { DeckMeta, ApiError, listDecks } from "../games/_lib/deckSessionClient";
+import DeckProgress from "@/app/_components/DeckProgress";
 
 export default function MyDecksOverview() {
   const { t, language, learningLanguage } = useLanguage();
@@ -140,6 +141,13 @@ export default function MyDecksOverview() {
                         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                           {deck.wordCount} {t("common.words")}
                         </p>
+                        {deck.wordCount > 0 && (
+                          <DeckProgress
+                            known={deck.knownCount}
+                            total={deck.wordCount}
+                            className="mt-3"
+                          />
+                        )}
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Link
                             href={`/my-decks/edit?deck=${deck.id}`}

@@ -50,6 +50,8 @@ export interface DeckMeta {
   nativeLang: string;
   foreignLang: string;
   wordCount: number;
+  /** Words mastered in this deck; 0 when signed out. */
+  knownCount: number;
 }
 
 export interface DeckWithWords extends DeckMeta {
@@ -148,6 +150,20 @@ export async function fetchSession(
   if (options.size) params.set("size", String(options.size));
   const query = params.toString();
   return apiFetch(`/api/decks/${deckId}/session${query ? `?${query}` : ""}`);
+}
+
+/**
+ * Fresh mastery counts for a deck. The summary bundled with a session is a
+ * snapshot from when that session started, so end-of-round screens ask for
+ * this instead.
+ */
+export async function fetchDeckProgress(
+  deckId: string,
+): Promise<DeckProgressSummary> {
+  const data = await apiFetch<{ progress: DeckProgressSummary }>(
+    `/api/decks/${deckId}/progress`,
+  );
+  return data.progress;
 }
 
 export async function postAttempts(

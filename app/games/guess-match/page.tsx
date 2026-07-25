@@ -17,6 +17,7 @@ import { useFallbackWords } from "../_lib/useFallbackWords";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
+import DeckRoundProgress from "../_components/DeckRoundProgress";
 
 interface PracticeWord {
   id: string;
@@ -440,6 +441,9 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
                 Accuracy: {scorePercent}% - {mistakes} mistake
                 {mistakes === 1 ? "" : "s"} - {elapsedSeconds}s
               </p>
+              {deckId && (
+                <DeckRoundProgress deckId={deckId} className="mt-5" />
+              )}
               <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold">
                 {lessonPassed ? (
                   <>

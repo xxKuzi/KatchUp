@@ -6,9 +6,12 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "../../_lib/languageContext";
 import {
   ApiError,
+  DeckProgressSummary,
   DeckWithWords,
+  fetchDeckProgress,
   getDeck,
 } from "../../games/_lib/deckSessionClient";
+import DeckProgress from "@/app/_components/DeckProgress";
 
 const GAME_MODE_IDS = [
   {
@@ -42,6 +45,7 @@ function PracticeModeSelector() {
   const searchParams = useSearchParams();
   const deckId = searchParams.get("deck") ?? "";
   const [deck, setDeck] = useState<DeckWithWords | null>(null);
+  const [progress, setProgress] = useState<DeckProgressSummary | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "notfound">(
     deckId ? "loading" : "notfound",
   );
@@ -52,6 +56,17 @@ function PracticeModeSelector() {
     }
 
     let cancelled = false;
+
+    fetchDeckProgress(deckId)
+      .then((value) => {
+        if (!cancelled) {
+          setProgress(value);
+        }
+      })
+      .catch(() => {
+        // Non-critical: the launcher still works without the progress bar.
+      });
+
     getDeck(deckId)
       .then((data) => {
         if (!cancelled) {
@@ -148,6 +163,12 @@ function PracticeModeSelector() {
             {t("practice.startFinishRound", "Start finish round")}
           </Link>
         </div>
+
+        {progress && progress.total > 0 && (
+          <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <DeckProgress known={progress.known} total={progress.total} />
+          </div>
+        )}
 
         <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
           <p className="text-sm text-slate-600 dark:text-slate-400">

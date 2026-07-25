@@ -48,6 +48,12 @@ export const translations: Record<Language, Translations> = {
       friends:
         "Let your friends see your progress and challenge your streak. Sign in to open Friends.",
     },
+    deck: {
+      learned: "learned",
+      toGo: "to go",
+      allLearned: "All learned 🎉",
+      nextBatch: "Play again for the next words",
+    },
     common: {
       welcome: "Welcome",
       language: "Language",
@@ -222,6 +228,12 @@ export const translations: Record<Language, Translations> = {
       friends:
         "At vasi pratele vidi vas pokrok a vyzyvaji vas. Prihlaste se pro sekci Pratele.",
     },
+    deck: {
+      learned: "naučeno",
+      toGo: "zbývá",
+      allLearned: "Vše naučeno 🎉",
+      nextBatch: "Hrajte znovu pro další slova",
+    },
     common: {
       welcome: "Vítejte",
       language: "Jazyk",
@@ -395,6 +407,12 @@ export const translations: Record<Language, Translations> = {
         "Verfolge deinen Themenfortschritt und schalte Pakete mit Schlusseln frei. Melde dich an.",
       friends:
         "Lass Freunde deinen Fortschritt sehen und dich herausfordern. Melde dich an fur Freunde.",
+    },
+    deck: {
+      learned: "gelernt",
+      toGo: "übrig",
+      allLearned: "Alles gelernt 🎉",
+      nextBatch: "Nochmal spielen für die nächsten Wörter",
     },
     common: {
       welcome: "Willkommen",
