@@ -65,7 +65,12 @@ export const verificationTokens = pgTable(
 
 export const matches = pgTable("matches", {
   id: uuid("id").defaultRandom().primaryKey(),
+  // The language being learned. Both players must share it, along with
+  // `nativeLang`, or the answer options would be in different languages.
   language: text("language").notNull(),
+  // The language both players speak. Null on matches created before pairs
+  // existed, which are read as English.
+  nativeLang: text("native_lang"),
   level: text("level").notNull(),
   mode: text("mode").default("fair").notNull(),
   status: text("status").notNull(),
@@ -178,10 +183,15 @@ export const decks = pgTable(
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => ({
-    // One canonical topic deck per (topicKey, foreignLang). Custom decks keep
-    // topicKey null; Postgres treats nulls as distinct, so they don't collide.
-    topicKeyLangUnique: uniqueIndex("decks_topic_key_foreign_lang_key").on(
+    // One canonical topic deck per (topicKey, nativeLang, foreignLang). The
+    // native side is part of the key so the same topic can exist for speakers
+    // of different languages — "Food" for an English speaker learning German
+    // is a different deck from "Food" for a Czech speaker learning German.
+    // Custom decks keep topicKey null; Postgres treats nulls as distinct, so
+    // they don't collide.
+    topicKeyLangUnique: uniqueIndex("decks_topic_key_lang_key").on(
       table.topicKey,
+      table.nativeLang,
       table.foreignLang,
     ),
     ownerIdx: index("decks_owner_user_id_idx").on(table.ownerUserId),
@@ -234,21 +244,46 @@ export const userWordStats = pgTable(
   }),
 );
 
-export const globalWords = pgTable(
-  "global_words",
+// Unified vocabulary. One row per *concept* (an idea like "bread"), with its
+// wording in each language living in `concept_translations`. This replaces the
+// old per-language `global_words` rows, which pinned English to the "native"
+// side and so made pairs like German -> English impossible to express.
+export const wordConcepts = pgTable("word_concepts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  // Slug of the English word — stable identity for re-seeding.
+  conceptKey: text("concept_key").notNull().unique(),
+  category: text("category").notNull().default("general"),
+  // Set only for concepts that belong to the ordered lecture progression.
+  lectureIndex: integer("lecture_index"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// CEFR level lives here rather than on the concept because difficulty is
+// language-dependent: "voyage" is A1 in Spanish (viaje) but B2 in German
+// (Seereise). Cognates make the same idea easy in one language and hard in
+// another, so each translation carries its own level.
+export const conceptTranslations = pgTable(
+  "concept_translations",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    language: text("language").notNull(), // "german" | "spanish"
+    conceptId: uuid("concept_id")
+      .notNull()
+      .references(() => wordConcepts.id, { onDelete: "cascade" }),
+    lang: text("lang").notNull(), // "en" | "de" | "es" | "cs"
+    text: text("text").notNull(),
     level: text("level").notNull(), // "A1" | "A2" | "B1" | "B2" | "C1"
-    category: text("category").notNull().default("general"),
-    native: text("native").notNull(),
-    foreign: text("foreign").notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => ({
-    langLevelIdx: index("global_words_lang_level_idx").on(
-      table.language,
+    conceptLangUnique: uniqueIndex(
+      "concept_translations_concept_id_lang_key",
+    ).on(table.conceptId, table.lang),
+    // Serves the hot query: pick N concepts where the target language sits at
+    // a given level, joined to the prompt language on concept_id.
+    langLevelIdx: index("concept_translations_lang_level_idx").on(
+      table.lang,
       table.level,
     ),
   }),
 );
+

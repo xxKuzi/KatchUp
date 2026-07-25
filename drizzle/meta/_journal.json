@@ -36,6 +36,34 @@
       "when": 1784933465771,
       "tag": "0004_huge_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784987946424,
+      "tag": "0005_nosy_jasper_sitwell",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784990145356,
+      "tag": "0006_slimy_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784990882703,
+      "tag": "0007_light_klaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784991057063,
+      "tag": "0008_nifty_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }
