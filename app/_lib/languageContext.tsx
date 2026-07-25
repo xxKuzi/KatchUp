@@ -1,14 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Language, translations, Translations } from "./translations";
+import { Translations, translationsForLang } from "./translations";
+import { detectBrowserLang, normalizeLang, type Lang } from "./languages";
 
 interface LanguageContextType {
   // The UI language is also the user's native language ("from").
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  learningLanguage: Language;
-  setLearningLanguage: (lang: Language) => void;
+  language: Lang;
+  setLanguage: (lang: Lang) => void;
+  learningLanguage: Lang;
+  setLearningLanguage: (lang: Lang) => void;
   t: (key: string, defaultValue?: string) => string;
   translations: Translations;
 }
@@ -19,57 +20,52 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 
 const LANGUAGE_STORAGE_KEY = "katchup-language";
 const LEARNING_LANGUAGE_STORAGE_KEY = "katchup-learning-language";
-const DEFAULT_LANGUAGE: Language = "english";
-const DEFAULT_LEARNING_LANGUAGE: Language = "deutsch";
-
-function parseLanguage(value: string | null, fallback: Language): Language {
-  if (value === "english" || value === "czech" || value === "deutsch") {
-    return value;
-  }
-
-  return fallback;
-}
+const DEFAULT_LANGUAGE: Lang = "en";
+const DEFAULT_LEARNING_LANGUAGE: Lang = "de";
 
 export function LanguageProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
-  const [learningLanguage, setLearningLanguageState] =
-    useState<Language>(DEFAULT_LEARNING_LANGUAGE);
+  const [language, setLanguageState] = useState<Lang>(DEFAULT_LANGUAGE);
+  const [learningLanguage, setLearningLanguageState] = useState<Lang>(
+    DEFAULT_LEARNING_LANGUAGE,
+  );
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem(
-      LANGUAGE_STORAGE_KEY,
+    // Stored values may predate canonical codes ("deutsch", "german"), so they
+    // go through normalizeLang rather than being trusted as-is.
+    const storedLanguage = normalizeLang(
+      window.localStorage.getItem(LANGUAGE_STORAGE_KEY),
     );
-    const storedLearningLanguage = window.localStorage.getItem(
-      LEARNING_LANGUAGE_STORAGE_KEY,
+    const storedLearning = normalizeLang(
+      window.localStorage.getItem(LEARNING_LANGUAGE_STORAGE_KEY),
     );
 
-    setLanguageState(parseLanguage(storedLanguage, DEFAULT_LANGUAGE));
-    setLearningLanguageState(
-      parseLanguage(storedLearningLanguage, DEFAULT_LEARNING_LANGUAGE),
-    );
+    setLanguageState(storedLanguage ?? detectBrowserLang() ?? DEFAULT_LANGUAGE);
+    setLearningLanguageState(storedLearning ?? DEFAULT_LEARNING_LANGUAGE);
   }, []);
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = (lang: Lang) => {
     setLanguageState(lang);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
     }
   };
 
-  const setLearningLanguage = (lang: Language) => {
+  const setLearningLanguage = (lang: Lang) => {
     setLearningLanguageState(lang);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(LEARNING_LANGUAGE_STORAGE_KEY, lang);
     }
   };
 
+  const activeTranslations = translationsForLang(language);
+
   const t = (key: string, defaultValue?: string): string => {
     const keys = key.split(".");
-    let current: unknown = translations[language];
+    let current: unknown = activeTranslations;
 
     for (const k of keys) {
       if (current && typeof current === "object" && k in current) {
@@ -90,7 +86,7 @@ export function LanguageProvider({
         learningLanguage,
         setLearningLanguage,
         t,
-        translations: translations[language],
+        translations: activeTranslations,
       }}
     >
       {children}

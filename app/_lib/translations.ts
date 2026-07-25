@@ -1,3 +1,6 @@
+import type { Lang } from "./languages";
+
+/** @deprecated Use `Lang` from ./languages — kept for legacy call sites. */
 export type Language = "english" | "czech" | "deutsch";
 
 export interface Translations {
@@ -23,6 +26,8 @@ export const translations: Record<Language, Translations> = {
       topics: "Topics",
       myDecks: "My Decks",
       friends: "Me & Friends",
+      learnedWords: "Learned Words",
+      blog: "Blog",
       energy: "Energy",
       resetsIn: "Resets in",
       earnEnergy: "Earn energy back",
@@ -90,6 +95,20 @@ export const translations: Record<Language, Translations> = {
       noWordsYet: "No words added yet. Add your first word above!",
       deleteWord: "Delete",
       editWord: "Edit",
+    },
+    learnedWords: {
+      title: "Learned Words",
+      description:
+        "Every word you've practiced, across your decks and lessons.",
+      empty: "No words practiced yet. Start a deck or a lesson to see them here.",
+      learned: "Learned",
+      skipped: "Skipped",
+      timesShort: "x",
+      page: "Page",
+      of: "of",
+      previous: "Previous",
+      next: "Next",
+      totalWords: "words practiced",
     },
     deckEditor: {
       deckEditor: "Deck Editor",
@@ -181,6 +200,8 @@ export const translations: Record<Language, Translations> = {
       topics: "Temata",
       myDecks: "Moje balíčky",
       friends: "Já a přátelé",
+      learnedWords: "Naučená slova",
+      blog: "Blog",
       energy: "Energie",
       resetsIn: "Obnoví se za",
       earnEnergy: "Získej zpět energii",
@@ -248,6 +269,19 @@ export const translations: Record<Language, Translations> = {
       noWordsYet: "Dosud žádná slova. Přidejte své první slovo výše!",
       deleteWord: "Smazat",
       editWord: "Upravit",
+    },
+    learnedWords: {
+      title: "Naučená slova",
+      description: "Všechna slova, která jste procvičili napříč balíčky a lekcemi.",
+      empty: "Zatím žádná procvičená slova. Spusťte balíček nebo lekci.",
+      learned: "Naučeno",
+      skipped: "Přeskočeno",
+      timesShort: "x",
+      page: "Stránka",
+      of: "z",
+      previous: "Předchozí",
+      next: "Další",
+      totalWords: "procvičených slov",
     },
     deckEditor: {
       deckEditor: "Editor balíčku",
@@ -340,6 +374,8 @@ export const translations: Record<Language, Translations> = {
       topics: "Themen",
       myDecks: "Meine Decks",
       friends: "Ich & Freunde",
+      learnedWords: "Gelernte Wörter",
+      blog: "Blog",
       energy: "Energie",
       resetsIn: "Zurücksetzen in",
       earnEnergy: "Energie zurückverdienen",
@@ -408,6 +444,20 @@ export const translations: Record<Language, Translations> = {
         "Noch keine Wörter hinzugefügt. Fügen Sie Ihr erstes Wort oben hinzu!",
       deleteWord: "Löschen",
       editWord: "Bearbeiten",
+    },
+    learnedWords: {
+      title: "Gelernte Wörter",
+      description:
+        "Alle Wörter, die du geübt hast, über deine Decks und Lektionen hinweg.",
+      empty: "Noch keine geübten Wörter. Starte ein Deck oder eine Lektion.",
+      learned: "Gelernt",
+      skipped: "Übersprungen",
+      timesShort: "x",
+      page: "Seite",
+      of: "von",
+      previous: "Zurück",
+      next: "Weiter",
+      totalWords: "geübte Wörter",
     },
     deckEditor: {
       deckEditor: "Deck-Editor",
@@ -481,6 +531,19 @@ export const translations: Record<Language, Translations> = {
     },
   },
 };
+
+// UI copy exists only for these languages. Others (Spanish) are perfectly
+// valid to learn or speak, they just read the interface in English until a
+// dictionary is written for them.
+export const TRANSLATIONS_BY_LANG: Partial<Record<Lang, Translations>> = {
+  en: translations.english,
+  cs: translations.czech,
+  de: translations.deutsch,
+};
+
+export function translationsForLang(lang: Lang): Translations {
+  return TRANSLATIONS_BY_LANG[lang] ?? translations.english;
+}
 
 export function getTranslation(
   language: Language,

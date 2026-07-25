@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, X } from "lucide-react";
 import { useLanguage } from "../_lib/languageContext";
-import { Language, LANGUAGES, LANGUAGE_FLAGS } from "../_lib/translations";
-
-const LANGUAGE_OPTIONS: Language[] = ["english", "czech", "deutsch"];
+import { useLearningLevel } from "../_lib/useLearningLevel";
+import { LANGS, LANG_FLAGS, LANG_LABELS, type Lang } from "../_lib/languages";
 
 export default function LanguageSwitcher({
   open,
@@ -20,16 +19,17 @@ export default function LanguageSwitcher({
   const { language, setLanguage, learningLanguage, setLearningLanguage } =
     useLanguage();
   const [mounted, setMounted] = useState(false);
+  const level = useLearningLevel(learningLanguage);
 
   // Keep the two languages distinct: picking the other side's value swaps them.
-  const handleSetSpeak = (option: Language) => {
+  const handleSetSpeak = (option: Lang) => {
     if (option === learningLanguage) {
       setLearningLanguage(language);
     }
     setLanguage(option);
   };
 
-  const handleSetLearning = (option: Language) => {
+  const handleSetLearning = (option: Lang) => {
     if (option === language) {
       setLanguage(learningLanguage);
     }
@@ -61,15 +61,30 @@ export default function LanguageSwitcher({
       <button
         type="button"
         onClick={() => onOpenChange(true)}
-        aria-label={`Change languages (learning ${LANGUAGES[learningLanguage]})`}
-        title={`${LANGUAGES[language]} → ${LANGUAGES[learningLanguage]}`}
+        aria-label={`Change languages (learning ${LANG_LABELS[learningLanguage]})`}
+        title={
+          level
+            ? `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]} · ${level.label} (${level.masteredCount} words mastered)`
+            : `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]}`
+        }
         className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-lg leading-none shadow-sm transition hover:scale-105 ${
           isHomePage
             ? "border-slate-700/80 bg-slate-900/80 hover:bg-slate-800"
             : "border-slate-300/80 bg-white/80 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800"
         }`}
       >
-        <span aria-hidden>{LANGUAGE_FLAGS[learningLanguage]}</span>
+        <span aria-hidden>{LANG_FLAGS[learningLanguage]}</span>
+        {level && (
+          <span
+            className={`rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold leading-none ${
+              isHomePage
+                ? "bg-blue-500/20 text-blue-200"
+                : "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+            }`}
+          >
+            {level.label}
+          </span>
+        )}
       </button>
 
       {open &&
@@ -139,22 +154,24 @@ export default function LanguageSwitcher({
   );
 }
 
-function LanguagePicker({
+export function LanguagePicker({
   label,
   value,
   onChange,
+  options = LANGS,
 }: {
   label: string;
-  value: Language;
-  onChange: (lang: Language) => void;
+  value: Lang;
+  onChange: (lang: Lang) => void;
+  options?: readonly Lang[];
 }) {
   return (
     <div>
       <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <div className="grid grid-cols-3 gap-2">
-        {LANGUAGE_OPTIONS.map((option) => {
+      <div className="grid grid-cols-4 gap-2">
+        {options.map((option) => {
           const active = option === value;
           return (
             <button
@@ -168,9 +185,9 @@ function LanguagePicker({
               }`}
             >
               <span className="text-2xl leading-none" aria-hidden>
-                {LANGUAGE_FLAGS[option]}
+                {LANG_FLAGS[option]}
               </span>
-              <span>{LANGUAGES[option].split(" ")[0]}</span>
+              <span>{LANG_LABELS[option]}</span>
             </button>
           );
         })}
