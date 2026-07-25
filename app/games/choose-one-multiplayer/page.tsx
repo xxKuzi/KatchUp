@@ -85,7 +85,12 @@ const ChooseOneMultiplayerPage = () => {
     try {
       const stored = window.localStorage.getItem(MATCH_HISTORY_KEY);
       const parsed = stored ? (JSON.parse(stored) as MatchHistoryEntry[]) : [];
-      setRecentMatches(parsed.slice(0, 4));
+      // Newest first, so the duel you just played is the one on the left.
+      setRecentMatches(
+        [...parsed]
+          .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+          .slice(0, 4),
+      );
     } catch {
       setRecentMatches([]);
     }
@@ -217,7 +222,10 @@ const ChooseOneMultiplayerPage = () => {
     });
 
     if (useBeacon && typeof navigator !== "undefined" && navigator.sendBeacon) {
-      navigator.sendBeacon(url, new Blob([payload], { type: "application/json" }));
+      navigator.sendBeacon(
+        url,
+        new Blob([payload], { type: "application/json" }),
+      );
       return;
     }
 
@@ -447,7 +455,9 @@ const ChooseOneMultiplayerPage = () => {
         if (payload.match.status === "finished") {
           setMatchState("idle");
           setMatchId(null);
-          setAcceptError("Your opponent left. Search again to find someone new.");
+          setAcceptError(
+            "Your opponent left. Search again to find someone new.",
+          );
         }
       } catch {
         // Keep polling; a transient failure shouldn't drop the duel.
@@ -545,33 +555,25 @@ const ChooseOneMultiplayerPage = () => {
       bgImage="flip_cards.png"
     >
       <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-800/40">
-        <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-          Duel Setup
-        </h2>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+            Duel Setup
+          </h2>
+          <span
+            title="Language pair and the level picked from your progress"
+            className="shrink-0 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+          >
+            {LANG_LABELS[speak]} → {LANG_LABELS[learning]}
+            {/* Spacing via margin rather than literal spaces, which HTML
+                collapses down to one however many you write. */}
+            <span className="mx-2 text-zinc-300 dark:text-zinc-600">|</span>
+            {isHydrated ? level : "..."}
+          </span>
+        </div>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
           Compete live against another player, or race a bot. Either way, the
           first to 10 correct answers wins.
         </p>
-
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">
-              Language
-            </p>
-            <p className="mt-1 text-base font-semibold text-zinc-900 dark:text-zinc-100">
-              {LANG_LABELS[speak]} → {LANG_LABELS[learning]}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">
-              Preselected level
-            </p>
-            <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-              {isHydrated ? `${level} (auto from your progress)` : "Loading..."}
-            </p>
-          </div>
-        </div>
 
         <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-xs uppercase tracking-wide text-zinc-500 font-semibold mb-2">
@@ -587,7 +589,9 @@ const ChooseOneMultiplayerPage = () => {
               }`}
             >
               <span className="text-sm font-bold">Fair Mode</span>
-              <span className="text-xxs text-zinc-500 mt-0.5">Same words for both players</span>
+              <span className="text-xxs text-zinc-500 mt-0.5">
+                Same words for both players
+              </span>
             </button>
             <button
               onClick={() => chooseMatchSettings("personal")}
@@ -598,40 +602,38 @@ const ChooseOneMultiplayerPage = () => {
               }`}
             >
               <span className="text-sm font-bold">Personalized Mode</span>
-              <span className="text-xxs text-zinc-500 mt-0.5">Asymmetric custom/recent vocabulary</span>
+              <span className="text-xxs text-zinc-500 mt-0.5">
+                Asymmetric custom/recent vocabulary
+              </span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="mt-6 flex w-full max-w-3xl flex-col items-center gap-4 sm:mt-8">
         {matchState === "idle" && (
-          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex w-full max-w-md mt-6 flex-col items-center gap-3">
             <button
               onClick={() => void startFindingOpponent()}
-              className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 transition hover:-translate-y-0.5"
+              className="w-full rounded-xl bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-emerald-500"
             >
-              <span className="text-xl font-bold text-emerald-800 dark:text-emerald-300">
-                Start Live Duel
-              </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 text-center">
-                Match with a live opponent instantly and race to finish translating words.
-              </span>
+              Start Live Duel
             </button>
+            <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Match with a live opponent and race to 10 correct answers.
+            </p>
 
             <button
               onClick={startBotDuel}
-              className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 dark:border-blue-800/40 dark:bg-blue-950/10 dark:hover:bg-blue-950/20 transition hover:-translate-y-0.5"
+              className="mt-2 w-full rounded-xl border border-zinc-300 px-8 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
-              <span className="text-xl font-bold text-blue-800 dark:text-blue-300">
-                {isBotDuelLocked ? "Sign in to duel the bot" : "Start Bot Duel"}
-              </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 text-center">
-                {isBotDuelLocked
-                  ? "You've used your free bot duel. Sign in to keep duelling."
-                  : "No waiting - race a bot to 10 correct answers."}
-              </span>
+              {isBotDuelLocked ? "Sign in to duel the bot" : "Start Bot Duel"}
             </button>
+            <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
+              {isBotDuelLocked
+                ? "You've used your free bot duel. Sign in to keep duelling."
+                : "No waiting - race a bot instead."}
+            </p>
           </div>
         )}
 
@@ -733,32 +735,48 @@ const ChooseOneMultiplayerPage = () => {
         )}
       </div>
 
-      <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          Recent Duels
-        </p>
-        <div className="mt-3 space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
-          {recentMatches.length === 0 ? (
-            <p>No duel history yet.</p>
-          ) : (
-            recentMatches.map((entry, index) => (
-              <p key={`${entry.createdAt}-${index}`}>
-                {entry.mode === "live"
-                  ? `Live vs ${entry.opponentName ?? "opponent"}`
-                  : "Bot"}{" "}
-                - {entry.score} pts -{" "}
-                {entry.winner === "player"
+      {recentMatches.length > 0 && (
+        <div className="mt-8 flex w-full max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 border-t border-zinc-200 pt-4 dark:border-zinc-800 sm:flex-nowrap">
+          <p className="shrink-0 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            Recent duels:
+          </p>
+          {/* One line on desktop: anything that would wrap is clipped rather
+              than pushed onto a second row. */}
+          <div className="flex flex-wrap items-center gap-2 sm:min-w-0 sm:flex-nowrap sm:overflow-hidden">
+            {recentMatches.map((entry, index) => {
+              const result =
+                entry.winner === "player"
                   ? "Win"
                   : entry.winner === "draw"
                     ? "Draw"
                     : entry.winner === "opponent"
                       ? "Loss"
-                      : "Unfinished"}
-              </p>
-            ))
-          )}
+                      : "Unfinished";
+
+              return (
+                <span
+                  key={`${entry.createdAt}-${index}`}
+                  className={`rounded-full border px-3 py-1 text-xs ${
+                    entry.winner === "player"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/40 dark:bg-emerald-950/20 dark:text-emerald-300"
+                      : entry.winner === "opponent"
+                        ? "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/40 dark:bg-rose-950/20 dark:text-rose-300"
+                        : "border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/40 dark:text-zinc-300"
+                  }`}
+                >
+                  <span className="font-semibold">{result}</span>
+                  {" - "}
+                  {entry.mode === "live"
+                    ? (entry.opponentName ?? "opponent")
+                    : "Bot"}
+                  {" - "}
+                  {entry.score} pts
+                </span>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </GamePage>
   );
 };
