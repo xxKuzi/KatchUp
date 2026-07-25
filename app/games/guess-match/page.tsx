@@ -7,13 +7,13 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
 import { useLanguage } from "@/app/_lib/languageContext";
-import { Language } from "@/app/_lib/translations";
+import type { Lang } from "@/app/_lib/languages";
 import {
   completeTopicLevel,
   loadTopicsState,
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
-import { getAllWords } from "../_lib/learning/wordDatabase";
+import { useFallbackWords } from "../_lib/useFallbackWords";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
@@ -86,7 +86,7 @@ const GuessMatchPage = () => {
 
   const deckSession = useDeckSession(deckId || null, sessionMode);
 
-  const allWords = useMemo(() => getAllWords("german"), []);
+  const allWords = useFallbackWords();
   const roundSeed = deckId
     ? `deck:${deckId}:${sessionMode}:guess-match:${
         deckSession.session?.words.map((w) => w.id).join(",") ?? ""
@@ -180,7 +180,7 @@ interface GuessMatchRoundProps {
   sessionMode: "practice" | "finish";
   topicId: string;
   safeLevel: number;
-  language: Language;
+  language: Lang;
   isEnergyReview: boolean;
   onResult?: (deckWordId: string, correct: boolean) => void;
   onReplay: () => void;

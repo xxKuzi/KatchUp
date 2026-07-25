@@ -1,0 +1,410 @@
+"use client";
+/* eslint-disable react-hooks/purity */
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import GamePage from "../../_components/GamePage";
+import { spendEnergy } from "@/app/_lib/energy";
+import {
+  isCefrLevel,
+  LANG_LABELS,
+  normalizeLang,
+  type CefrLevel,
+} from "@/app/_lib/languages";
+import { buildOptions, fetchWordPairs, shuffle, type WordPair } from "../../_lib/wordPairs";
+
+interface RushQuestion {
+  id: string;
+  prompt: string;
+  options: string[];
+  correctOption: string;
+}
+
+type RunStatus = "playing" | "finished";
+
+const RUN_DURATION_MS = 30_000;
+const RUN_HISTORY_KEY = "katchup-score-rush-history-v1";
+
+interface AsyncLeaderboardRow {
+  name: string;
+  avatar: string;
+  score: number;
+  correct: number;
+  timeMs: number;
+}
+
+// Score Rush is a recognition drill: it shows the word in the language you're
+// learning and asks what it means in yours.
+const DIRECTION = "recognition" as const;
+
+function buildQuestionQueue(pool: WordPair[], count: number): RushQuestion[] {
+  return shuffle(pool)
+    .slice(0, Math.min(count, pool.length))
+    .map((pair, index) => ({
+      id: `${pair.conceptId}-${index}`,
+      prompt: pair.prompt,
+      options: buildOptions(pair, pool),
+      correctOption: pair.answer,
+    }));
+}
+
+export default function ScoreRushPlayPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // `language` is the pre-migration param name, kept so older links and the
+  // lobby's in-flight navigations still resolve to a sensible pair.
+  const speak = normalizeLang(searchParams.get("speak")) ?? "en";
+  const learning =
+    normalizeLang(searchParams.get("learning")) ??
+    normalizeLang(searchParams.get("language")) ??
+    "de";
+  const levelParam = searchParams.get("level")?.toUpperCase();
+  const level: CefrLevel = isCefrLevel(levelParam) ? levelParam : "A1";
+  const playerId = searchParams.get("playerId") ?? "player-local";
+  const playerName = searchParams.get("playerName") ?? "You";
+  const playerAvatar =
+    searchParams.get("playerAvatar") ?? "https://i.pravatar.cc/100?img=12";
+
+  const [wordPool, setWordPool] = useState<WordPair[]>([]);
+  const [queue, setQueue] = useState<RushQuestion[]>([]);
+  const [queueIndex, setQueueIndex] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [answered, setAnswered] = useState(0);
+  const [score, setScore] = useState(0);
+  const [status, setStatus] = useState<RunStatus>("playing");
+  const [countdown, setCountdown] = useState<number | null>(3);
+  const [msRemaining, setMsRemaining] = useState(RUN_DURATION_MS);
+  const [feedback, setFeedback] = useState<{
+    text: string;
+    tone: "good" | "bad";
+  } | null>(null);
+  const [leaderboard, setLeaderboard] = useState<AsyncLeaderboardRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const scoreSubmitted = useRef(false);
+  const questionStartedAt = useRef<number>(Date.now());
+  const runEndsAt = useRef<number>(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchWordPairs({
+      speak,
+      learning,
+      direction: DIRECTION,
+      level,
+      count: 40,
+      signal: controller.signal,
+    })
+      .then((pairs) => {
+        setWordPool(pairs);
+        setQueue(buildQuestionQueue(pairs, 40));
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        setLoadError("Could not load words for this level.");
+      });
+
+    return () => controller.abort();
+  }, [speak, learning, level]);
+
+  useEffect(() => {
+    if (countdown === null) {
+      return;
+    }
+
+    if (countdown === 0) {
+      runEndsAt.current = Date.now() + RUN_DURATION_MS;
+      questionStartedAt.current = Date.now();
+      const timeoutId = window.setTimeout(() => {
+        setCountdown(null);
+      }, 500);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCountdown((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [countdown]);
+
+  useEffect(() => {
+    if (countdown !== null || status !== "playing") {
+      return;
+    }
+
+    const tickId = window.setInterval(() => {
+      const remaining = runEndsAt.current - Date.now();
+      if (remaining <= 0) {
+        setMsRemaining(0);
+        setStatus("finished");
+      } else {
+        setMsRemaining(remaining);
+      }
+    }, 100);
+
+    return () => window.clearInterval(tickId);
+  }, [countdown, status]);
+
+  useEffect(() => {
+    if (status !== "finished" || scoreSubmitted.current) {
+      return;
+    }
+
+    scoreSubmitted.current = true;
+
+    const submitScore = async () => {
+      try {
+        await fetch("/api/flip-cards/async-score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            playerId,
+            name: playerName,
+            avatar: playerAvatar,
+            // Leaderboards are per language-being-learned, not per pair.
+            language: learning,
+            level,
+            score,
+            correct,
+            timeMs: RUN_DURATION_MS,
+          }),
+        });
+
+        const leaderboardResponse = await fetch(
+          `/api/flip-cards/async-score?language=${learning}&level=${level}`,
+        );
+
+        if (!leaderboardResponse.ok) {
+          return;
+        }
+
+        const leaderboardData = (await leaderboardResponse.json()) as {
+          leaderboard: AsyncLeaderboardRow[];
+        };
+
+        setLeaderboard(leaderboardData.leaderboard ?? []);
+      } catch {
+        // Non-blocking: the run already completed.
+      }
+    };
+
+    const appendHistory = () => {
+      try {
+        const stored = window.localStorage.getItem(RUN_HISTORY_KEY);
+        const parsed = stored
+          ? (JSON.parse(stored) as Array<Record<string, unknown>>)
+          : [];
+
+        const updated = [
+          {
+            createdAt: Date.now(),
+            score,
+            correct,
+          },
+          ...parsed,
+        ].slice(0, 15);
+
+        window.localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignore local storage errors.
+      }
+    };
+
+    appendHistory();
+    void submitScore();
+  }, [correct, learning, level, playerAvatar, playerId, playerName, score, status]);
+
+  const currentQuestion = queue[queueIndex] ?? null;
+
+  const showFeedback = (text: string, tone: "good" | "bad") => {
+    setFeedback({ text, tone });
+    window.setTimeout(() => {
+      setFeedback(null);
+    }, 400);
+  };
+
+  const handleAnswer = (selectedOption: string) => {
+    if (!currentQuestion || status !== "playing") {
+      return;
+    }
+
+    spendEnergy();
+
+    const responseTime = Date.now() - questionStartedAt.current;
+    const speedBonus = Math.max(0, 50 - Math.floor(responseTime / 45));
+
+    setAnswered((previous) => previous + 1);
+
+    const isCorrect = selectedOption === currentQuestion.correctOption;
+    if (isCorrect) {
+      setCorrect((previous) => previous + 1);
+      setScore((previous) => previous + 100 + speedBonus);
+      showFeedback(`Correct +${100 + speedBonus} pts`, "good");
+    } else {
+      showFeedback("Wrong answer", "bad");
+    }
+
+    questionStartedAt.current = Date.now();
+
+    const nextIndex = queueIndex + 1;
+    if (nextIndex >= queue.length) {
+      setQueue((previous) => [...previous, ...buildQuestionQueue(wordPool, 40)]);
+    }
+    setQueueIndex(nextIndex);
+  };
+
+  const restartRun = () => {
+    router.push("/games/score-rush/play?" + searchParams.toString());
+  };
+
+  const backToLobby = () => {
+    router.push("/games/score-rush");
+  };
+
+  const secondsRemaining = Math.max(0, Math.ceil(msRemaining / 1000));
+  const timerPercent = Math.max(0, Math.min(100, (msRemaining / RUN_DURATION_MS) * 100));
+
+  if (countdown !== null) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 text-white font-sans">
+        <div className="text-center animate-pulse">
+          <span className="text-xs uppercase tracking-widest text-blue-400 font-extrabold">
+            Get Ready
+          </span>
+          <h1 className="mt-4 text-9xl font-black tracking-tight text-white transition-all duration-300 transform scale-110">
+            {countdown === 0 ? "GO!" : countdown}
+          </h1>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <GamePage
+      name="Score Rush"
+      description="Answer as many translations as you can before the clock runs out."
+      bgImage="one_of_three.png"
+    >
+      <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600 dark:text-zinc-300">
+          <p>
+            Language:{" "}
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+              {LANG_LABELS[speak]} → {LANG_LABELS[learning]}
+            </span>
+          </p>
+          <p className="text-xs">Level {level} (preselected)</p>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-300">
+          <p>Score: {score} pts</p>
+          <p>
+            Accuracy: {correct}/{Math.max(answered, 1)}
+          </p>
+        </div>
+
+        <div className="mt-4">
+          <div className="relative h-4 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+            <div
+              className={`h-full rounded-full transition-all duration-100 ${
+                secondsRemaining <= 5 ? "bg-red-500" : "bg-blue-500"
+              }`}
+              style={{ width: `${timerPercent}%` }}
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-center">
+            <p className="text-2xl font-black tabular-nums text-zinc-900 dark:text-zinc-100">
+              {secondsRemaining}s
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {status === "playing" && currentQuestion ? (
+        <div className="relative w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+          <h2 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+            {currentQuestion.prompt}
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Pick the correct translation
+          </p>
+
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {currentQuestion.options.map((option) => (
+              <button
+                key={option}
+                className="rounded-xl border border-zinc-300 px-4 py-3 text-left font-medium text-zinc-800 transition hover:border-blue-500 hover:bg-blue-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                onClick={() => handleAnswer(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          {feedback && (
+            <div
+              className={`absolute right-6 top-5 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all duration-300 ${
+                feedback.tone === "good"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                  : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+              }`}
+            >
+              {feedback.text}
+            </div>
+          )}
+
+          {loadError && (
+            <p className="mt-3 text-sm text-red-500">{loadError}</p>
+          )}
+        </div>
+      ) : (
+        <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
+          <p className="text-sm uppercase tracking-wide text-zinc-500">
+            Time&apos;s up
+          </p>
+          <h2 className="mt-2 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+            {score} points
+          </h2>
+          <p className="mt-3 text-zinc-600 dark:text-zinc-300">
+            {correct}/{answered} correct answers
+          </p>
+
+          {leaderboard.length > 0 && (
+            <div className="mx-auto mt-5 max-w-md rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-800/40">
+              <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
+                Top Score Rush Players
+              </p>
+              {leaderboard.slice(0, 5).map((entry, index) => (
+                <p
+                  key={`${entry.name}-${index}`}
+                  className="text-sm text-zinc-700 dark:text-zinc-200"
+                >
+                  #{index + 1} {entry.name} - {entry.score} pts
+                </p>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              className="rounded-xl bg-blue-600 px-5 py-2 font-semibold text-white transition hover:bg-blue-500"
+              onClick={restartRun}
+            >
+              Play Again
+            </button>
+            <button
+              className="rounded-xl border border-zinc-300 px-5 py-2 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              onClick={backToLobby}
+            >
+              Back to lobby
+            </button>
+          </div>
+        </div>
+      )}
+    </GamePage>
+  );
+}
