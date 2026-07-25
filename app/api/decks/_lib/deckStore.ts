@@ -1,9 +1,15 @@
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
-import { deckWords, decks } from "@/db/schema";
 import {
-  SEED_FOREIGN_LANGUAGES,
-  TOPIC_NATIVE_LANG,
+  conceptTranslations,
+  deckWords,
+  decks,
+  wordConcepts,
+} from "@/db/schema";
+import {
+  TOPIC_DECK_PAIRS,
+  topicDeckName,
   TOPIC_SEEDS,
 } from "./topicSeedData";
 
@@ -53,6 +59,7 @@ function toDeckRecord(
   };
 }
 
+
 /** Returns a map of deckId -> word count for the given deck ids. */
 async function countWordsByDeck(
   deckIds: string[],
@@ -74,26 +81,32 @@ async function countWordsByDeck(
 
 /**
  * Creates the canonical topic decks and their words if they do not yet exist.
- * Idempotent: an existing topic deck (matched by topicKey + native/foreign
- * language pair) is
+ *
+ * Words come from the shared vocabulary corpus rather than a hand-maintained
+ * list, so a topic deck can be built for any pair the corpus covers — including
+ * reversed ones like a German speaker learning English.
+ *
+ * Idempotent: an existing topic deck (matched by topicKey + language pair) is
  * left untouched so re-running never duplicates words or disturbs user stats.
  */
 export async function seedTopicDecks(): Promise<{
   createdDecks: number;
   createdWords: number;
+  skippedPairs: string[];
 }> {
   let createdDecks = 0;
   let createdWords = 0;
+  const skippedPairs: string[] = [];
 
   for (const seed of TOPIC_SEEDS) {
-    for (const foreignLang of SEED_FOREIGN_LANGUAGES) {
+    for (const { nativeLang, foreignLang } of TOPIC_DECK_PAIRS) {
       const existing = await db
         .select({ id: decks.id })
         .from(decks)
         .where(
           and(
             eq(decks.topicKey, seed.topicKey),
-            eq(decks.nativeLang, TOPIC_NATIVE_LANG),
+            eq(decks.nativeLang, nativeLang),
             eq(decks.foreignLang, foreignLang),
           ),
         )
@@ -103,14 +116,25 @@ export async function seedTopicDecks(): Promise<{
         continue;
       }
 
+      const words = await resolveTopicWords(seed.english, nativeLang, foreignLang);
+
+      // A topic with barely any resolvable words would make a broken deck, so
+      // skip it and report rather than seeding a stub.
+      if (words.length < seed.english.length / 2) {
+        skippedPairs.push(
+          `${seed.topicKey} ${nativeLang}->${foreignLang} (${words.length}/${seed.english.length} words)`,
+        );
+        continue;
+      }
+
       const [deck] = await db
         .insert(decks)
         .values({
           ownerUserId: null,
           kind: "topic",
           topicKey: seed.topicKey,
-          name: seed.name[foreignLang],
-          nativeLang: TOPIC_NATIVE_LANG,
+          name: topicDeckName(seed, foreignLang),
+          nativeLang,
           foreignLang,
         })
         .returning({ id: decks.id });
@@ -118,19 +142,131 @@ export async function seedTopicDecks(): Promise<{
       createdDecks += 1;
 
       await db.insert(deckWords).values(
-        seed.words.map((word, index) => ({
+        words.map((word, index) => ({
           deckId: deck.id,
           native: word.native,
-          foreign: word[foreignLang],
+          foreign: word.foreign,
           orderIndex: index,
         })),
       );
 
-      createdWords += seed.words.length;
+      createdWords += words.length;
     }
   }
 
-  return { createdDecks, createdWords };
+  return { createdDecks, createdWords, skippedPairs };
+}
+
+/**
+ * Looks up each English concept in the corpus and returns the pair of texts for
+ * the requested languages, preserving the topic's word order. Concepts missing
+ * either language are dropped.
+ */
+async function resolveTopicWords(
+  english: string[],
+  nativeLang: string,
+  foreignLang: string,
+): Promise<Array<{ native: string; foreign: string }>> {
+  const keys = english.map((word) => slugifyConceptKey(word));
+  if (keys.length === 0) {
+    return [];
+  }
+
+  const nativeSide = alias(conceptTranslations, "native_side");
+  const foreignSide = alias(conceptTranslations, "foreign_side");
+
+  const rows = await db
+    .select({
+      conceptKey: wordConcepts.conceptKey,
+      native: nativeSide.text,
+      foreign: foreignSide.text,
+    })
+    .from(wordConcepts)
+    .innerJoin(
+      nativeSide,
+      and(
+        eq(nativeSide.conceptId, wordConcepts.id),
+        eq(nativeSide.lang, nativeLang),
+      ),
+    )
+    .innerJoin(
+      foreignSide,
+      and(
+        eq(foreignSide.conceptId, wordConcepts.id),
+        eq(foreignSide.lang, foreignLang),
+      ),
+    )
+    .where(inArray(wordConcepts.conceptKey, keys));
+
+  const byKey = new Map(rows.map((row) => [row.conceptKey, row]));
+  return keys
+    .map((key) => byKey.get(key))
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .map((row) => ({ native: row.native, foreign: row.foreign }));
+}
+
+/**
+ * Replaces the words of existing topic decks with the current corpus text.
+ *
+ * The first topic decks were seeded from a hand-written list that used ASCII
+ * transliterations ("Strasse", "Kaese"); the corpus has correct orthography.
+ * Destructive: deleting deck_words cascades to the per-word stats users built
+ * on them, so this is opt-in rather than part of the normal seed.
+ */
+export async function refreshTopicDeckWords(): Promise<{
+  refreshedDecks: number;
+  replacedWords: number;
+}> {
+  let refreshedDecks = 0;
+  let replacedWords = 0;
+
+  for (const seed of TOPIC_SEEDS) {
+    const existing = await db
+      .select({
+        id: decks.id,
+        nativeLang: decks.nativeLang,
+        foreignLang: decks.foreignLang,
+      })
+      .from(decks)
+      .where(and(eq(decks.kind, "topic"), eq(decks.topicKey, seed.topicKey)));
+
+    for (const deck of existing) {
+      const words = await resolveTopicWords(
+        seed.english,
+        deck.nativeLang,
+        deck.foreignLang,
+      );
+      if (words.length < seed.english.length / 2) {
+        continue;
+      }
+
+      await db.delete(deckWords).where(eq(deckWords.deckId, deck.id));
+      await db.insert(deckWords).values(
+        words.map((word, index) => ({
+          deckId: deck.id,
+          native: word.native,
+          foreign: word.foreign,
+          orderIndex: index,
+        })),
+      );
+
+      refreshedDecks += 1;
+      replacedWords += words.length;
+    }
+  }
+
+  return { refreshedDecks, replacedWords };
+}
+
+/** Mirrors the slug rule used when the corpus was built. */
+function slugifyConceptKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 async function loadWords(deckId: string): Promise<DeckWordRecord[]> {

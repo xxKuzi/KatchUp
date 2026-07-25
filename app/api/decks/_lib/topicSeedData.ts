@@ -1,104 +1,127 @@
-// Canonical word lists for the fixed topic decks. Each entry pairs an English
-// "native" word with its German and Spanish translations. The seed builds one
-// topic deck per (topicKey, foreignLang) from this data.
+import type { Lang } from "@/app/_lib/languages";
 
-export type SeedLanguage = "de" | "es";
-
-export interface TopicSeedWord {
-  native: string; // English
-  de: string;
-  es: string;
-}
+// Topic decks no longer carry their own translations. Each topic just names the
+// English concepts it covers; the words themselves are resolved from the shared
+// vocabulary corpus (word_concepts + concept_translations) at seed time.
+//
+// That means a topic deck can be built for ANY language pair the corpus
+// supports, instead of only the two that happened to be hand-translated here.
+// Adding a language is now a corpus job, not an edit to this file.
 
 export interface TopicSeed {
   topicKey: string;
-  // Display name per foreign language, mirrors the labels in topicsProgress.ts.
-  name: Record<SeedLanguage, string>;
-  words: TopicSeedWord[];
+  /** Display name per language; falls back to the English name if absent. */
+  name: Partial<Record<Lang, string>> & { en: string };
+  /** English concept words, matched against `word_concepts.concept_key`. */
+  english: string[];
 }
 
 export const TOPIC_SEEDS: TopicSeed[] = [
   {
     topicKey: "autos",
-    name: { de: "Autos", es: "Coches" },
-    words: [
-      { native: "car", de: "Auto", es: "coche" },
-      { native: "road", de: "Strasse", es: "carretera" },
-      { native: "wheel", de: "Rad", es: "rueda" },
-      { native: "engine", de: "Motor", es: "motor" },
-      { native: "brake", de: "Bremse", es: "freno" },
-      { native: "driver", de: "Fahrer", es: "conductor" },
-      { native: "fuel", de: "Kraftstoff", es: "combustible" },
-      { native: "traffic", de: "Verkehr", es: "trafico" },
-      { native: "speed", de: "Geschwindigkeit", es: "velocidad" },
-      { native: "highway", de: "Autobahn", es: "autopista" },
+    name: { en: "Cars", de: "Autos", es: "Coches", cs: "Auta" },
+    english: [
+      "car",
+      "road",
+      "wheel",
+      "engine",
+      "brake",
+      "driver",
+      "fuel",
+      "traffic",
+      "speed",
+      "highway",
     ],
   },
   {
     topicKey: "essen",
-    name: { de: "Essen", es: "Comida" },
-    words: [
-      { native: "bread", de: "Brot", es: "pan" },
-      { native: "water", de: "Wasser", es: "agua" },
-      { native: "meat", de: "Fleisch", es: "carne" },
-      { native: "cheese", de: "Kaese", es: "queso" },
-      { native: "soup", de: "Suppe", es: "sopa" },
-      { native: "breakfast", de: "Fruehstueck", es: "desayuno" },
-      { native: "dinner", de: "Abendessen", es: "cena" },
-      { native: "coffee", de: "Kaffee", es: "cafe" },
-      { native: "sugar", de: "Zucker", es: "azucar" },
-      { native: "plate", de: "Teller", es: "plato" },
+    name: { en: "Food", de: "Essen", es: "Comida", cs: "Jídlo" },
+    english: [
+      "bread",
+      "water",
+      "meat",
+      "cheese",
+      "soup",
+      "breakfast",
+      "dinner",
+      "coffee",
+      "sugar",
+      "plate",
     ],
   },
   {
     topicKey: "obst-gemuese",
-    name: { de: "Obst & Gemuese", es: "Frutas y verduras" },
-    words: [
-      { native: "apple", de: "Apfel", es: "manzana" },
-      { native: "banana", de: "Banane", es: "platano" },
-      { native: "orange", de: "Orange", es: "naranja" },
-      { native: "tomato", de: "Tomate", es: "tomate" },
-      { native: "potato", de: "Kartoffel", es: "patata" },
-      { native: "carrot", de: "Karotte", es: "zanahoria" },
-      { native: "onion", de: "Zwiebel", es: "cebolla" },
-      { native: "lemon", de: "Zitrone", es: "limon" },
-      { native: "grape", de: "Traube", es: "uva" },
-      { native: "salad", de: "Salat", es: "ensalada" },
+    name: {
+      en: "Fruit & Vegetables",
+      de: "Obst & Gemuese",
+      es: "Frutas y verduras",
+      cs: "Ovoce a zelenina",
+    },
+    english: [
+      "apple",
+      "banana",
+      "orange",
+      "tomato",
+      "potato",
+      "carrot",
+      "onion",
+      "lemon",
+      "grape",
+      "salad",
     ],
   },
   {
     topicKey: "reisen",
-    name: { de: "Reisen", es: "Viajes" },
-    words: [
-      { native: "airport", de: "Flughafen", es: "aeropuerto" },
-      { native: "ticket", de: "Fahrkarte", es: "billete" },
-      { native: "hotel", de: "Hotel", es: "hotel" },
-      { native: "luggage", de: "Gepaeck", es: "equipaje" },
-      { native: "passport", de: "Reisepass", es: "pasaporte" },
-      { native: "train", de: "Zug", es: "tren" },
-      { native: "map", de: "Karte", es: "mapa" },
-      { native: "beach", de: "Strand", es: "playa" },
-      { native: "station", de: "Bahnhof", es: "estacion" },
-      { native: "journey", de: "Reise", es: "viaje" },
+    name: { en: "Travel", de: "Reisen", es: "Viajes", cs: "Cestování" },
+    english: [
+      "airport",
+      "ticket",
+      "hotel",
+      "luggage",
+      "passport",
+      "train",
+      "map",
+      "beach",
+      "station",
+      "journey",
     ],
   },
   {
     topicKey: "alltag",
-    name: { de: "Alltag", es: "Vida diaria" },
-    words: [
-      { native: "morning", de: "Morgen", es: "manana" },
-      { native: "work", de: "Arbeit", es: "trabajo" },
-      { native: "house", de: "Haus", es: "casa" },
-      { native: "money", de: "Geld", es: "dinero" },
-      { native: "friend", de: "Freund", es: "amigo" },
-      { native: "phone", de: "Telefon", es: "telefono" },
-      { native: "time", de: "Zeit", es: "tiempo" },
-      { native: "week", de: "Woche", es: "semana" },
-      { native: "sleep", de: "Schlaf", es: "sueno" },
-      { native: "shopping", de: "Einkaufen", es: "compras" },
+    name: {
+      en: "Daily Life",
+      de: "Alltag",
+      es: "Vida diaria",
+      cs: "Každodenní život",
+    },
+    english: [
+      "morning",
+      "work",
+      "house",
+      "money",
+      "friend",
+      "phone",
+      "time",
+      "week",
+      "sleep",
+      "shopping",
     ],
   },
 ];
 
-export const SEED_FOREIGN_LANGUAGES: SeedLanguage[] = ["de", "es"];
-export const TOPIC_NATIVE_LANG = "en";
+/**
+ * Pairs to seed topic decks for. English speakers learning the other three,
+ * plus two reverses — the case the old two-language seed data could not
+ * express at all.
+ */
+export const TOPIC_DECK_PAIRS: Array<{ nativeLang: Lang; foreignLang: Lang }> = [
+  { nativeLang: "en", foreignLang: "de" },
+  { nativeLang: "en", foreignLang: "es" },
+  { nativeLang: "en", foreignLang: "cs" },
+  { nativeLang: "de", foreignLang: "en" },
+  { nativeLang: "cs", foreignLang: "en" },
+];
+
+export function topicDeckName(seed: TopicSeed, lang: Lang): string {
+  return seed.name[lang] ?? seed.name.en;
+}

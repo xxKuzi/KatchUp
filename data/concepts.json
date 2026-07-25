@@ -21646,5 +21646,555 @@
         "level": "B2"
       }
     }
+  },
+  {
+    "conceptKey": "road",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "road",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Straße",
+        "level": "A1"
+      },
+      "es": {
+        "text": "carretera",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "silnice",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "wheel",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "wheel",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Rad",
+        "level": "A1"
+      },
+      "es": {
+        "text": "rueda",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "kolo",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "engine",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "engine",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Motor",
+        "level": "A2"
+      },
+      "es": {
+        "text": "motor",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "motor",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "brake",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "brake",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Bremse",
+        "level": "B1"
+      },
+      "es": {
+        "text": "freno",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "brzda",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "fuel",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "fuel",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Kraftstoff",
+        "level": "B1"
+      },
+      "es": {
+        "text": "combustible",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "palivo",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "traffic",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "traffic",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Verkehr",
+        "level": "A2"
+      },
+      "es": {
+        "text": "tráfico",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "doprava",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "speed",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "speed",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Geschwindigkeit",
+        "level": "A2"
+      },
+      "es": {
+        "text": "velocidad",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "rychlost",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "highway",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "highway",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Autobahn",
+        "level": "A1"
+      },
+      "es": {
+        "text": "autopista",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "dálnice",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "meat",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "meat",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Fleisch",
+        "level": "A1"
+      },
+      "es": {
+        "text": "carne",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "maso",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "cheese",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "cheese",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Käse",
+        "level": "A1"
+      },
+      "es": {
+        "text": "queso",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "sýr",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "soup",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "soup",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Suppe",
+        "level": "A1"
+      },
+      "es": {
+        "text": "sopa",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "polévka",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "breakfast",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "breakfast",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Frühstück",
+        "level": "A1"
+      },
+      "es": {
+        "text": "desayuno",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "snídaně",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "dinner",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "dinner",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Abendessen",
+        "level": "A1"
+      },
+      "es": {
+        "text": "cena",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "večeře",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "sugar",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "sugar",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Zucker",
+        "level": "A1"
+      },
+      "es": {
+        "text": "azúcar",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "cukr",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "plate",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "plate",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Teller",
+        "level": "A1"
+      },
+      "es": {
+        "text": "plato",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "talíř",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "orange",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "orange",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Orange",
+        "level": "A1"
+      },
+      "es": {
+        "text": "naranja",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "pomeranč",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "tomato",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "tomato",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Tomate",
+        "level": "A1"
+      },
+      "es": {
+        "text": "tomate",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "rajče",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "potato",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "potato",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Kartoffel",
+        "level": "A1"
+      },
+      "es": {
+        "text": "patata",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "brambora",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "carrot",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "carrot",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Karotte",
+        "level": "A2"
+      },
+      "es": {
+        "text": "zanahoria",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "mrkev",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "onion",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "onion",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Zwiebel",
+        "level": "A2"
+      },
+      "es": {
+        "text": "cebolla",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "cibule",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "lemon",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "lemon",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Zitrone",
+        "level": "A1"
+      },
+      "es": {
+        "text": "limón",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "citron",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "grape",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "grape",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Traube",
+        "level": "A2"
+      },
+      "es": {
+        "text": "uva",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "hrozen",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "salad",
+    "category": "food",
+    "translations": {
+      "en": {
+        "text": "salad",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Salat",
+        "level": "A1"
+      },
+      "es": {
+        "text": "ensalada",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "salát",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "train",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "train",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Zug",
+        "level": "A1"
+      },
+      "es": {
+        "text": "tren",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "vlak",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "shopping",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "shopping",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Einkaufen",
+        "level": "A1"
+      },
+      "es": {
+        "text": "compras",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "nakupování",
+        "level": "A1"
+      }
+    }
   }
 ]
