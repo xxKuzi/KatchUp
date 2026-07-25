@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSession } from "@/lib/auth-client";
+import { useStartPlayingModal } from "./_components/StartPlayingModalProvider";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -383,6 +384,7 @@ export default function Home() {
   const container = useRef<HTMLDivElement>(null);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const { data: session } = useSession();
+  const { openModal } = useStartPlayingModal();
 
   useGSAP(
     () => {
@@ -756,7 +758,7 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => router.push("/games")}
+                onClick={openModal}
                 className="relative group inline-flex cursor-pointer items-center justify-center rounded-xl bg-slate-900 px-7 py-3.5 font-bold text-slate-100 border border-slate-800 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-950 dark:text-white dark:border-slate-850 dark:hover:border-slate-700"
               >
                 {/* Glow border on hover */}

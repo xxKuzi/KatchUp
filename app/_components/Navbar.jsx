@@ -12,12 +12,14 @@ import {
   Layers,
   Users,
   Zap,
+  Newspaper,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useLanguage } from "../_lib/languageContext";
 import { useEnergy, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
+import { useStartPlayingModal } from "./StartPlayingModalProvider";
 
 function getInitials(value) {
   const trimmed = (value || "").trim();
@@ -42,6 +44,7 @@ function Navbar() {
   const energy = useEnergy();
   const reset = useResetCountdown();
   const { data: session, status } = useSession();
+  const { openModal } = useStartPlayingModal();
   const [menuOpen, setMenuOpen] = useState(false);
   const [energyPopoverOpen, setEnergyPopoverOpen] = useState(false);
   const [langModalOpen, setLangModalOpen] = useState(false);
@@ -49,6 +52,16 @@ function Navbar() {
   const energyRef = useRef(null);
   const isSignedIn = status === "authenticated";
   const isHomePage = pathname === "/";
+  const isLoginPage = pathname === "/login";
+  // First-time-visitor onboarding: on the landing page, while signed out, the
+  // navbar is locked down to just Home/Games so new visitors get funneled
+  // into a free Score Rush round before browsing the rest of the app. Stays
+  // locked through the login page too, so it doesn't unblur the instant you
+  // click "sign in" — only once you're actually authenticated.
+  const gateActive = (isHomePage || isLoginPage) && !isSignedIn;
+  const gatedItemClass = gateActive
+    ? " pointer-events-none blur-[3px] opacity-50 select-none"
+    : "";
 
   const bottomNavItems = [
     { href: "/", label: t("navbar.home", "Home"), Icon: Home },
@@ -60,6 +73,14 @@ function Navbar() {
 
   const isActive = (href) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const handleNavigate = (href) => {
+    if (gateActive && href === "/games") {
+      openModal();
+      return;
+    }
+    router.push(href);
+  };
 
   const handleOpenLogin = () => {
     setMenuOpen(false);
@@ -127,11 +148,13 @@ function Navbar() {
               />
             </button>
 
-            <LanguageSwitcher
-              open={langModalOpen}
-              onOpenChange={setLangModalOpen}
-              isHomePage={isHomePage}
-            />
+            <div className={gatedItemClass}>
+              <LanguageSwitcher
+                open={langModalOpen}
+                onOpenChange={setLangModalOpen}
+                isHomePage={isHomePage}
+              />
+            </div>
           </div>
 
           {/* Desktop Navigation Links */}
@@ -142,7 +165,7 @@ function Navbar() {
                   ? "text-slate-100 hover:bg-slate-800/80 hover:text-white"
                   : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
               }`}
-              onClick={() => router.push("/games")}
+              onClick={() => handleNavigate("/games")}
               type="button"
             >
               {t("navbar.games")}
@@ -152,7 +175,7 @@ function Navbar() {
                 isHomePage
                   ? "text-slate-100 hover:bg-slate-800/80 hover:text-white"
                   : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
-              }`}
+              }${gatedItemClass}`}
               onClick={() => router.push("/topics")}
               type="button"
             >
@@ -163,7 +186,7 @@ function Navbar() {
                 isHomePage
                   ? "text-slate-100 hover:bg-slate-800/80 hover:text-white"
                   : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
-              }`}
+              }${gatedItemClass}`}
               onClick={() => router.push("/my-decks")}
               type="button"
             >
@@ -174,7 +197,7 @@ function Navbar() {
                 isHomePage
                   ? "text-slate-100 hover:bg-slate-800/80 hover:text-white"
                   : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
-              }`}
+              }${gatedItemClass}`}
               onClick={() => router.push("/friends")}
               type="button"
             >
@@ -189,36 +212,64 @@ function Navbar() {
                 <button
                   type="button"
                   onClick={handleOpenLogin}
-                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-blue-500 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
+                  className={`inline-flex cursor-pointer items-center justify-center rounded-lg border border-blue-500 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400${gatedItemClass}`}
                 >
                   {t("auth.loginRegister", "Login / Register")}
                 </button>
               ) : null}
             </div>
 
-            {/* Always-visible daily energy */}
+            {/* Blog — small icon link next to energy */}
+            <button
+              type="button"
+              onClick={() => router.push("/blog")}
+              aria-label={t("navbar.blog", "Blog")}
+              title={t("navbar.blog", "Blog")}
+              className={`inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border shadow-sm transition hover:scale-105 ${
+                isHomePage
+                  ? "border-slate-700/80 bg-slate-900/80 text-slate-100 hover:bg-slate-800"
+                  : "border-slate-300/80 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
+              }${gatedItemClass}`}
+            >
+              <Newspaper className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Always-visible daily energy — locked to a single pip until signed in */}
             <div className="relative" ref={energyRef}>
               <button
                 type="button"
                 onClick={() => {
+                  if (!isSignedIn) {
+                    return;
+                  }
                   setMenuOpen(false);
                   setEnergyPopoverOpen((prev) => !prev);
                 }}
-                aria-label={`${t("navbar.energy")}: ${energy}/${MAX_ENERGY}`}
-                aria-expanded={energyPopoverOpen}
-                className={`inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-1.5 text-sm font-bold shadow-sm transition hover:scale-105 ${
-                  energy <= 0
-                    ? "border-rose-400/60 bg-rose-500/10 text-rose-500 dark:border-rose-500/50 dark:text-rose-400"
-                    : isHomePage
-                      ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
-                      : "border-amber-400/60 bg-amber-50 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
+                aria-label={
+                  isSignedIn
+                    ? `${t("navbar.energy")}: ${energy}/${MAX_ENERGY}`
+                    : "Sign in to track energy"
+                }
+                aria-expanded={isSignedIn ? energyPopoverOpen : undefined}
+                className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-sm font-bold shadow-sm transition ${
+                  !isSignedIn
+                    ? "cursor-default border-slate-400/40 bg-slate-400/10 text-slate-400 dark:border-slate-600/60 dark:text-slate-500"
+                    : `cursor-pointer hover:scale-105 ${
+                        energy <= 0
+                          ? "border-rose-400/60 bg-rose-500/10 text-rose-500 dark:border-rose-500/50 dark:text-rose-400"
+                          : isHomePage
+                            ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
+                            : "border-amber-400/60 bg-amber-50 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
+                      }`
                 }`}
               >
                 <Zap className="h-4 w-4 fill-current" />
-                <span className="tabular-nums leading-none">{energy}</span>
+                <span className="tabular-nums leading-none">
+                  {isSignedIn ? energy : 1}
+                </span>
               </button>
 
-              {energyPopoverOpen && (
+              {isSignedIn && energyPopoverOpen && (
                 <div className="absolute right-0 top-[120%] mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 text-sm text-slate-700 shadow-2xl backdrop-blur-xl transition-all sm:left-1/2 sm:right-auto sm:-translate-x-1/2 dark:border-slate-700 dark:bg-slate-950/95 dark:text-slate-200">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -330,7 +381,17 @@ function Navbar() {
                         type="button"
                         onClick={() => {
                           setMenuOpen(false);
-                          router.push("/games");
+                          router.push("/learned-words");
+                        }}
+                        className={`rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800${gatedItemClass}`}
+                      >
+                        {t("navbar.learnedWords", "Learned Words")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          handleNavigate("/games");
                         }}
                         className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
                       >
@@ -342,7 +403,7 @@ function Navbar() {
                           setMenuOpen(false);
                           router.push("/topics");
                         }}
-                        className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                        className={`rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800${gatedItemClass}`}
                       >
                         {t("navbar.topics", "Topics")}
                       </button>
@@ -352,7 +413,7 @@ function Navbar() {
                           setMenuOpen(false);
                           router.push("/my-decks");
                         }}
-                        className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                        className={`rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800${gatedItemClass}`}
                       >
                         {t("navbar.myDecks")}
                       </button>
@@ -362,7 +423,7 @@ function Navbar() {
                           setMenuOpen(false);
                           router.push("/friends");
                         }}
-                        className="rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                        className={`rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800${gatedItemClass}`}
                       >
                         {t("navbar.friends")}
                       </button>
@@ -391,7 +452,7 @@ function Navbar() {
                         </button>
                       </div>
                     ) : (
-                      <div className="pt-2 lg:hidden">
+                      <div className={`pt-2 lg:hidden${gatedItemClass}`}>
                         <button
                           type="button"
                           onClick={handleOpenLogin}
@@ -417,17 +478,19 @@ function Navbar() {
         <div className="mx-auto flex max-w-lg items-stretch justify-around">
           {bottomNavItems.map(({ href, label, Icon }) => {
             const active = isActive(href);
+            const isGatedItem =
+              gateActive && href !== "/" && href !== "/games";
             return (
               <button
                 key={href}
                 type="button"
-                onClick={() => router.push(href)}
+                onClick={() => handleNavigate(href)}
                 aria-current={active ? "page" : undefined}
                 className={`flex flex-1 flex-col items-center gap-1 px-1 py-2 text-[0.65rem] font-semibold transition ${
                   active
                     ? "text-blue-600 dark:text-blue-400"
                     : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
-                }`}
+                }${isGatedItem ? gatedItemClass : ""}`}
               >
                 <Icon
                   className={`h-5 w-5 transition-transform ${

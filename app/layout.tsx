@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "./_components/Navbar";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./_lib/languageContext";
+import { StartPlayingModalProvider } from "./_components/StartPlayingModalProvider";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/lib/auth-client";
 
@@ -42,8 +43,10 @@ export default async function RootLayout({
         >
           <SessionProvider session={session}>
             <LanguageProvider>
-              <Navbar />
-              <main className="pb-20 lg:pb-0">{children}</main>
+              <StartPlayingModalProvider>
+                <Navbar />
+                <main className="pb-20 lg:pb-0">{children}</main>
+              </StartPlayingModalProvider>
             </LanguageProvider>
           </SessionProvider>
         </ThemeProvider>

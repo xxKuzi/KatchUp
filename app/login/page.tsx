@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "@/lib/auth-client";
 import { useRef } from "react";
 import gsap from "gsap";
@@ -11,6 +11,8 @@ gsap.registerPlugin(useGSAP);
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const { data: session, status } = useSession();
   const isSignedIn = status === "authenticated";
   const container = useRef<HTMLDivElement>(null);
@@ -31,7 +33,7 @@ export default function LoginPage() {
   );
 
   const loginWithProvider = async (provider: "google" | "github" | "discord") => {
-    await signIn(provider, { callbackUrl: "/" });
+    await signIn(provider, { callbackUrl });
   };
 
   const handleSignOut = async () => {
@@ -69,7 +71,7 @@ export default function LoginPage() {
             </div>
             <button
               type="button"
-              onClick={() => router.push("/")}
+              onClick={() => router.push(callbackUrl)}
               className="animate-item w-full cursor-pointer rounded-xl bg-blue-600 px-5 py-4 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
             >
               Continue to Home
