@@ -135,34 +135,6 @@ export const asyncScores = pgTable("async_scores", {
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 
-export const userWordProgress = pgTable(
-  "user_word_progress",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    wordId: text("word_id").notNull(),
-    language: text("language").notNull(),
-    isUnlocked: boolean("is_unlocked").default(true).notNull(),
-    isMastered: boolean("is_mastered").default(false).notNull(),
-    streak: integer("streak").default(0).notNull(),
-    updatedAt: timestamp("updated_at", { mode: "date" })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => ({
-    userWordUnique: uniqueIndex("user_word_progress_user_id_word_id_key").on(
-      table.userId,
-      table.wordId,
-    ),
-    userLanguageIdx: index("user_word_progress_user_id_language_idx").on(
-      table.userId,
-      table.language,
-    ),
-  }),
-);
-
 // Decks unify topic decks (system-owned, one per topicKey + foreignLang) and
 // custom decks (user-owned). Both hold their words in `deck_words`.
 export const decks = pgTable(
@@ -253,8 +225,6 @@ export const wordConcepts = pgTable("word_concepts", {
   // Slug of the English word — stable identity for re-seeding.
   conceptKey: text("concept_key").notNull().unique(),
   category: text("category").notNull().default("general"),
-  // Set only for concepts that belong to the ordered lecture progression.
-  lectureIndex: integer("lecture_index"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 

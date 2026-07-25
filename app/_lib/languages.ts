@@ -2,7 +2,7 @@
 //
 // This replaces three divergent enums that used to disagree with each other:
 //   - `Language`          ("english" | "czech" | "deutsch")  — UI language
-//   - `SupportedLanguage` ("german" | "spanish" | "czech")   — learning target
+//   - `SupportedLanguage` ("german" | "spanish" | "czech")   — learning target (now removed)
 //   - `DeckLanguage`      ("english" | "czech" | "deutsch")  — deck generation
 // Note that the same language was spelled both "deutsch" and "german", and
 // Spanish existed as a target but never as a UI/deck language.

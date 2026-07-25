@@ -12,7 +12,6 @@ const BATCH_SIZE = 100;
 export interface ConceptSeedRow {
   conceptKey: string;
   category: string;
-  lectureIndex?: number | null;
   translations: Partial<Record<Lang, { text: string; level: string }>>;
 }
 
@@ -66,7 +65,6 @@ export async function seedConcepts(
     .map((row) => ({
       conceptKey: row.conceptKey,
       category: row.category?.trim() || "general",
-      lectureIndex: row.lectureIndex ?? null,
     }));
 
   let conceptsUpserted = 0;
@@ -78,7 +76,6 @@ export async function seedConcepts(
         target: wordConcepts.conceptKey,
         set: {
           category: sqlExcluded("category"),
-          lectureIndex: sqlExcluded("lecture_index"),
         },
       });
     conceptsUpserted += batch.length;
