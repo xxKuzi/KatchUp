@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { SupportedLanguage } from "@/app/games/_lib/learning/types";
+import { normalizeLang } from "@/app/_lib/languages";
 import { db } from "@/lib/db";
 import {
   getLeaderboard,
   saveAsyncScore,
 } from "@/app/api/flip-cards/_lib/server";
-
-function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish" || value === "czech";
-}
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -22,14 +18,15 @@ export async function GET(request: NextRequest) {
   const language = searchParams.get("language");
   const level = searchParams.get("level");
 
-  if (!isSupportedLanguage(language) || !level) {
+  const lang = normalizeLang(language);
+  if (!lang || !level) {
     return NextResponse.json(
       { error: "Missing language or level" },
       { status: 400 },
     );
   }
 
-  const leaderboard = await getLeaderboard(language, level);
+  const leaderboard = await getLeaderboard(lang, level);
   return NextResponse.json({ leaderboard });
 }
 
@@ -41,15 +38,17 @@ export async function POST(request: NextRequest) {
   const userId = session.user.id;
 
   const body = (await request.json()) as {
-    language?: SupportedLanguage;
+    language?: string;
     level?: string;
     score?: number;
     correct?: number;
     timeMs?: number;
   };
 
+  const postLang = normalizeLang(body.language);
+
   if (
-    !isSupportedLanguage(body.language) ||
+    !postLang ||
     !body.level ||
     typeof body.score !== "number" ||
     typeof body.correct !== "number" ||
@@ -60,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   await saveAsyncScore({
     userId,
-    language: body.language,
+    language: postLang,
     level: body.level,
     score: body.score,
     correct: body.correct,

@@ -5,17 +5,18 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
-import { SupportedLanguage } from "../_lib/learning/types";
-import { getAllWords } from "../_lib/learning/wordDatabase";
+import {
+  LANGS,
+  LANG_LABELS,
+  type CefrLevel,
+  type Lang,
+} from "@/app/_lib/languages";
+import { useLanguagePair } from "@/app/_lib/useLanguagePair";
+import { useLearningLevel } from "@/app/_lib/useLearningLevel";
+import { fetchWordPairs } from "../_lib/wordPairs";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
 import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
-
-const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
-  german: "German",
-  spanish: "Spanish",
-  czech: "Czech",
-};
 
 const DECK_SIZE = 15;
 const SWIPE_THRESHOLD = 110;
@@ -41,30 +42,6 @@ function shuffleArray<T>(items: T[]): T[] {
   return cloned;
 }
 
-function getPreferredLanguage(): SupportedLanguage {
-  try {
-    const germanRaw = window.localStorage.getItem(
-      "katchup-learning-progress-v1-german",
-    );
-    const spanishRaw = window.localStorage.getItem(
-      "katchup-learning-progress-v1-spanish",
-    );
-
-    const germanLecture = germanRaw
-      ? ((JSON.parse(germanRaw) as { currentLecture?: number })
-          .currentLecture ?? 1)
-      : 1;
-    const spanishLecture = spanishRaw
-      ? ((JSON.parse(spanishRaw) as { currentLecture?: number })
-          .currentLecture ?? 1)
-      : 1;
-
-    return spanishLecture > germanLecture ? "spanish" : "german";
-  } catch {
-    return "german";
-  }
-}
-
 type Verdict = "known" | "practice";
 
 const FlipCardsPage = () => {
@@ -76,7 +53,17 @@ const FlipCardsPage = () => {
     searchParams.get("mode") === "finish" ? "finish" : "practice";
   const deckSession = useDeckSession(deckId || null, sessionMode);
 
-  const [language, setLanguage] = useState<SupportedLanguage>("german");
+  const { speak, learning: defaultLearning } = useLanguagePair();
+  const [learning, setLearning] = useState<Lang>(defaultLearning);
+  // Bumped to pull a fresh set of cards for the same pair.
+  const [reshuffleToken, setReshuffleToken] = useState(0);
+  const learningLevel = useLearningLevel(learning);
+  const level: CefrLevel =
+    learningLevel && learningLevel.label !== "C2"
+      ? (learningLevel.label as CefrLevel)
+      : "A1";
+
+
   const [deck, setDeck] = useState<CardWord[]>([]);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -99,22 +86,47 @@ const FlipCardsPage = () => {
     setLeaving(null);
   };
 
-  const buildDeck = (lang: SupportedLanguage, source?: CardWord[]) => {
-    const words = source ?? getAllWords(lang);
-    setDeck(shuffleArray(words).slice(0, DECK_SIZE));
-    resetPiles();
-  };
-
-  // Non-deck path: seed from the base word DB in the preferred language.
+  // Non-deck path: pull cards for the chosen pair. Flip-cards is a recall
+  // drill — the front shows your language, the back the one you're learning.
   useEffect(() => {
     if (deckId) {
       return;
     }
-    const preferred = getPreferredLanguage();
-    setLanguage(preferred);
-    buildDeck(preferred);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deckId]);
+
+    const controller = new AbortController();
+
+    fetchWordPairs({
+      speak,
+      learning,
+      direction: "recall",
+      level,
+      count: DECK_SIZE * 3,
+      signal: controller.signal,
+    })
+      .then((pairs) => {
+        setDeck(
+          shuffleArray(
+            pairs.map((pair) => ({
+              id: pair.conceptId,
+              native: pair.prompt,
+              foreign: pair.answer,
+            })),
+          ).slice(0, DECK_SIZE),
+        );
+        resetPiles();
+      })
+      .catch(() => {
+        // Leave the deck empty; the existing empty state covers it.
+      });
+
+    return () => controller.abort();
+  }, [deckId, speak, learning, level, reshuffleToken]);
+
+  /** Re-run the round using only the cards swiped into "still learning". */
+  const replayPractice = () => {
+    setDeck(shuffleArray(practice).slice(0, DECK_SIZE));
+    resetPiles();
+  };
 
   // Deck path: load the session's selected words.
   useEffect(() => {
@@ -212,9 +224,8 @@ const FlipCardsPage = () => {
     }
   };
 
-  const switchLanguage = (lang: SupportedLanguage) => {
-    setLanguage(lang);
-    buildDeck(lang);
+  const switchLanguage = (lang: Lang) => {
+    setLearning(lang);
   };
 
   // Deck-path gating.
@@ -269,18 +280,18 @@ const FlipCardsPage = () => {
       <div className="w-full max-w-xl">
         {!deckId && (
           <div className="flex items-center justify-center gap-2">
-            {(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map(
+            {LANGS.filter((lang) => lang !== speak).map(
               (lang) => (
                 <button
                   key={lang}
                   onClick={() => switchLanguage(lang)}
                   className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                    language === lang
+                    learning === lang
                       ? "border-blue-600 bg-blue-600 text-white"
                       : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
                   }`}
                 >
-                  {LANGUAGE_LABELS[lang]}
+                  {LANG_LABELS[lang]}
                 </button>
               ),
             )}
@@ -368,7 +379,7 @@ const FlipCardsPage = () => {
                   className="absolute inset-0 flex flex-col items-center justify-center rounded-3xl border border-blue-200 bg-blue-50 p-6 text-center shadow-xl dark:border-blue-900 dark:bg-blue-950/40"
                 >
                   <span className="absolute top-4 left-5 text-[11px] font-semibold uppercase tracking-wider text-blue-500/70">
-                    {deckId ? "Translation" : LANGUAGE_LABELS[language]}
+                    {deckId ? "Translation" : LANG_LABELS[learning]}
                   </span>
                   <p className="text-4xl font-black text-blue-700 dark:text-blue-300">
                     {currentCard.foreign}
@@ -446,7 +457,7 @@ const FlipCardsPage = () => {
             <div className="mt-7 flex flex-col gap-3">
               {practice.length > 0 && (
                 <button
-                  onClick={() => buildDeck(language, practice)}
+                  onClick={replayPractice}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-semibold text-white transition hover:bg-amber-400"
                 >
                   <Sparkles className="h-4 w-4" />
@@ -463,7 +474,7 @@ const FlipCardsPage = () => {
                 </button>
               ) : (
                 <button
-                  onClick={() => buildDeck(language)}
+                  onClick={() => setReshuffleToken((value) => value + 1)}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
                   <RefreshCw className="h-4 w-4" />

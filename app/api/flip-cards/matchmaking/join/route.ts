@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { SupportedLanguage } from "@/app/games/_lib/learning/types";
+import { isCefrLevel, normalizeLang } from "@/app/_lib/languages";
 import { tryMatch } from "@/app/api/flip-cards/_lib/server";
-
-function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish" || value === "czech";
-}
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -15,12 +11,18 @@ export async function POST(request: NextRequest) {
   const userId = session.user.id;
 
   const body = (await request.json()) as {
-    language?: SupportedLanguage;
+    language?: string;
+    nativeLang?: string;
     level?: string;
     mode?: string;
   };
 
-  if (!body.level || !isSupportedLanguage(body.language)) {
+  const learning = normalizeLang(body.language);
+  // Older clients only sent the target language and assumed English options.
+  const nativeLang = normalizeLang(body.nativeLang) ?? "en";
+  const level = body.level?.toUpperCase();
+
+  if (!learning || !isCefrLevel(level) || learning === nativeLang) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
@@ -30,8 +32,9 @@ export async function POST(request: NextRequest) {
     userId,
     name: session.user.name ?? "Player",
     avatar: session.user.image ?? "https://i.pravatar.cc/100?img=12",
-    language: body.language,
-    level: body.level,
+    language: learning,
+    nativeLang,
+    level,
     mode,
   };
 
@@ -45,5 +48,6 @@ export async function POST(request: NextRequest) {
     status: "matched",
     matchId: match.match.id,
     opponent: match.waiting,
+    matchStartAt: match.startAt,
   });
 }

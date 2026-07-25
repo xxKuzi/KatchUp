@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import GamePage from "../_components/GamePage";
-import { useLearningProgress } from "../_hooks/useLearningProgress";
-import { SupportedLanguage } from "../_lib/learning/types";
+import { LANG_LABELS, type CefrLevel } from "@/app/_lib/languages";
+import { useLanguagePair } from "@/app/_lib/useLanguagePair";
+import { useLearningLevel } from "@/app/_lib/useLearningLevel";
+import { hasAnonPlaysRemaining } from "../_lib/anonPlayGate";
 import { getPlayerProfile, PlayerProfile } from "./_lib/playerProfile";
-
-const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
-  german: "German",
-  spanish: "Spanish",
-  czech: "Czech",
-};
+import { useSession } from "@/lib/auth-client";
+import { pusherClient } from "@/lib/realtime/pusher-client";
 
 const DEFAULT_OPPONENTS = [
   { name: "Luna87", avatar: "https://i.pravatar.cc/100?img=34" },
@@ -38,49 +36,12 @@ interface MatchHistoryEntry {
   winner: "player" | "opponent" | null;
 }
 
-function levelFromLecture(lecture: number): "A1" | "A2" | "B1" | "B2" | "C1" {
-  if (lecture <= 2) {
-    return "A1";
-  }
-  if (lecture <= 4) {
-    return "A2";
-  }
-  if (lecture <= 6) {
-    return "B1";
-  }
-  if (lecture <= 8) {
-    return "B2";
-  }
-  return "C1";
-}
-
-function getPreferredLanguage(): SupportedLanguage {
-  try {
-    const germanRaw = window.localStorage.getItem(
-      "katchup-learning-progress-v1-german",
-    );
-    const spanishRaw = window.localStorage.getItem(
-      "katchup-learning-progress-v1-spanish",
-    );
-
-    const germanLecture = germanRaw
-      ? ((JSON.parse(germanRaw) as { currentLecture?: number })
-          .currentLecture ?? 1)
-      : 1;
-    const spanishLecture = spanishRaw
-      ? ((JSON.parse(spanishRaw) as { currentLecture?: number })
-          .currentLecture ?? 1)
-      : 1;
-
-    return spanishLecture > germanLecture ? "spanish" : "german";
-  } catch {
-    return "german";
-  }
-}
-
 const ChooseOneMultiplayerPage = () => {
   const router = useRouter();
-  const [language, setLanguage] = useState<SupportedLanguage>("german");
+  const { data: session } = useSession();
+  const isSignedIn = Boolean(session?.user?.id);
+  const { speak, learning } = useLanguagePair();
+
   const [mode, setMode] = useState<MatchMode>("live");
   const [matchState, setMatchState] = useState<MatchState>("idle");
   const [matchSettings, setMatchSettings] = useState<"fair" | "personal">("fair");
@@ -90,20 +51,21 @@ const ChooseOneMultiplayerPage = () => {
   );
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
+  const [matchStartAt, setMatchStartAt] = useState<number | null>(null);
+  const autoStartedMatchId = useRef<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [topAsyncPlayers, setTopAsyncPlayers] = useState<
     Array<{ name: string; score: number; timeMs: number }>
   >([]);
   const [recentMatches, setRecentMatches] = useState<MatchHistoryEntry[]>([]);
-  const { progress, isHydrated } = useLearningProgress(language);
-
-  const level = useMemo(
-    () => levelFromLecture(progress.currentLecture),
-    [progress.currentLecture],
-  );
+  const learningLevel = useLearningLevel(learning);
+  const level: CefrLevel =
+    learningLevel && learningLevel.label !== "C2"
+      ? (learningLevel.label as CefrLevel)
+      : "A1";
+  const isHydrated = learningLevel !== null;
 
   useEffect(() => {
-    setLanguage(getPreferredLanguage());
     setProfile(getPlayerProfile());
 
     if (typeof window !== "undefined") {
@@ -127,7 +89,7 @@ const ChooseOneMultiplayerPage = () => {
     const loadAsyncLeaderboard = async () => {
       try {
         const response = await fetch(
-          `/api/flip-cards/async-score?language=${language}&level=${level}`,
+          `/api/flip-cards/async-score?language=${learning}&level=${level}`,
         );
         if (!response.ok) {
           return;
@@ -144,7 +106,51 @@ const ChooseOneMultiplayerPage = () => {
     };
 
     void loadAsyncLeaderboard();
-  }, [language, level]);
+  }, [learning, level]);
+
+  const applyMatchFound = (found: {
+    matchId: string;
+    opponent?: OpponentPreview;
+    matchStartAt?: number;
+  }) => {
+    setMatchId(found.matchId);
+    if (found.opponent) {
+      setOpponent(found.opponent);
+    }
+    if (found.matchStartAt) {
+      setMatchStartAt(found.matchStartAt);
+    }
+    setMatchState("found");
+  };
+
+  // Instant push: the server notifies the opponent the moment a match is
+  // created, so the waiting player doesn't have to wait on the ~1s poll below.
+  useEffect(() => {
+    const userId = session?.user?.id;
+    const client = pusherClient;
+    if (mode !== "live" || matchState !== "searching" || !userId || !client) {
+      return;
+    }
+
+    const channel = client.subscribe(`user-${userId}`);
+    const handler = (data: {
+      matchId: string;
+      opponent?: { userId: string; name: string; avatar: string };
+      startAt?: number;
+    }) => {
+      applyMatchFound({
+        matchId: data.matchId,
+        opponent: data.opponent,
+        matchStartAt: data.startAt,
+      });
+    };
+    channel.bind("match-found", handler);
+
+    return () => {
+      channel.unbind("match-found", handler);
+      client.unsubscribe(`user-${userId}`);
+    };
+  }, [matchState, mode, session?.user?.id]);
 
   useEffect(() => {
     if (mode !== "live" || matchState !== "searching" || !profile) {
@@ -155,10 +161,11 @@ const ChooseOneMultiplayerPage = () => {
       setSearchPulse((previous) => (previous + 1) % 4);
     }, 420);
 
+    // Polling fallback in case the Pusher push above is missed/delayed.
     const pollInterval = window.setInterval(async () => {
       try {
         const response = await fetch(
-          `/api/flip-cards/matchmaking/status?playerId=${profile.id}&language=${language}&level=${level}`,
+          `/api/flip-cards/matchmaking/status?playerId=${profile.id}&language=${learning}&level=${level}`,
         );
 
         if (!response.ok) {
@@ -169,14 +176,15 @@ const ChooseOneMultiplayerPage = () => {
           status: "matched" | "waiting" | "idle";
           matchId?: string;
           opponent?: OpponentPreview;
+          matchStartAt?: number;
         };
 
         if (data.status === "matched" && data.matchId) {
-          setMatchId(data.matchId);
-          if (data.opponent) {
-            setOpponent(data.opponent);
-          }
-          setMatchState("found");
+          applyMatchFound({
+            matchId: data.matchId,
+            opponent: data.opponent,
+            matchStartAt: data.matchStartAt,
+          });
         }
       } catch {
         // Keep polling to recover from transient errors.
@@ -187,7 +195,7 @@ const ChooseOneMultiplayerPage = () => {
       window.clearInterval(pulseInterval);
       window.clearInterval(pollInterval);
     };
-  }, [language, level, matchState, mode, profile]);
+  }, [learning, level, matchState, mode, profile]);
 
   const startFindingOpponent = async () => {
     if (matchState === "searching" || !profile) {
@@ -208,7 +216,8 @@ const ChooseOneMultiplayerPage = () => {
           playerId: profile.id,
           name: profile.name,
           avatar: profile.avatar,
-          language,
+          language: learning,
+          nativeLang: speak,
           level,
           mode: matchSettings,
         }),
@@ -222,14 +231,15 @@ const ChooseOneMultiplayerPage = () => {
         status: "waiting" | "matched";
         matchId?: string;
         opponent?: OpponentPreview;
+        matchStartAt?: number;
       };
 
       if (data.status === "matched" && data.matchId) {
-        setMatchId(data.matchId);
-        if (data.opponent) {
-          setOpponent(data.opponent);
-        }
-        setMatchState("found");
+        applyMatchFound({
+          matchId: data.matchId,
+          opponent: data.opponent,
+          matchStartAt: data.matchStartAt,
+        });
       }
     } catch {
       setSearchError("Matchmaking is unavailable right now. Try again.");
@@ -239,7 +249,8 @@ const ChooseOneMultiplayerPage = () => {
 
   const startLiveMatch = () => {
     const params = new URLSearchParams({
-      language,
+      speak,
+      learning,
       level,
       mode: "live",
       settingsMode: matchSettings,
@@ -253,13 +264,42 @@ const ChooseOneMultiplayerPage = () => {
     if (matchId) {
       params.set("matchId", matchId);
     }
+    if (matchStartAt) {
+      params.set("startAt", String(matchStartAt));
+    }
 
     router.push(`/games/choose-one-multiplayer/play?${params.toString()}`);
   };
 
+  // Both players should land on the play screen without relying on each of
+  // them individually clicking "Start Match" at their own pace - otherwise
+  // one side can sit on the countdown far longer than the other.
+  useEffect(() => {
+    if (matchState !== "found" || !matchId) {
+      return;
+    }
+    if (autoStartedMatchId.current === matchId) {
+      return;
+    }
+    autoStartedMatchId.current = matchId;
+
+    const timeoutId = window.setTimeout(() => {
+      startLiveMatch();
+    }, 600);
+
+    return () => window.clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchState, matchId]);
+
   const startAsyncMatch = () => {
+    if (!isSignedIn && !hasAnonPlaysRemaining()) {
+      router.push(`/login?callbackUrl=${encodeURIComponent("/")}`);
+      return;
+    }
+
     const params = new URLSearchParams({
-      language,
+      speak,
+      learning,
       level,
       mode: "async",
       playerId: profile?.id ?? "player-local",
@@ -290,7 +330,7 @@ const ChooseOneMultiplayerPage = () => {
               Language
             </p>
             <p className="mt-1 text-base font-semibold text-zinc-900 dark:text-zinc-100">
-              {LANGUAGE_LABELS[language]}
+              {LANG_LABELS[speak]} → {LANG_LABELS[learning]}
             </p>
           </div>
 
@@ -402,10 +442,14 @@ const ChooseOneMultiplayerPage = () => {
             className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 dark:border-blue-800/40 dark:bg-blue-950/10 dark:hover:bg-blue-950/20 transition hover:-translate-y-0.5"
           >
             <span className="text-xl font-bold text-blue-800 dark:text-blue-300">
-              Start Score Rush
+              {isSignedIn || hasAnonPlaysRemaining()
+                ? "Start Score Rush"
+                : "Sign in to keep playing Score Rush"}
             </span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-              Climb async leaderboard rankings by matching words as fast as possible.
+              {isSignedIn || hasAnonPlaysRemaining()
+                ? "Climb async leaderboard rankings by matching words as fast as possible."
+                : "You've used your free Score Rush round. Sign in to keep climbing the leaderboard."}
             </span>
           </button>
         )}

@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { matchPlayers, matchQuestions, matches, users } from "@/db/schema";
 import { and, asc, eq } from "drizzle-orm";
+import { MATCH_COUNTDOWN_MS } from "@/app/api/flip-cards/_lib/server";
 
 export async function GET(
   request: NextRequest,
@@ -64,6 +65,7 @@ export async function GET(
       totalQuestions: questions.length,
       language: match.language,
       level: match.level,
+      startAt: match.createdAt.getTime() + MATCH_COUNTDOWN_MS,
     },
     me,
     opponent,

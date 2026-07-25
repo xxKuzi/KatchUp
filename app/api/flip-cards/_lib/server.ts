@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { pusher } from "@/lib/realtime/pusher-server";
-import { getAllWords } from "@/app/games/_lib/learning/wordDatabase";
-import { SupportedLanguage } from "@/app/games/_lib/learning/types";
+import { getWordPairs } from "@/app/api/words/_lib/wordPool";
+import { normalizeLang, type CefrLevel, type Lang } from "@/app/_lib/languages";
 import {
   asyncScores,
   matchAnswers,
@@ -10,7 +10,6 @@ import {
   matchQuestions,
   matches,
   users,
-  globalWords,
 } from "@/db/schema";
 import { eq, and, or, isNull, asc, desc } from "drizzle-orm";
 import { listDecksForUser, getDeckForUser } from "@/app/api/decks/_lib/deckStore";
@@ -33,6 +32,10 @@ const USER_CHANNEL_PREFIX = "user-";
 const MATCH_CHANNEL_PREFIX = "match-";
 const WINNING_CORRECT_ANSWERS = 10;
 const LIVE_QUESTION_COUNT = 30;
+// Buffer between match creation and the moment both players' clocks are
+// allowed to start, so both clients have time to be pushed the match,
+// navigate to the play screen, and show a synced 3-2-1 countdown.
+export const MATCH_COUNTDOWN_MS = 5000;
 
 function shuffleArray<T>(items: T[]): T[] {
   const cloned = [...items];
@@ -45,12 +48,14 @@ function shuffleArray<T>(items: T[]): T[] {
 
 async function getWordsFromRecentDecks(
   userId: string,
-  language: SupportedLanguage,
+  language: Lang,
 ): Promise<{ native: string; foreign: string }[]> {
   try {
     const userDecks = await listDecksForUser(userId);
+    // Deck languages may still be stored as legacy names ("german"), so both
+    // sides go through normalizeLang before comparing.
     const matchingDecks = userDecks.filter(
-      (d) => d.foreignLang.toLowerCase() === language.toLowerCase()
+      (d) => normalizeLang(d.foreignLang) === language,
     );
 
     const pool: { native: string; foreign: string }[] = [];
@@ -71,116 +76,89 @@ async function getWordsFromRecentDecks(
   }
 }
 
-async function createPersonalMatchQuestions(
-  userId: string,
-  language: SupportedLanguage,
-  level: string,
-): Promise<MatchQuestionPayload[]> {
-  const recentWords = await getWordsFromRecentDecks(userId, language);
-  
-  let levelWords = await db
-    .select({
-      id: globalWords.id,
-      native: globalWords.native,
-      foreign: globalWords.foreign,
-    })
-    .from(globalWords)
-    .where(
-      and(
-        eq(globalWords.language, language),
-        eq(globalWords.level, level),
-      ),
-    );
+interface MatchPair {
+  speak: Lang;
+  learning: Lang;
+  level: CefrLevel;
+}
 
-  if (levelWords.length < 5) {
-    const localWords = getAllWords(language);
-    levelWords = localWords.map((w) => ({
-      id: w.id,
-      native: w.native,
-      foreign: w.foreign,
-    }));
-  }
-
-  const uniqueKeys = new Set<string>();
-  const combinedPool: { id?: string; native: string; foreign: string }[] = [];
-
-  for (const w of recentWords) {
-    const key = `${w.foreign.toLowerCase()}|||${w.native.toLowerCase()}`;
-    if (!uniqueKeys.has(key)) {
-      uniqueKeys.add(key);
-      combinedPool.push(w);
-    }
-  }
-
-  for (const w of levelWords) {
-    const key = `${w.foreign.toLowerCase()}|||${w.native.toLowerCase()}`;
-    if (!uniqueKeys.has(key)) {
-      uniqueKeys.add(key);
-      combinedPool.push(w);
-    }
-  }
-
-  const selected = shuffleArray(combinedPool).slice(0, LIVE_QUESTION_COUNT);
-
-  return selected.map((word, idx) => {
+/** Turn prompt/answer pairs into multiple-choice questions. */
+function toQuestions(
+  pairs: Array<{ conceptId?: string; prompt: string; answer: string }>,
+  answerPool: string[],
+  idPrefix: string,
+): MatchQuestionPayload[] {
+  return pairs.slice(0, LIVE_QUESTION_COUNT).map((pair, idx) => {
     const wrong = shuffleArray(
-      levelWords
-        .filter((candidate) => candidate.foreign.toLowerCase() !== word.foreign.toLowerCase())
-        .map((candidate) => candidate.native),
+      answerPool.filter(
+        (candidate) => candidate.toLowerCase() !== pair.answer.toLowerCase(),
+      ),
     ).slice(0, 3);
 
     return {
-      id: word.id || `personal-${idx}-${Math.random()}`,
-      prompt: word.foreign,
-      correctOption: word.native,
-      options: shuffleArray([...wrong, word.native]),
+      id: pair.conceptId ?? `${idPrefix}-${idx}-${Math.random()}`,
+      prompt: pair.prompt,
+      correctOption: pair.answer,
+      options: shuffleArray([...wrong, pair.answer]),
     };
   });
 }
 
-async function createMatchQuestions(
-  language: SupportedLanguage,
-  level: string,
-): Promise<MatchQuestionPayload[]> {
-  let dbWords = await db
-    .select({
-      id: globalWords.id,
-      native: globalWords.native,
-      foreign: globalWords.foreign,
-    })
-    .from(globalWords)
-    .where(
-      and(
-        eq(globalWords.language, language),
-        eq(globalWords.level, level),
-      ),
-    );
+// Live duels quiz in the recognition direction: show the word being learned,
+// pick its meaning in the language both players speak.
+const MATCH_DIRECTION = "recognition" as const;
 
-  if (dbWords.length < 5) {
-    const localWords = getAllWords(language);
-    dbWords = localWords.map((w) => ({
-      id: w.id,
-      native: w.native,
-      foreign: w.foreign,
-    }));
+async function createPersonalMatchQuestions(
+  userId: string,
+  { speak, learning, level }: MatchPair,
+): Promise<MatchQuestionPayload[]> {
+  const recentWords = await getWordsFromRecentDecks(userId, learning);
+  const levelPairs = await getWordPairs({
+    speak,
+    learning,
+    direction: MATCH_DIRECTION,
+    level,
+    count: 100,
+  });
+
+  const seen = new Set<string>();
+  const combined: Array<{ conceptId?: string; prompt: string; answer: string }> = [];
+
+  // Deck words are stored native/foreign; in recognition the foreign side is
+  // the prompt and the native side the answer.
+  for (const word of recentWords) {
+    const key = `${word.foreign.toLowerCase()}|||${word.native.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    combined.push({ prompt: word.foreign, answer: word.native });
   }
 
-  const words = shuffleArray(dbWords).slice(0, LIVE_QUESTION_COUNT);
+  for (const pair of levelPairs) {
+    const key = `${pair.prompt.toLowerCase()}|||${pair.answer.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    combined.push(pair);
+  }
 
-  return words.map((word) => {
-    const wrong = shuffleArray(
-      dbWords
-        .filter((candidate) => candidate.id !== word.id)
-        .map((candidate) => candidate.native),
-    ).slice(0, 3);
+  const answerPool = levelPairs.map((pair) => pair.answer);
+  return toQuestions(shuffleArray(combined), answerPool, "personal");
+}
 
-    return {
-      id: word.id,
-      prompt: word.foreign,
-      correctOption: word.native,
-      options: shuffleArray([...wrong, word.native]),
-    };
+async function createMatchQuestions({
+  speak,
+  learning,
+  level,
+}: MatchPair): Promise<MatchQuestionPayload[]> {
+  const pairs = await getWordPairs({
+    speak,
+    learning,
+    direction: MATCH_DIRECTION,
+    level,
+    count: 100,
   });
+
+  const answerPool = pairs.map((pair) => pair.answer);
+  return toQuestions(shuffleArray(pairs), answerPool, "match");
 }
 
 export async function ensureUser(user: PlayerSession) {
@@ -201,10 +179,17 @@ export async function ensureUser(user: PlayerSession) {
 }
 
 export async function tryMatch(
-  user: PlayerSession & { language: SupportedLanguage; level: string; mode?: string },
+  user: PlayerSession & {
+    language: Lang;
+    nativeLang: Lang;
+    level: CefrLevel;
+    mode?: string;
+  },
 ) {
   const mode = user.mode || "fair";
-  const queueKey = `${QUEUE_KEY_PREFIX}:${user.language}:${user.level}:${mode}`;
+  // The pair is part of the queue key: two players learning German only get
+  // matched if they also share the language the options are written in.
+  const queueKey = `${QUEUE_KEY_PREFIX}:${user.nativeLang}:${user.language}:${user.level}:${mode}`;
   await ensureUser(user);
 
   const playerObj: PlayerSession = {
@@ -235,6 +220,7 @@ export async function tryMatch(
     .insert(matches)
     .values({
       language: user.language,
+      nativeLang: user.nativeLang,
       level: user.level,
       mode: mode,
       status: "active",
@@ -242,8 +228,13 @@ export async function tryMatch(
     .returning();
 
   if (mode === "personal") {
-    const p1Questions = await createPersonalMatchQuestions(user.userId, user.language, user.level);
-    const p2Questions = await createPersonalMatchQuestions(waiting.userId, user.language, user.level);
+    const pair = {
+      speak: user.nativeLang,
+      learning: user.language,
+      level: user.level,
+    };
+    const p1Questions = await createPersonalMatchQuestions(user.userId, pair);
+    const p2Questions = await createPersonalMatchQuestions(waiting.userId, pair);
 
     await db.insert(matchQuestions).values([
       ...p1Questions.map((question, orderIndex) => ({
@@ -264,7 +255,11 @@ export async function tryMatch(
       })),
     ]);
   } else {
-    const questions = await createMatchQuestions(user.language, user.level);
+    const questions = await createMatchQuestions({
+      speak: user.nativeLang,
+      learning: user.language,
+      level: user.level,
+    });
     await db.insert(matchQuestions).values(
       questions.map((question, orderIndex) => ({
         matchId: match.id,
@@ -283,9 +278,12 @@ export async function tryMatch(
   ];
   await db.insert(matchPlayers).values(playerRows);
 
+  const startAt = match.createdAt.getTime() + MATCH_COUNTDOWN_MS;
+
   await pusher.trigger(`${USER_CHANNEL_PREFIX}${user.userId}`, "match-found", {
     matchId: match.id,
     opponent: waiting,
+    startAt,
   });
   await pusher.trigger(
     `${USER_CHANNEL_PREFIX}${waiting.userId}`,
@@ -293,10 +291,11 @@ export async function tryMatch(
     {
       matchId: match.id,
       opponent: user,
+      startAt,
     },
   );
 
-  return { match, waiting };
+  return { match, waiting, startAt };
 }
 
 export async function fetchMatchForUser(matchId: string, userId: string) {
@@ -467,7 +466,7 @@ export async function submitLiveAnswer(params: {
 
 export async function saveAsyncScore(params: {
   userId: string;
-  language: SupportedLanguage;
+  language: Lang;
   level: string;
   score: number;
   correct: number;
@@ -484,7 +483,7 @@ export async function saveAsyncScore(params: {
 }
 
 export async function getLeaderboard(
-  language: SupportedLanguage,
+  language: Lang,
   level: string,
 ) {
   return db

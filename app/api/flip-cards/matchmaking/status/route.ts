@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { SupportedLanguage } from "@/app/games/_lib/learning/types";
+import { normalizeLang } from "@/app/_lib/languages";
 import { db } from "@/lib/db";
 import { matchPlayers, matches, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-
-function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === "german" || value === "spanish" || value === "czech";
-}
+import { MATCH_COUNTDOWN_MS } from "@/app/api/flip-cards/_lib/server";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -20,7 +17,7 @@ export async function GET(request: NextRequest) {
   const language = searchParams.get("language");
   const level = searchParams.get("level");
 
-  if (!level || !isSupportedLanguage(language)) {
+  if (!level || !normalizeLang(language)) {
     return NextResponse.json({ error: "Invalid query" }, { status: 400 });
   }
 
@@ -28,6 +25,7 @@ export async function GET(request: NextRequest) {
   const activePlayerMatches = await db
     .select({
       matchId: matchPlayers.matchId,
+      createdAt: matches.createdAt,
     })
     .from(matchPlayers)
     .innerJoin(matches, eq(matchPlayers.matchId, matches.id))
@@ -44,6 +42,8 @@ export async function GET(request: NextRequest) {
   }
 
   const activeMatchId = activePlayerMatches[0].matchId;
+  const matchStartAt =
+    activePlayerMatches[0].createdAt.getTime() + MATCH_COUNTDOWN_MS;
 
   const opponent = await db
     .select({ id: users.id, name: users.name, avatar: users.image })
@@ -56,5 +56,6 @@ export async function GET(request: NextRequest) {
     status: "matched",
     matchId: activeMatchId,
     opponent: opponent.find((player) => player.id !== userId) ?? null,
+    matchStartAt,
   });
 }

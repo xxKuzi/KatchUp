@@ -4,10 +4,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import GamePage from "../../_components/GamePage";
-import { SupportedLanguage } from "../../_lib/learning/types";
-import { getAllWords } from "../../_lib/learning/wordDatabase";
+import {
+  isCefrLevel,
+  LANG_LABELS,
+  normalizeLang,
+  type CefrLevel,
+  type Lang,
+} from "@/app/_lib/languages";
+import { buildOptions, fetchWordPairs } from "../../_lib/wordPairs";
 import { pusherClient } from "@/lib/realtime/pusher-client";
 import { spendEnergy } from "@/app/_lib/energy";
+import { useSession } from "@/lib/auth-client";
+import { recordAnonPlayUsed } from "../../_lib/anonPlayGate";
 
 interface MatchQuestion {
   id: string;
@@ -29,8 +37,9 @@ interface LiveMatchPayload {
     status: "active" | "finished";
     winnerId: string | null;
     totalQuestions: number;
-    language: SupportedLanguage;
+    language: Lang;
     level: string;
+    startAt: number;
   };
   me: {
     id: string;
@@ -58,10 +67,6 @@ interface AsyncLeaderboardRow {
   timeMs: number;
 }
 
-function isSupportedLanguage(value: string | null): value is SupportedLanguage {
-  return value === "german" || value === "spanish" || value === "czech";
-}
-
 function shuffleArray<T>(items: T[]): T[] {
   const cloned = [...items];
   for (let i = cloned.length - 1; i > 0; i -= 1) {
@@ -71,39 +76,25 @@ function shuffleArray<T>(items: T[]): T[] {
   return cloned;
 }
 
-function buildQuestions(language: SupportedLanguage): MatchQuestion[] {
-  const words = shuffleArray(getAllWords(language)).slice(0, 10);
-
-  return words.map((word) => {
-    const wrongOptions = shuffleArray(
-      getAllWords(language)
-        .filter((candidate) => candidate.id !== word.id)
-        .map((candidate) => candidate.native),
-    ).slice(0, 3);
-
-    const options = shuffleArray([...wrongOptions, word.native]);
-
-    return {
-      id: word.id,
-      prompt: word.foreign,
-      options,
-      correctOption: word.native,
-    };
-  });
-}
-
 export default function ChooseOneMultiplayerPlayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const isSignedIn = Boolean(session?.user?.id);
 
-  const language = isSupportedLanguage(searchParams.get("language"))
-    ? (searchParams.get("language") as SupportedLanguage)
-    : "german";
+  // `language` is the pre-migration param name, still honoured so older links
+  // and in-flight navigations resolve to a sensible pair.
+  const speak = normalizeLang(searchParams.get("speak")) ?? "en";
+  const learning =
+    normalizeLang(searchParams.get("learning")) ??
+    normalizeLang(searchParams.get("language")) ??
+    "de";
   const mode =
     searchParams.get("mode") === "async"
       ? ("async" as MatchMode)
       : ("live" as MatchMode);
-  const level = searchParams.get("level") ?? "A1";
+  const levelParam = searchParams.get("level")?.toUpperCase();
+  const level: CefrLevel = isCefrLevel(levelParam) ? levelParam : "A1";
   const playerId = searchParams.get("playerId") ?? "player-local";
   const playerName = searchParams.get("playerName") ?? "You";
   const playerAvatar =
@@ -123,9 +114,30 @@ export default function ChooseOneMultiplayerPlayPage() {
   const [livePayload, setLivePayload] = useState<LiveMatchPayload | null>(null);
   const [score, setScore] = useState(0);
   const [status, setStatus] = useState<MatchStatus>("playing");
-  
-  const [countdown, setCountdown] = useState<number | null>(() => {
-    return mode === "async" ? 3 : null;
+
+  // For live matches, the lobby hands us the server-computed moment both
+  // players' clocks should start (see MATCH_COUNTDOWN_MS) so the 3-2-1
+  // countdown is anchored to the same absolute time on both screens instead
+  // of two independent local timers.
+  const initialMatchStartAt =
+    mode === "async"
+      ? Date.now() + 3000
+      : (() => {
+          const raw = searchParams.get("startAt");
+          const parsed = raw ? Number(raw) : NaN;
+          return Number.isFinite(parsed) && parsed > Date.now()
+            ? parsed
+            : null;
+        })();
+
+  const [matchStartAt, setMatchStartAt] = useState<number | null>(
+    initialMatchStartAt,
+  );
+  const [countdownValue, setCountdownValue] = useState<number | null>(() => {
+    if (initialMatchStartAt === null) {
+      return null;
+    }
+    return Math.min(3, Math.ceil((initialMatchStartAt - Date.now()) / 1000));
   });
 
   const [winner, setWinner] = useState<"player" | "opponent" | null>(null);
@@ -141,25 +153,26 @@ export default function ChooseOneMultiplayerPlayPage() {
   );
 
   useEffect(() => {
-    if (countdown === null) {
+    if (matchStartAt === null) {
       return;
     }
 
-    if (countdown === 0) {
-      setStartMs(Date.now());
-      setQuestionStartedAt(Date.now());
-      const timeoutId = window.setTimeout(() => {
-        setCountdown(null);
-      }, 500);
-      return () => window.clearTimeout(timeoutId);
-    }
+    const tick = () => {
+      const remaining = matchStartAt - Date.now();
+      if (remaining <= 0) {
+        setStartMs(matchStartAt);
+        setQuestionStartedAt(matchStartAt);
+        setCountdownValue(null);
+        setMatchStartAt(null);
+        return;
+      }
+      setCountdownValue(Math.min(3, Math.ceil(remaining / 1000)));
+    };
 
-    const intervalId = window.setInterval(() => {
-      setCountdown((prev) => (prev !== null ? prev - 1 : null));
-    }, 1000);
-
+    tick();
+    const intervalId = window.setInterval(tick, 150);
     return () => window.clearInterval(intervalId);
-  }, [countdown]);
+  }, [matchStartAt]);
   const [asyncLeaderboard, setAsyncLeaderboard] = useState<
     AsyncLeaderboardRow[]
   >([]);
@@ -198,11 +211,24 @@ export default function ChooseOneMultiplayerPlayPage() {
         setQuestionIndex(payload.me.progress);
         setPlayerCorrect(payload.me.correct);
         initialLoaded.current = true;
+
+        // Fallback for when we didn't get a startAt via the lobby handoff
+        // (e.g. a direct link or a page refresh before the countdown ended).
+        setMatchStartAt((prev) => {
+          if (prev !== null) {
+            return prev;
+          }
+          return payload.match.startAt > Date.now()
+            ? payload.match.startAt
+            : null;
+        });
       }
 
       if (payload.match.status === "finished") {
         setStatus("finished");
-        setWinner(payload.match.winnerId === playerId ? "player" : "opponent");
+        setWinner(
+          payload.match.winnerId === payload.me.id ? "player" : "opponent",
+        );
       }
     } catch {
       setLoadError("Live sync failed temporarily.");
@@ -229,38 +255,31 @@ export default function ChooseOneMultiplayerPlayPage() {
 
     if (mode === "async") {
       setLivePayload(null);
-      fetch(`/data/words-${language}.json`)
-        .then((res) => {
-          if (!res.ok) throw new Error("JSON not found");
-          return res.json() as Promise<Array<{ native: string; foreign: string; level: string }>>;
-        })
-        .then((data) => {
-          const levelWords = data.filter((w) => w.level.toLowerCase() === level.toLowerCase());
-          const pool = levelWords.length > 5 ? levelWords : data;
-          
-          const selected = shuffleArray(pool).slice(0, 10);
-          const generated = selected.map((word) => {
-            const wrongOptions = shuffleArray(
-              pool
-                .filter((candidate) => candidate.foreign !== word.foreign)
-                .map((candidate) => candidate.native),
-            ).slice(0, 3);
-            const options = shuffleArray([...wrongOptions, word.native]);
-            return {
-              id: `${word.foreign}-${Math.random()}`,
-              prompt: word.foreign,
-              options,
-              correctOption: word.native,
-            };
-          });
-          setQuestions(generated);
+      // Recognition: show the word being learned, pick its meaning.
+      fetchWordPairs({
+        speak,
+        learning,
+        direction: "recognition",
+        level,
+        count: 30,
+      })
+        .then((pairs) => {
+          setQuestions(
+            shuffleArray(pairs)
+              .slice(0, 10)
+              .map((pair) => ({
+                id: pair.conceptId,
+                prompt: pair.prompt,
+                options: buildOptions(pair, pairs),
+                correctOption: pair.answer,
+              })),
+          );
         })
         .catch(() => {
-          // Fallback to local seeds
-          setQuestions(buildQuestions(language));
+          setLoadError("Could not load words for this level.");
         });
     }
-  }, [language, mode, level]);
+  }, [speak, learning, mode, level]);
 
   useEffect(() => {
     if (mode !== "live" || status !== "playing" || !matchId) {
@@ -299,6 +318,10 @@ export default function ChooseOneMultiplayerPlayPage() {
 
     asyncScoreSubmitted.current = true;
 
+    if (!isSignedIn) {
+      recordAnonPlayUsed();
+    }
+
     const elapsed = Date.now() - startMs;
 
     const submitAsyncScore = async () => {
@@ -310,7 +333,7 @@ export default function ChooseOneMultiplayerPlayPage() {
             playerId,
             name: playerName,
             avatar: playerAvatar,
-            language,
+            language: learning,
             level,
             score,
             correct: playerCorrect,
@@ -319,7 +342,7 @@ export default function ChooseOneMultiplayerPlayPage() {
         });
 
         const leaderboardResponse = await fetch(
-          `/api/flip-cards/async-score?language=${language}&level=${level}`,
+          `/api/flip-cards/async-score?language=${learning}&level=${level}`,
         );
 
         if (!leaderboardResponse.ok) {
@@ -347,7 +370,7 @@ export default function ChooseOneMultiplayerPlayPage() {
           {
             createdAt: Date.now(),
             mode,
-            language,
+            language: learning,
             level,
             playerName,
             score,
@@ -368,7 +391,7 @@ export default function ChooseOneMultiplayerPlayPage() {
     appendHistory();
     void submitAsyncScore();
   }, [
-    language,
+    learning,
     level,
     mode,
     playerAvatar,
@@ -380,6 +403,7 @@ export default function ChooseOneMultiplayerPlayPage() {
     status,
     totalQuestions,
     winner,
+    isSignedIn,
   ]);
 
   useEffect(() => {
@@ -399,7 +423,7 @@ export default function ChooseOneMultiplayerPlayPage() {
         {
           createdAt: Date.now(),
           mode,
-          language,
+          language: learning,
           level,
           playerName,
           opponentName: livePayload?.opponent?.name ?? opponentName,
@@ -417,7 +441,7 @@ export default function ChooseOneMultiplayerPlayPage() {
       // Ignore local storage errors.
     }
   }, [
-    language,
+    learning,
     level,
     livePayload?.opponent?.name,
     mode,
@@ -515,7 +539,9 @@ export default function ChooseOneMultiplayerPlayPage() {
         };
 
         if (answerData.status === "finished") {
-          finishMatch(answerData.winnerId === playerId ? "player" : "opponent");
+          finishMatch(
+            answerData.winnerId === livePayload?.me.id ? "player" : "opponent",
+          );
         }
       });
 
@@ -560,7 +586,7 @@ export default function ChooseOneMultiplayerPlayPage() {
       ? (livePayload?.opponent?.avatar ?? opponentAvatar)
       : DEFAULT_OPPONENT_AVATAR;
 
-  if (countdown !== null) {
+  if (countdownValue !== null) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 text-white font-sans">
         <div className="text-center animate-pulse">
@@ -568,7 +594,7 @@ export default function ChooseOneMultiplayerPlayPage() {
             Get Ready
           </span>
           <h1 className="mt-4 text-9xl font-black tracking-tight text-white transition-all duration-300 transform scale-110">
-            {countdown === 0 ? "GO!" : countdown}
+            {countdownValue}
           </h1>
         </div>
       </div>
@@ -594,7 +620,7 @@ export default function ChooseOneMultiplayerPlayPage() {
           <p>
             Language:{" "}
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-              {language}
+              {LANG_LABELS[speak]} → {LANG_LABELS[learning]}
             </span>
           </p>
           <p className="text-xs">Level {level} (preselected)</p>
@@ -700,6 +726,28 @@ export default function ChooseOneMultiplayerPlayPage() {
             {rivalName} {opponentCorrect}/{totalQuestions}
           </p>
           <p className="mt-2 text-sm text-zinc-500">Total points: {score}</p>
+
+          {mode === "async" && !isSignedIn && (
+            <div className="mx-auto mt-5 max-w-md rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-800/40 dark:bg-blue-950/20">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                That was your free Score Rush!
+              </p>
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
+                Sign in to save your scores and keep climbing the leaderboard.
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/login?callbackUrl=${encodeURIComponent("/")}`,
+                  )
+                }
+                className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+              >
+                Sign in to keep playing
+              </button>
+            </div>
+          )}
 
           {mode === "async" && asyncLeaderboard.length > 0 && (
             <div className="mx-auto mt-5 max-w-md rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-800/40">
