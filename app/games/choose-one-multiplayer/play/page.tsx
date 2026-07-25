@@ -14,7 +14,7 @@ import {
 import { buildOptions, fetchWordPairs } from "../../_lib/wordPairs";
 import { pusherClient } from "@/lib/realtime/pusher-client";
 import { spendEnergy } from "@/app/_lib/energy";
-import { useSession } from "@/lib/auth-client";
+import { useAuthState } from "@/app/_lib/auth";
 import { recordAnonPlayUsed } from "../../_lib/anonPlayGate";
 
 interface MatchQuestion {
@@ -25,10 +25,23 @@ interface MatchQuestion {
 }
 
 type MatchStatus = "playing" | "finished";
-type MatchMode = "live" | "async";
+type MatchMode = "live" | "bot";
+// A live duel can end with nobody ahead - an abandoned match that neither
+// player ever answered resolves to a draw rather than a loss.
+type MatchWinner = "player" | "opponent" | "draw" | null;
 
 const DEFAULT_PLAYER_AVATAR = "https://i.pravatar.cc/100?img=12";
 const DEFAULT_OPPONENT_AVATAR = "https://i.pravatar.cc/100?img=34";
+const BOT_NAME = "KatchUp Bot";
+const BOT_AVATAR = "https://i.pravatar.cc/100?img=68";
+// How long the bot "thinks" before clearing each prompt.
+const BOT_MS_PER_QUESTION = 3500;
+// The bot race is to a number of *correct* answers, so the player needs more
+// prompts than that to have room to get some wrong.
+const BOT_TARGET_CORRECT = 10;
+const BOT_QUESTION_COUNT = 30;
+// How long a wrong answer stays on screen with the right one highlighted.
+const WRONG_ANSWER_REVEAL_MS = 2000;
 const MATCH_HISTORY_KEY = "katchup-choose-one-multi-history-v1";
 
 interface LiveMatchPayload {
@@ -37,9 +50,11 @@ interface LiveMatchPayload {
     status: "active" | "finished";
     winnerId: string | null;
     totalQuestions: number;
+    targetCorrect: number;
     language: Lang;
     level: string;
-    startAt: number;
+    // Null until both players have accepted the duel.
+    startAt: number | null;
   };
   me: {
     id: string;
@@ -59,14 +74,6 @@ interface LiveMatchPayload {
   questions?: MatchQuestion[];
 }
 
-interface AsyncLeaderboardRow {
-  name: string;
-  avatar: string;
-  score: number;
-  correct: number;
-  timeMs: number;
-}
-
 function shuffleArray<T>(items: T[]): T[] {
   const cloned = [...items];
   for (let i = cloned.length - 1; i > 0; i -= 1) {
@@ -79,8 +86,7 @@ function shuffleArray<T>(items: T[]): T[] {
 export default function ChooseOneMultiplayerPlayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
-  const isSignedIn = Boolean(session?.user?.id);
+  const { isSignedIn } = useAuthState();
 
   // `language` is the pre-migration param name, still honoured so older links
   // and in-flight navigations resolve to a sensible pair.
@@ -89,10 +95,11 @@ export default function ChooseOneMultiplayerPlayPage() {
     normalizeLang(searchParams.get("learning")) ??
     normalizeLang(searchParams.get("language")) ??
     "de";
-  const mode =
-    searchParams.get("mode") === "async"
-      ? ("async" as MatchMode)
-      : ("live" as MatchMode);
+  // `async` is the pre-rename param for what is now the bot duel, kept so
+  // older links still land on the right game.
+  const modeParam = searchParams.get("mode");
+  const mode: MatchMode =
+    modeParam === "bot" || modeParam === "async" ? "bot" : "live";
   const levelParam = searchParams.get("level")?.toUpperCase();
   const level: CefrLevel = isCefrLevel(levelParam) ? levelParam : "A1";
   const playerId = searchParams.get("playerId") ?? "player-local";
@@ -120,7 +127,7 @@ export default function ChooseOneMultiplayerPlayPage() {
   // countdown is anchored to the same absolute time on both screens instead
   // of two independent local timers.
   const initialMatchStartAt =
-    mode === "async"
+    mode === "bot"
       ? Date.now() + 3000
       : (() => {
           const raw = searchParams.get("startAt");
@@ -140,13 +147,26 @@ export default function ChooseOneMultiplayerPlayPage() {
     return Math.min(3, Math.ceil((initialMatchStartAt - Date.now()) / 1000));
   });
 
-  const [winner, setWinner] = useState<"player" | "opponent" | null>(null);
+  const [winner, setWinner] = useState<MatchWinner>(null);
   const [feedback, setFeedback] = useState<{
     text: string;
     tone: "good" | "bad";
   } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [botClockMs, setBotClockMs] = useState<number>(() => Date.now());
+  // Set while a wrong answer is held on screen with the correct option shown.
+  const [reveal, setReveal] = useState<{
+    selected: string;
+    correct: string;
+  } | null>(null);
+  const revealTimeout = useRef<number | null>(null);
+  // Bumped by "Play again" to run the whole setup effect again.
+  const [roundKey, setRoundKey] = useState(0);
+  // True once this player has hit the target and is only waiting for the
+  // server to confirm the result. Without it the board flashed the next
+  // question for the round-trip before the win screen appeared.
+  const [awaitingResult, setAwaitingResult] = useState(false);
   const [startMs, setStartMs] = useState<number>(() => Date.now());
   const [questionStartedAt, setQuestionStartedAt] = useState<number>(() =>
     Date.now(),
@@ -173,14 +193,17 @@ export default function ChooseOneMultiplayerPlayPage() {
     const intervalId = window.setInterval(tick, 150);
     return () => window.clearInterval(intervalId);
   }, [matchStartAt]);
-  const [asyncLeaderboard, setAsyncLeaderboard] = useState<
-    AsyncLeaderboardRow[]
-  >([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const asyncScoreSubmitted = useRef(false);
+  const [isMatchGone, setIsMatchGone] = useState(false);
+  const botResultRecorded = useRef(false);
+  // The answer response can arrive before a sync has populated `livePayload`,
+  // so the winner check needs an id that's available as soon as we know it.
+  const myUserId = useRef<string | null>(null);
 
   const totalQuestions =
-    mode === "live" ? (livePayload?.match.totalQuestions ?? 10) : 10;
+    mode === "live"
+      ? (livePayload?.match.totalQuestions ?? BOT_QUESTION_COUNT)
+      : questions.length;
 
   const syncLiveMatch = async () => {
     if (!matchId) {
@@ -194,11 +217,21 @@ export default function ChooseOneMultiplayerPlayPage() {
       );
 
       if (!response.ok) {
+        // A match that no longer exists (or that this player isn't part of)
+        // will never load - keep the player out of an endless retry loop and
+        // send them back to the lobby instead.
+        if (response.status === 404 || response.status === 403) {
+          setIsMatchGone(true);
+          setLoadError("This duel is no longer available.");
+          return;
+        }
         setLoadError("Could not load live match state.");
         return;
       }
 
+      setLoadError(null);
       const payload = (await response.json()) as LiveMatchPayload;
+      myUserId.current = payload.me.id;
       setLivePayload(payload);
       if (payload.questions) {
         setLiveQuestions(payload.questions);
@@ -218,16 +251,26 @@ export default function ChooseOneMultiplayerPlayPage() {
           if (prev !== null) {
             return prev;
           }
-          return payload.match.startAt > Date.now()
+          return payload.match.startAt && payload.match.startAt > Date.now()
             ? payload.match.startAt
             : null;
         });
+      } else {
+        // The local index moves optimistically on each answer; if the server
+        // is ahead (a submit landed that this client never saw the result of)
+        // catch up rather than re-serving a question already answered.
+        setQuestionIndex((previous) => Math.max(previous, payload.me.progress));
+        setPlayerCorrect((previous) => Math.max(previous, payload.me.correct));
       }
 
       if (payload.match.status === "finished") {
         setStatus("finished");
         setWinner(
-          payload.match.winnerId === payload.me.id ? "player" : "opponent",
+          payload.match.winnerId === null
+            ? "draw"
+            : payload.match.winnerId === payload.me.id
+              ? "player"
+              : "opponent",
         );
       }
     } catch {
@@ -249,11 +292,26 @@ export default function ChooseOneMultiplayerPlayPage() {
     setStartMs(Date.now());
     setQuestionStartedAt(Date.now());
     setLoadError(null);
-    asyncScoreSubmitted.current = false;
+    setAwaitingResult(false);
+    setReveal(null);
+    if (revealTimeout.current !== null) {
+      window.clearTimeout(revealTimeout.current);
+      revealTimeout.current = null;
+    }
+    setIsMatchGone(false);
+    botResultRecorded.current = false;
     initialLoaded.current = false;
+    myUserId.current = null;
     setLiveQuestions([]);
 
-    if (mode === "async") {
+    // A live URL without a match id can never resolve - say so instead of
+    // spinning on a load that will never come.
+    if (mode === "live" && !matchId) {
+      setIsMatchGone(true);
+      setLoadError("This duel link is missing its match.");
+    }
+
+    if (mode === "bot") {
       setLivePayload(null);
       // Recognition: show the word being learned, pick its meaning.
       fetchWordPairs({
@@ -266,7 +324,7 @@ export default function ChooseOneMultiplayerPlayPage() {
         .then((pairs) => {
           setQuestions(
             shuffleArray(pairs)
-              .slice(0, 10)
+              .slice(0, BOT_QUESTION_COUNT)
               .map((pair) => ({
                 id: pair.conceptId,
                 prompt: pair.prompt,
@@ -279,10 +337,10 @@ export default function ChooseOneMultiplayerPlayPage() {
           setLoadError("Could not load words for this level.");
         });
     }
-  }, [speak, learning, mode, level]);
+  }, [speak, learning, mode, level, matchId, roundKey]);
 
   useEffect(() => {
-    if (mode !== "live" || status !== "playing" || !matchId) {
+    if (mode !== "live" || status !== "playing" || !matchId || isMatchGone) {
       return;
     }
 
@@ -305,18 +363,70 @@ export default function ChooseOneMultiplayerPlayPage() {
       channel?.unbind_all();
       pusherClient?.unsubscribe(`match-${matchId}`);
     };
-  }, [matchId, mode, playerId, status]);
+  }, [matchId, mode, playerId, status, isMatchGone]);
+
+  // Leaving a live duel has to close it out server-side. An "active" match
+  // nobody will ever answer again used to be handed back on the next visit to
+  // the lobby, opponent and all.
+  const leaveGuard = useRef<{ matchId: string; active: boolean }>({
+    matchId: "",
+    active: false,
+  });
 
   useEffect(() => {
-    if (
-      mode !== "async" ||
-      status !== "finished" ||
-      asyncScoreSubmitted.current
-    ) {
+    leaveGuard.current = {
+      matchId,
+      active: mode === "live" && status === "playing" && !isMatchGone,
+    };
+  }, [matchId, mode, status, isMatchGone]);
+
+  useEffect(() => {
+    const forfeit = () => {
+      const { matchId: id, active } = leaveGuard.current;
+      // `initialLoaded` also keeps React's development remount from
+      // forfeiting a duel before it has even loaded.
+      if (!id || !active || !initialLoaded.current) {
+        return;
+      }
+      leaveGuard.current.active = false;
+
+      const url = `/api/flip-cards/match/${id}/leave`;
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon(url);
+      } else {
+        void fetch(url, { method: "POST", keepalive: true }).catch(() => {});
+      }
+    };
+
+    window.addEventListener("pagehide", forfeit);
+    return () => {
+      window.removeEventListener("pagehide", forfeit);
+      forfeit();
+    };
+  }, []);
+
+  // The bot advances on wall-clock time, so the screen has to keep ticking
+  // between answers - otherwise its avatar only moves when the player does,
+  // and a bot that reached the finish line goes unnoticed.
+  useEffect(() => {
+    if (mode !== "bot" || status !== "playing" || countdownValue !== null) {
       return;
     }
 
-    asyncScoreSubmitted.current = true;
+    setBotClockMs(Date.now());
+    const intervalId = window.setInterval(() => {
+      setBotClockMs(Date.now());
+    }, 250);
+
+    return () => window.clearInterval(intervalId);
+  }, [mode, status, countdownValue]);
+
+  useEffect(() => {
+    if (mode !== "bot" || status !== "finished" || botResultRecorded.current) {
+      return;
+    }
+
+    botResultRecorded.current = true;
 
     if (!isSignedIn) {
       recordAnonPlayUsed();
@@ -324,41 +434,9 @@ export default function ChooseOneMultiplayerPlayPage() {
 
     const elapsed = Date.now() - startMs;
 
-    const submitAsyncScore = async () => {
-      try {
-        await fetch("/api/flip-cards/async-score", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            playerId,
-            name: playerName,
-            avatar: playerAvatar,
-            language: learning,
-            level,
-            score,
-            correct: playerCorrect,
-            timeMs: elapsed,
-          }),
-        });
-
-        const leaderboardResponse = await fetch(
-          `/api/flip-cards/async-score?language=${learning}&level=${level}`,
-        );
-
-        if (!leaderboardResponse.ok) {
-          return;
-        }
-
-        const leaderboardData = (await leaderboardResponse.json()) as {
-          leaderboard: AsyncLeaderboardRow[];
-        };
-
-        setAsyncLeaderboard(leaderboardData.leaderboard ?? []);
-      } catch {
-        // Non-blocking: the game already completed.
-      }
-    };
-
+    // Bot duels stay off the leaderboard - that board ranks Score Rush runs,
+    // which are scored over a fixed 30s clock and aren't comparable to a
+    // 10-question race against a scripted pace.
     const appendHistory = () => {
       try {
         const stored = window.localStorage.getItem(MATCH_HISTORY_KEY);
@@ -389,14 +467,11 @@ export default function ChooseOneMultiplayerPlayPage() {
     };
 
     appendHistory();
-    void submitAsyncScore();
   }, [
     learning,
     level,
     mode,
-    playerAvatar,
     playerCorrect,
-    playerId,
     playerName,
     score,
     startMs,
@@ -460,28 +535,53 @@ export default function ChooseOneMultiplayerPlayPage() {
       ? (liveQuestions[questionIndex] ?? null)
       : (questions[questionIndex] ?? null);
 
-  const elapsedSinceStart = Date.now() - startMs;
-  const asyncGhostProgress =
-    mode === "async"
-      ? Math.min(Math.floor(elapsedSinceStart / 3500), totalQuestions)
+  // A thin word pool would otherwise set a target the player cannot reach.
+  const botTarget = questions.length
+    ? Math.min(BOT_TARGET_CORRECT, questions.length)
+    : BOT_TARGET_CORRECT;
+
+  const elapsedSinceStart =
+    (mode === "bot" ? botClockMs : Date.now()) - startMs;
+  // The bot doesn't answer anything - it just advances on a fixed clock, so
+  // there's a rival to race without needing a second human.
+  const rivalProgress =
+    mode === "bot"
+      ? Math.min(
+          Math.floor(elapsedSinceStart / BOT_MS_PER_QUESTION),
+          botTarget,
+        )
       : opponentProgress;
 
-  const playerPercent = totalQuestions
-    ? Math.min((questionIndex / totalQuestions) * 100, 100)
-    : 0;
-  const opponentPercent = totalQuestions
-    ? Math.min(
-        ((mode === "async" ? asyncGhostProgress : opponentProgress) /
-          totalQuestions) *
-          100,
-        100,
-      )
-    : 0;
+  // A live duel is a race to a number of correct answers, not to the end of
+  // the question list - the bars have to track the same thing the win
+  // condition does or the leader shown can be the player who is behind.
+  const raceTarget =
+    mode === "live"
+      ? (livePayload?.match.targetCorrect ?? BOT_TARGET_CORRECT)
+      : botTarget;
+  // Only correct answers move you up the track - guessing through the list
+  // used to advance the player's avatar just as fast as answering well.
+  const playerRaceValue = playerCorrect;
+  const rivalRaceValue = mode === "live" ? opponentCorrect : rivalProgress;
 
-  const finishMatch = (resolvedWinner: "player" | "opponent") => {
+  const playerPercent = Math.min((playerRaceValue / raceTarget) * 100, 100);
+  const opponentPercent = Math.min((rivalRaceValue / raceTarget) * 100, 100);
+
+  const finishMatch = (resolvedWinner: MatchWinner) => {
     setStatus("finished");
     setWinner(resolvedWinner);
   };
+
+  // The bot crossing the line has to end the duel on its own; waiting for the
+  // player's next answer let them keep playing a race they had already lost.
+  useEffect(() => {
+    if (mode !== "bot" || status !== "playing" || countdownValue !== null) {
+      return;
+    }
+    if (rivalProgress >= botTarget) {
+      finishMatch("opponent");
+    }
+  }, [mode, status, countdownValue, rivalProgress, botTarget]);
 
   const showFeedback = (text: string, tone: "good" | "bad") => {
     setFeedback({ text, tone });
@@ -499,27 +599,25 @@ export default function ChooseOneMultiplayerPlayPage() {
 
     const responseTime = Date.now() - questionStartedAt;
     const speedBonus = Math.max(0, 50 - Math.floor(responseTime / 45));
+    const isCorrect = selectedOption === currentQuestion.correctOption;
+    const nextIndex = questionIndex + 1;
+    const nextCorrect = isCorrect ? playerCorrect + 1 : playerCorrect;
+
+    if (isCorrect) {
+      setPlayerCorrect(nextCorrect);
+      setScore((previous) => previous + 100 + speedBonus);
+      showFeedback(`Correct +${100 + speedBonus} pts`, "good");
+    } else {
+      showFeedback("Wrong answer", "bad");
+    }
 
     if (mode === "live") {
       if (!matchId) {
         return;
       }
 
-      const isCorrect = selectedOption === currentQuestion.correctOption;
-
-      if (isCorrect) {
-        setPlayerCorrect((previous) => previous + 1);
-        setScore((previous) => previous + 100 + speedBonus);
-        showFeedback(`Correct +${100 + speedBonus} pts`, "good");
-      } else {
-        showFeedback("Wrong answer", "bad");
-      }
-
-      const nextIndex = questionIndex + 1;
-      setQuestionIndex(nextIndex);
-      setQuestionStartedAt(Date.now());
-
-      // Submit to database in the background without blocking the UI
+      // Submitted straight away, before the reveal pause below: the race is
+      // scored on the server and shouldn't be slowed by a local animation.
       void fetch(`/api/flip-cards/match/${matchId}/answer`, {
         method: "POST",
         headers: {
@@ -531,46 +629,119 @@ export default function ChooseOneMultiplayerPlayPage() {
           selectedOption,
           responseMs: responseTime,
         }),
-      }).then(async (res) => {
-        if (!res.ok) return;
-        const answerData = (await res.json()) as {
-          status?: "active" | "finished";
-          winnerId?: string | null;
-        };
+      })
+        .then(async (res) => {
+          if (!res.ok) return;
+          const answerData = (await res.json()) as {
+            status?: "active" | "finished";
+            winnerId?: string | null;
+          };
 
-        if (answerData.status === "finished") {
-          finishMatch(
-            answerData.winnerId === livePayload?.me.id ? "player" : "opponent",
-          );
+          if (answerData.status === "finished") {
+            const meId = myUserId.current ?? livePayload?.me.id ?? null;
+            finishMatch(
+              !answerData.winnerId
+                ? "draw"
+                : answerData.winnerId === meId
+                  ? "player"
+                  : "opponent",
+            );
+          }
+        })
+        .catch(() => {
+          // The poll in syncLiveMatch reconciles progress, so a dropped
+          // submit doesn't need to interrupt the player mid-race.
+        });
+    }
+
+    const advance = () => {
+      revealTimeout.current = null;
+      setReveal(null);
+      setIsSubmitting(false);
+      setQuestionStartedAt(Date.now());
+      setQuestionIndex(nextIndex);
+
+      // The server decides a live duel, but the answer that reaches the target
+      // has already won it - hold the board rather than showing a question the
+      // player will never get to answer.
+      if (mode === "live" && nextCorrect >= raceTarget) {
+        setAwaitingResult(true);
+        return;
+      }
+
+      if (mode === "bot") {
+        if (nextCorrect >= botTarget) {
+          finishMatch("player");
+        } else if (nextIndex >= questions.length) {
+          // Out of prompts without reaching the target - the bot takes it.
+          finishMatch("opponent");
         }
-      });
+      }
+    };
 
+    if (isCorrect) {
+      advance();
       return;
     }
 
-    const isCorrect = selectedOption === currentQuestion.correctOption;
-    if (isCorrect) {
-      setPlayerCorrect((previous) => previous + 1);
-      setScore((previous) => previous + 100 + speedBonus);
-      showFeedback(`Correct +${100 + speedBonus} pts`, "good");
-    } else {
-      showFeedback("Wrong answer", "bad");
-    }
-
-    const nextIndex = questionIndex + 1;
-    if (nextIndex >= totalQuestions) {
-      const asyncWinner =
-        nextIndex <= asyncGhostProgress ? "opponent" : "player";
-      finishMatch(asyncWinner);
-      setQuestionIndex(nextIndex);
-    } else {
-      setQuestionStartedAt(Date.now());
-      setQuestionIndex(nextIndex);
-    }
+    // Hold a wrong answer on screen for a beat with the correct option marked,
+    // so the player actually sees what it should have been.
+    setIsSubmitting(true);
+    setReveal({
+      selected: selectedOption,
+      correct: currentQuestion.correctOption,
+    });
+    revealTimeout.current = window.setTimeout(advance, WRONG_ANSWER_REVEAL_MS);
   };
 
+  useEffect(() => {
+    return () => {
+      if (revealTimeout.current !== null) {
+        window.clearTimeout(revealTimeout.current);
+      }
+    };
+  }, []);
+
+  // Safety net: reaching the target means the duel is over, so a submit whose
+  // result never comes back must not leave the player on "confirming" forever.
+  useEffect(() => {
+    if (!awaitingResult || status !== "playing") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void syncLiveMatch().then(() => {
+        setStatus((current) => {
+          if (current !== "playing") {
+            return current;
+          }
+          setWinner((previous) => previous ?? "player");
+          return "finished";
+        });
+      });
+    }, 6000);
+
+    return () => window.clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awaitingResult, status]);
+
+  // "Play again" replays rather than just backing out: a bot duel restarts in
+  // place with fresh words, and a live duel needs a new opponent, so the lobby
+  // starts searching the moment it loads.
   const restartMatch = () => {
-    router.push("/games/choose-one-multiplayer");
+    if (mode === "bot") {
+      setRoundKey((previous) => previous + 1);
+      return;
+    }
+
+    // Carry the matchmaking mode back so a personalized duel replays as one.
+    const params = new URLSearchParams({ autostart: "1" });
+    const settingsMode = searchParams.get("settingsMode");
+    if (settingsMode) {
+      params.set("settingsMode", settingsMode);
+    }
+
+    router.push(`/games/choose-one-multiplayer?${params.toString()}`);
   };
 
   const backToPregame = () => {
@@ -580,11 +751,11 @@ export default function ChooseOneMultiplayerPlayPage() {
   const rivalName =
     mode === "live"
       ? (livePayload?.opponent?.name ?? opponentName)
-      : "Leaderboard Ghost";
+      : BOT_NAME;
   const rivalAvatar =
     mode === "live"
       ? (livePayload?.opponent?.avatar ?? opponentAvatar)
-      : DEFAULT_OPPONENT_AVATAR;
+      : BOT_AVATAR;
 
   if (countdownValue !== null) {
     return (
@@ -603,15 +774,11 @@ export default function ChooseOneMultiplayerPlayPage() {
 
   return (
     <GamePage
-      name={
-        mode === "live"
-          ? "Choose One Multiplayer Match"
-          : "Choose One Score Rush"
-      }
+      name={mode === "live" ? "Live Duel" : "Bot Duel"}
       description={
         mode === "live"
           ? "Both players race through a shared set of prompts. First player to reach 10 correct answers wins."
-          : "Answer quickly for timing bonus and push your score onto the online board."
+          : "Race the bot to 10 correct answers. Only right answers move you forward, so answer quickly but get them right."
       }
       bgImage="flip_cards.png"
     >
@@ -654,25 +821,23 @@ export default function ChooseOneMultiplayerPlayPage() {
           </div>
           <div className="mt-8 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-300">
             <p>
-              {playerName}: {Math.min(questionIndex, totalQuestions)}/
-              {totalQuestions}
+              {playerName}: {Math.min(playerRaceValue, raceTarget)}/
+              {raceTarget}
             </p>
             <p>
-              {rivalName}:{" "}
-              {Math.min(
-                mode === "async" ? asyncGhostProgress : opponentProgress,
-                totalQuestions,
-              )}
-              /{totalQuestions}
+              {rivalName}: {Math.min(rivalRaceValue, raceTarget)}/{raceTarget}
             </p>
           </div>
+          <p className="mt-1 text-center text-xxs text-zinc-500">
+            First to {raceTarget} correct answers wins
+          </p>
         </div>
       </div>
 
-      {status === "playing" && currentQuestion ? (
+      {status === "playing" && currentQuestion && !awaitingResult ? (
         <div className="relative w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
           <div className="text-sm text-zinc-600 dark:text-zinc-300 pr-24">
-            Question {questionIndex + 1}/{totalQuestions}
+            Question {questionIndex + 1} - {playerCorrect}/{raceTarget} correct
           </div>
 
           <h2 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
@@ -683,16 +848,27 @@ export default function ChooseOneMultiplayerPlayPage() {
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {currentQuestion.options.map((option) => (
-              <button
-                key={option}
-                className="rounded-xl border border-zinc-300 px-4 py-3 text-left font-medium text-zinc-800 transition hover:border-emerald-500 hover:bg-emerald-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                onClick={() => void handleAnswer(option)}
-                disabled={isSubmitting}
-              >
-                {option}
-              </button>
-            ))}
+            {currentQuestion.options.map((option) => {
+              const isCorrectOption = reveal?.correct === option;
+              const isWrongPick = reveal?.selected === option;
+
+              return (
+                <button
+                  key={option}
+                  className={`rounded-xl border px-4 py-3 text-left font-medium transition ${
+                    isCorrectOption
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : isWrongPick
+                        ? "border-rose-500 bg-rose-50 text-rose-800 dark:border-rose-500 dark:bg-rose-950/40 dark:text-rose-300"
+                        : "border-zinc-300 text-zinc-800 hover:border-emerald-500 hover:bg-emerald-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  } ${reveal && !isCorrectOption && !isWrongPick ? "opacity-60" : ""}`}
+                  onClick={() => void handleAnswer(option)}
+                  disabled={isSubmitting}
+                >
+                  {option}
+                </button>
+              );
+            })}
           </div>
 
           {feedback && (
@@ -711,6 +887,58 @@ export default function ChooseOneMultiplayerPlayPage() {
             <p className="mt-3 text-sm text-red-500">{loadError}</p>
           )}
         </div>
+      ) : status === "playing" ? (
+        // A live duel has no question to show until its state has loaded, and
+        // a player can also run out of prompts before the duel resolves.
+        // Falling through to the result screen here is what made "Play" look
+        // like it jumped to the end of the round.
+        <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
+          {awaitingResult ? (
+            <>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                {raceTarget}/{raceTarget} correct
+              </h2>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                Confirming the result...
+              </p>
+            </>
+          ) : isMatchGone ? (
+            <>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                This duel has ended
+              </h2>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                It was closed or is no longer available. Start a fresh one from
+                the lobby.
+              </p>
+              <button
+                className="mt-5 rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white transition hover:bg-emerald-500"
+                onClick={backToPregame}
+              >
+                Back to lobby
+              </button>
+            </>
+          ) : mode === "live" && questionIndex >= liveQuestions.length &&
+            liveQuestions.length > 0 ? (
+            <>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                You&apos;re out of prompts
+              </h2>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                Waiting for {rivalName} to finish...
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                Loading the duel...
+              </h2>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                {loadError ?? "Fetching your prompts."}
+              </p>
+            </>
+          )}
+        </div>
       ) : (
         <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-sm uppercase tracking-wide text-zinc-500">
@@ -719,21 +947,27 @@ export default function ChooseOneMultiplayerPlayPage() {
           <h2 className="mt-2 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
             {winner === "player"
               ? "You won the race!"
-              : `${rivalName} won this round`}
+              : winner === "draw"
+                ? "It's a draw"
+                : `${rivalName} won this round`}
           </h2>
           <p className="mt-3 text-zinc-600 dark:text-zinc-300">
-            Final score: {playerName} {playerCorrect}/{totalQuestions} -{" "}
-            {rivalName} {opponentCorrect}/{totalQuestions}
+            {mode === "live"
+              ? `Final score: ${playerName} ${playerCorrect} correct - ${rivalName} ${opponentCorrect} correct`
+              : `Final score: ${playerName} ${playerCorrect}/${raceTarget} correct - ${rivalName} reached ${Math.min(
+                  rivalProgress,
+                  raceTarget,
+                )}/${raceTarget}`}
           </p>
           <p className="mt-2 text-sm text-zinc-500">Total points: {score}</p>
 
-          {mode === "async" && !isSignedIn && (
+          {mode === "bot" && !isSignedIn && (
             <div className="mx-auto mt-5 max-w-md rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-800/40 dark:bg-blue-950/20">
               <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                That was your free Score Rush!
+                That was your free bot duel!
               </p>
               <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
-                Sign in to save your scores and keep climbing the leaderboard.
+                Sign in to save your progress and keep duelling.
               </p>
               <button
                 type="button"
@@ -749,22 +983,6 @@ export default function ChooseOneMultiplayerPlayPage() {
             </div>
           )}
 
-          {mode === "async" && asyncLeaderboard.length > 0 && (
-            <div className="mx-auto mt-5 max-w-md rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-800/40">
-              <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
-                Top Score Rush Players
-              </p>
-              {asyncLeaderboard.slice(0, 5).map((entry, index) => (
-                <p
-                  key={`${entry.name}-${index}`}
-                  className="text-sm text-zinc-700 dark:text-zinc-200"
-                >
-                  #{index + 1} {entry.name} - {entry.score} pts -{" "}
-                  {Math.round(entry.timeMs / 1000)}s
-                </p>
-              ))}
-            </div>
-          )}
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button

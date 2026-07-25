@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import GamePage from "../_components/GamePage";
 import { LANG_LABELS, type CefrLevel } from "@/app/_lib/languages";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
 import { hasAnonPlaysRemaining } from "../_lib/anonPlayGate";
 import { getPlayerProfile, PlayerProfile } from "./_lib/playerProfile";
+import { useAuthState } from "@/app/_lib/auth";
 import { useSession } from "@/lib/auth-client";
 import { pusherClient } from "@/lib/realtime/pusher-client";
+import { useDuelNickname } from "./_lib/useDuelNickname";
 
 const DEFAULT_OPPONENTS = [
   { name: "Luna87", avatar: "https://i.pravatar.cc/100?img=34" },
@@ -20,9 +22,16 @@ const DEFAULT_OPPONENTS = [
 ];
 
 const MATCH_HISTORY_KEY = "katchup-choose-one-multi-history-v1";
+// How long a found duel waits for both players to accept before it is dropped
+// and the players are put back in the lobby.
+const ACCEPT_WINDOW_S = 20;
+const MATCH_SETTINGS_KEY = "katchup-choose-one-multi-settings-v1";
 
-type MatchState = "idle" | "searching" | "found";
-type MatchMode = "live" | "async";
+type MatchSettings = "fair" | "personal";
+
+// "found" waits for this player to accept, "accepted" waits for the opponent.
+type MatchState = "idle" | "searching" | "found" | "accepted";
+type MatchMode = "live" | "bot";
 
 interface OpponentPreview {
   name: string;
@@ -33,30 +42,35 @@ interface MatchHistoryEntry {
   createdAt: number;
   mode: MatchMode;
   score: number;
-  winner: "player" | "opponent" | null;
+  opponentName?: string;
+  winner: "player" | "opponent" | "draw" | null;
 }
 
 const ChooseOneMultiplayerPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const isSignedIn = Boolean(session?.user?.id);
+  // `session.user.id` isn't exposed to the client, so authentication has to be
+  // read off the status the way the rest of the app does it.
+  const { isSignedIn, isReady: isAuthReady } = useAuthState();
   const { speak, learning } = useLanguagePair();
 
-  const [mode, setMode] = useState<MatchMode>("live");
   const [matchState, setMatchState] = useState<MatchState>("idle");
-  const [matchSettings, setMatchSettings] = useState<"fair" | "personal">("fair");
+  const [matchSettings, setMatchSettings] = useState<MatchSettings>("fair");
+  // The stored choice only arrives after mount, so anything that joins a queue
+  // has to wait for it or it would queue as "fair" on a personalized replay.
+  const [settingsHydrated, setSettingsHydrated] = useState(false);
   const [searchPulse, setSearchPulse] = useState(0);
   const [opponent, setOpponent] = useState<OpponentPreview>(
     DEFAULT_OPPONENTS[0],
   );
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const getNickname = useDuelNickname(profile?.name ?? "You");
   const [matchId, setMatchId] = useState<string | null>(null);
-  const [matchStartAt, setMatchStartAt] = useState<number | null>(null);
-  const autoStartedMatchId = useRef<string | null>(null);
+  const startedMatchId = useRef<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [topAsyncPlayers, setTopAsyncPlayers] = useState<
-    Array<{ name: string; score: number; timeMs: number }>
-  >([]);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [acceptSecondsLeft, setAcceptSecondsLeft] = useState(ACCEPT_WINDOW_S);
   const [recentMatches, setRecentMatches] = useState<MatchHistoryEntry[]>([]);
   const learningLevel = useLearningLevel(learning);
   const level: CefrLevel =
@@ -68,14 +82,6 @@ const ChooseOneMultiplayerPage = () => {
   useEffect(() => {
     setProfile(getPlayerProfile());
 
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const urlMode = params.get("mode");
-      if (urlMode === "async" || urlMode === "live") {
-        setMode(urlMode as MatchMode);
-      }
-    }
-
     try {
       const stored = window.localStorage.getItem(MATCH_HISTORY_KEY);
       const parsed = stored ? (JSON.parse(stored) as MatchHistoryEntry[]) : [];
@@ -83,44 +89,49 @@ const ChooseOneMultiplayerPage = () => {
     } catch {
       setRecentMatches([]);
     }
+
+    // A duel coming back for a rematch says which mode it was played in; the
+    // stored value covers plain returns to the lobby.
+    const fromUrl = searchParams.get("settingsMode");
+    const stored = window.localStorage.getItem(MATCH_SETTINGS_KEY);
+    const restored = fromUrl ?? stored;
+
+    if (restored === "personal" || restored === "fair") {
+      setMatchSettings(restored);
+    }
+    setSettingsHydrated(true);
+    // Only the first load matters here - later changes are the player's own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    const loadAsyncLeaderboard = async () => {
-      try {
-        const response = await fetch(
-          `/api/flip-cards/async-score?language=${learning}&level=${level}`,
-        );
-        if (!response.ok) {
-          return;
-        }
-
-        const data = (await response.json()) as {
-          leaderboard: Array<{ name: string; score: number; timeMs: number }>;
-        };
-
-        setTopAsyncPlayers(data.leaderboard ?? []);
-      } catch {
-        // Ignore non-critical leaderboard fetch errors.
-      }
-    };
-
-    void loadAsyncLeaderboard();
-  }, [learning, level]);
+  const chooseMatchSettings = (next: MatchSettings) => {
+    setMatchSettings(next);
+    try {
+      window.localStorage.setItem(MATCH_SETTINGS_KEY, next);
+    } catch {
+      // A blocked localStorage just means the choice isn't remembered.
+    }
+  };
 
   const applyMatchFound = (found: {
     matchId: string;
     opponent?: OpponentPreview;
-    matchStartAt?: number;
   }) => {
-    setMatchId(found.matchId);
+    setMatchId((previous) => {
+      // The push and the poll both report the same match; only the first one
+      // through should reset the acceptance window.
+      if (previous === found.matchId) {
+        return previous;
+      }
+      setAcceptSecondsLeft(ACCEPT_WINDOW_S);
+      setAcceptError(null);
+      setMatchState("found");
+      return found.matchId;
+    });
+
     if (found.opponent) {
       setOpponent(found.opponent);
     }
-    if (found.matchStartAt) {
-      setMatchStartAt(found.matchStartAt);
-    }
-    setMatchState("found");
   };
 
   // Instant push: the server notifies the opponent the moment a match is
@@ -128,7 +139,7 @@ const ChooseOneMultiplayerPage = () => {
   useEffect(() => {
     const userId = session?.user?.id;
     const client = pusherClient;
-    if (mode !== "live" || matchState !== "searching" || !userId || !client) {
+    if (matchState !== "searching" || !userId || !client) {
       return;
     }
 
@@ -136,12 +147,10 @@ const ChooseOneMultiplayerPage = () => {
     const handler = (data: {
       matchId: string;
       opponent?: { userId: string; name: string; avatar: string };
-      startAt?: number;
     }) => {
       applyMatchFound({
         matchId: data.matchId,
         opponent: data.opponent,
-        matchStartAt: data.startAt,
       });
     };
     channel.bind("match-found", handler);
@@ -150,10 +159,10 @@ const ChooseOneMultiplayerPage = () => {
       channel.unbind("match-found", handler);
       client.unsubscribe(`user-${userId}`);
     };
-  }, [matchState, mode, session?.user?.id]);
+  }, [matchState, session?.user?.id]);
 
   useEffect(() => {
-    if (mode !== "live" || matchState !== "searching" || !profile) {
+    if (matchState !== "searching" || !profile) {
       return;
     }
 
@@ -164,8 +173,11 @@ const ChooseOneMultiplayerPage = () => {
     // Polling fallback in case the Pusher push above is missed/delayed.
     const pollInterval = window.setInterval(async () => {
       try {
+        // The pair, level and mode all have to match: they pick out the queue
+        // this player is actually sitting in, and they keep an unrelated
+        // match from being reported as this search's result.
         const response = await fetch(
-          `/api/flip-cards/matchmaking/status?playerId=${profile.id}&language=${learning}&level=${level}`,
+          `/api/flip-cards/matchmaking/status?playerId=${profile.id}&language=${learning}&nativeLang=${speak}&level=${level}&mode=${matchSettings}&nickname=${encodeURIComponent(getNickname())}`,
         );
 
         if (!response.ok) {
@@ -176,14 +188,12 @@ const ChooseOneMultiplayerPage = () => {
           status: "matched" | "waiting" | "idle";
           matchId?: string;
           opponent?: OpponentPreview;
-          matchStartAt?: number;
         };
 
         if (data.status === "matched" && data.matchId) {
           applyMatchFound({
             matchId: data.matchId,
             opponent: data.opponent,
-            matchStartAt: data.matchStartAt,
           });
         }
       } catch {
@@ -195,15 +205,80 @@ const ChooseOneMultiplayerPage = () => {
       window.clearInterval(pulseInterval);
       window.clearInterval(pollInterval);
     };
-  }, [learning, level, matchState, mode, profile]);
+  }, [learning, speak, level, matchSettings, matchState, getNickname, profile]);
+
+  const leaveQueue = (useBeacon = false) => {
+    const url = "/api/flip-cards/matchmaking/leave";
+    const payload = JSON.stringify({
+      language: learning,
+      nativeLang: speak,
+      level,
+      mode: matchSettings,
+    });
+
+    if (useBeacon && typeof navigator !== "undefined" && navigator.sendBeacon) {
+      navigator.sendBeacon(url, new Blob([payload], { type: "application/json" }));
+      return;
+    }
+
+    void fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {
+      // Nothing to recover here - a leftover entry ages out server-side.
+    });
+  };
+
+  // Closing the tab mid-search would otherwise leave an entry in the queue
+  // that the next player gets paired with and then waits on forever.
+  const searchingRef = useRef(false);
+  useEffect(() => {
+    searchingRef.current = matchState === "searching";
+  }, [matchState]);
+
+  useEffect(() => {
+    const handlePageHide = () => {
+      if (searchingRef.current) {
+        leaveQueue(true);
+      }
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [learning, speak, level, matchSettings]);
+
+  const cancelMatchmaking = () => {
+    setMatchState("idle");
+    setMatchId(null);
+    leaveQueue();
+  };
 
   const startFindingOpponent = async () => {
     if (matchState === "searching" || !profile) {
       return;
     }
 
+    // Matchmaking is account-bound, so send the player to sign in rather than
+    // letting the join call fail as a generic "unavailable".
+    if (isAuthReady && !isSignedIn) {
+      router.push(
+        `/login?callbackUrl=${encodeURIComponent("/games/choose-one-multiplayer")}`,
+      );
+      return;
+    }
+
     setSearchError(null);
     setSearchPulse(0);
+    // A previous result must not leak into this search - it is what kept
+    // showing the last opponent and sending players into a spent match.
+    setMatchId(null);
+    setAcceptError(null);
+    startedMatchId.current = null;
     setMatchState("searching");
 
     try {
@@ -214,7 +289,8 @@ const ChooseOneMultiplayerPage = () => {
         },
         body: JSON.stringify({
           playerId: profile.id,
-          name: profile.name,
+          name: getNickname(),
+          nickname: getNickname(),
           avatar: profile.avatar,
           language: learning,
           nativeLang: speak,
@@ -223,76 +299,208 @@ const ChooseOneMultiplayerPage = () => {
         }),
       });
 
+      if (response.status === 401) {
+        router.push(
+          `/login?callbackUrl=${encodeURIComponent("/games/choose-one-multiplayer")}`,
+        );
+        setMatchState("idle");
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error("Join failed");
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(body?.error ?? "Join failed");
       }
 
       const data = (await response.json()) as {
         status: "waiting" | "matched";
         matchId?: string;
         opponent?: OpponentPreview;
-        matchStartAt?: number;
       };
 
       if (data.status === "matched" && data.matchId) {
         applyMatchFound({
           matchId: data.matchId,
           opponent: data.opponent,
-          matchStartAt: data.matchStartAt,
         });
       }
-    } catch {
-      setSearchError("Matchmaking is unavailable right now. Try again.");
+    } catch (error) {
+      setSearchError(
+        error instanceof Error && error.message !== "Join failed"
+          ? error.message
+          : "Matchmaking is unavailable right now. Try again.",
+      );
       setMatchState("idle");
     }
   };
 
-  const startLiveMatch = () => {
+  const startLiveMatch = (id: string, startAt: number | null) => {
     const params = new URLSearchParams({
       speak,
       learning,
       level,
       mode: "live",
       settingsMode: matchSettings,
+      matchId: id,
       playerId: profile?.id ?? "player-local",
-      playerName: profile?.name ?? "You",
+      playerName: getNickname(),
       playerAvatar: profile?.avatar ?? "https://i.pravatar.cc/100?img=12",
       opponent: opponent.name,
       opponentAvatar: opponent.avatar,
     });
 
-    if (matchId) {
-      params.set("matchId", matchId);
-    }
-    if (matchStartAt) {
-      params.set("startAt", String(matchStartAt));
+    if (startAt) {
+      params.set("startAt", String(startAt));
     }
 
     router.push(`/games/choose-one-multiplayer/play?${params.toString()}`);
   };
 
-  // Both players should land on the play screen without relying on each of
-  // them individually clicking "Start Match" at their own pace - otherwise
-  // one side can sit on the countdown far longer than the other.
+  // Both players have to say yes before either is sent to the play screen, and
+  // the countdown only starts once the second acceptance lands.
+  const goToMatch = (id: string, startAt: number | null) => {
+    if (startedMatchId.current === id) {
+      return;
+    }
+    startedMatchId.current = id;
+    startLiveMatch(id, startAt);
+  };
+
+  const declineMatch = () => {
+    const id = matchId;
+    setMatchState("idle");
+    setMatchId(null);
+    setAcceptError(null);
+    leaveQueue();
+
+    if (id) {
+      void fetch(`/api/flip-cards/match/${id}/leave`, {
+        method: "POST",
+        keepalive: true,
+      }).catch(() => {
+        // The match ages out server-side even if this never lands.
+      });
+    }
+  };
+
+  const acceptMatch = async () => {
+    if (!matchId) {
+      return;
+    }
+
+    setMatchState("accepted");
+    setAcceptError(null);
+
+    try {
+      const response = await fetch(`/api/flip-cards/match/${matchId}/accept`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Accept failed");
+      }
+
+      const data = (await response.json()) as {
+        status: "pending" | "active";
+        startAt: number | null;
+      };
+
+      // Only the second player to accept gets a start time back; the first
+      // waits for the push (or the poll) below.
+      if (data.status === "active" && data.startAt) {
+        goToMatch(matchId, data.startAt);
+      }
+    } catch {
+      setAcceptError("Could not accept the duel. It may have been cancelled.");
+      setMatchState("found");
+    }
+  };
+
+  // Watch the match itself while it waits on acceptance: the opponent saying
+  // yes starts the duel, and them backing out sends this player back to idle.
   useEffect(() => {
-    if (matchState !== "found" || !matchId) {
+    if ((matchState !== "found" && matchState !== "accepted") || !matchId) {
       return;
     }
-    if (autoStartedMatchId.current === matchId) {
-      return;
-    }
-    autoStartedMatchId.current = matchId;
 
-    const timeoutId = window.setTimeout(() => {
-      startLiveMatch();
-    }, 600);
+    const checkMatch = async () => {
+      try {
+        const response = await fetch(`/api/flip-cards/match/${matchId}`, {
+          cache: "no-store",
+        });
 
-    return () => window.clearTimeout(timeoutId);
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          match: { status: string; startAt: number | null };
+        };
+
+        if (payload.match.status === "active" && payload.match.startAt) {
+          goToMatch(matchId, payload.match.startAt);
+          return;
+        }
+
+        if (payload.match.status === "finished") {
+          setMatchState("idle");
+          setMatchId(null);
+          setAcceptError("Your opponent left. Search again to find someone new.");
+        }
+      } catch {
+        // Keep polling; a transient failure shouldn't drop the duel.
+      }
+    };
+
+    const channel = pusherClient?.subscribe(`match-${matchId}`);
+    channel?.bind("match-ready", (data: { startAt?: number }) => {
+      goToMatch(matchId, data?.startAt ?? null);
+    });
+    channel?.bind("match-finished", () => {
+      void checkMatch();
+    });
+
+    void checkMatch();
+    const pollInterval = window.setInterval(() => void checkMatch(), 1000);
+
+    // Neither player should be stuck staring at an invite nobody answers.
+    const countdownInterval = window.setInterval(() => {
+      setAcceptSecondsLeft((previous) => Math.max(0, previous - 1));
+    }, 1000);
+
+    return () => {
+      window.clearInterval(pollInterval);
+      window.clearInterval(countdownInterval);
+      channel?.unbind_all();
+      pusherClient?.unsubscribe(`match-${matchId}`);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchState, matchId]);
 
-  const startAsyncMatch = () => {
-    if (!isSignedIn && !hasAnonPlaysRemaining()) {
+  useEffect(() => {
+    if (
+      (matchState === "found" || matchState === "accepted") &&
+      acceptSecondsLeft === 0
+    ) {
+      declineMatch();
+      setAcceptError("The duel expired before both players accepted.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acceptSecondsLeft, matchState]);
+
+  // Locking the button before auth resolves would flash "sign in" at players
+  // who are in fact signed in.
+  const isBotDuelLocked =
+    isAuthReady && !isSignedIn && !hasAnonPlaysRemaining();
+
+  const startBotDuel = () => {
+    if (matchState === "searching") {
+      leaveQueue();
+    }
+
+    if (isBotDuelLocked) {
       router.push(`/login?callbackUrl=${encodeURIComponent("/")}`);
       return;
     }
@@ -301,27 +509,48 @@ const ChooseOneMultiplayerPage = () => {
       speak,
       learning,
       level,
-      mode: "async",
+      mode: "bot",
       playerId: profile?.id ?? "player-local",
-      playerName: profile?.name ?? "You",
+      playerName: getNickname(),
       playerAvatar: profile?.avatar ?? "https://i.pravatar.cc/100?img=12",
     });
 
     router.push(`/games/choose-one-multiplayer/play?${params.toString()}`);
   };
 
+  // "Play again" on a live duel comes back here with ?autostart=1, because a
+  // rematch needs a new opponent rather than a replay of the old match.
+  const autoStartHandled = useRef(false);
+  useEffect(() => {
+    if (
+      autoStartHandled.current ||
+      searchParams.get("autostart") !== "1" ||
+      !profile ||
+      !isAuthReady ||
+      !settingsHydrated
+    ) {
+      return;
+    }
+
+    autoStartHandled.current = true;
+    router.replace("/games/choose-one-multiplayer");
+    void startFindingOpponent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthReady, profile, searchParams, settingsHydrated]);
+
   return (
     <GamePage
-      name="Choose One Multiplayer"
-      description="Race another player live: you both get the same 10 word prompts and pick the correct translation. First to finish wins."
+      name="Live Duel"
+      description="Race another player live: you both get the same prompts and pick the correct translation. First to 10 correct answers wins. No one online? Duel the bot instead."
       bgImage="flip_cards.png"
     >
       <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-800/40">
         <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-          Online Match Setup
+          Duel Setup
         </h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-          Compete live against another player or climb async score rankings.
+          Compete live against another player, or race a bot. Either way, the
+          first to 10 correct answers wins.
         </p>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -344,114 +573,151 @@ const ChooseOneMultiplayerPage = () => {
           </div>
         </div>
 
-        {mode === "live" && (
-          <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-xs uppercase tracking-wide text-zinc-500 font-semibold mb-2">
-              Matchmaking Mode
+        <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+          <p className="text-xs uppercase tracking-wide text-zinc-500 font-semibold mb-2">
+            Matchmaking Mode (live duels)
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => chooseMatchSettings("fair")}
+              className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+                matchSettings === "fair"
+                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
+                  : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
+              }`}
+            >
+              <span className="text-sm font-bold">Fair Mode</span>
+              <span className="text-xxs text-zinc-500 mt-0.5">Same words for both players</span>
+            </button>
+            <button
+              onClick={() => chooseMatchSettings("personal")}
+              className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+                matchSettings === "personal"
+                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
+                  : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
+              }`}
+            >
+              <span className="text-sm font-bold">Personalized Mode</span>
+              <span className="text-xxs text-zinc-500 mt-0.5">Asymmetric custom/recent vocabulary</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+        {matchState === "idle" && (
+          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              onClick={() => void startFindingOpponent()}
+              className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 transition hover:-translate-y-0.5"
+            >
+              <span className="text-xl font-bold text-emerald-800 dark:text-emerald-300">
+                Start Live Duel
+              </span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 text-center">
+                Match with a live opponent instantly and race to finish translating words.
+              </span>
+            </button>
+
+            <button
+              onClick={startBotDuel}
+              className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 dark:border-blue-800/40 dark:bg-blue-950/10 dark:hover:bg-blue-950/20 transition hover:-translate-y-0.5"
+            >
+              <span className="text-xl font-bold text-blue-800 dark:text-blue-300">
+                {isBotDuelLocked ? "Sign in to duel the bot" : "Start Bot Duel"}
+              </span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 text-center">
+                {isBotDuelLocked
+                  ? "You've used your free bot duel. Sign in to keep duelling."
+                  : "No waiting - race a bot to 10 correct answers."}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {matchState === "searching" && (
+          <div className="w-full max-w-md text-center py-4">
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              Searching opponent{".".repeat(searchPulse)}
             </p>
-            <div className="flex gap-2">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                style={{ width: `${25 + searchPulse * 25}%` }}
+              />
+            </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button
-                onClick={() => setMatchSettings("fair")}
-                className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
-                  matchSettings === "fair"
-                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
-                    : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
-                }`}
+                onClick={cancelMatchmaking}
+                className="rounded-xl border border-zinc-200 bg-white px-6 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition"
               >
-                <span className="text-sm font-bold">Fair Mode</span>
-                <span className="text-xxs text-zinc-500 mt-0.5">Same words for both players</span>
+                Cancel Matchmaking
               </button>
               <button
-                onClick={() => setMatchSettings("personal")}
-                className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
-                  matchSettings === "personal"
-                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
-                    : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
-                }`}
+                onClick={startBotDuel}
+                className="rounded-xl border border-blue-200 bg-blue-50/50 px-6 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50 dark:border-blue-800/40 dark:bg-blue-950/10 dark:text-blue-300 dark:hover:bg-blue-950/20 transition"
               >
-                <span className="text-sm font-bold">Personalized Mode</span>
-                <span className="text-xxs text-zinc-500 mt-0.5">Asymmetric custom/recent vocabulary</span>
+                Duel the bot instead
               </button>
             </div>
           </div>
         )}
-      </div>
 
-      <div className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-        {mode === "live" ? (
-          <>
-            {matchState === "idle" && (
-              <button
-                onClick={() => void startFindingOpponent()}
-                className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 transition hover:-translate-y-0.5"
-              >
-                <span className="text-xl font-bold text-emerald-800 dark:text-emerald-300">
-                  Start Live Duel
-                </span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                  Match with a live opponent instantly and race to finish translating words.
-                </span>
-              </button>
-            )}
+        {(matchState === "found" || matchState === "accepted") && (
+          <div className="relative flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-6 text-center dark:border-zinc-700 dark:bg-zinc-800/40">
+            <button
+              type="button"
+              onClick={declineMatch}
+              aria-label="Decline duel"
+              title="Decline duel"
+              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-lg leading-none text-zinc-400 transition hover:bg-zinc-200 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+            >
+              &times;
+            </button>
 
-            {matchState === "searching" && (
-              <div className="w-full max-w-md text-center py-4">
+            <div className="relative">
+              <img
+                src={opponent.avatar}
+                alt={opponent.name}
+                className="h-16 w-16 rounded-full border-2 border-emerald-400 object-cover"
+              />
+              <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500" />
+            </div>
+            <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              Opponent found: {opponent.name}
+            </p>
+
+            {matchState === "found" ? (
+              <>
+                <button
+                  className="w-full rounded-xl bg-emerald-600 px-8 py-3 text-base font-semibold text-white transition hover:bg-emerald-500"
+                  onClick={() => void acceptMatch()}
+                >
+                  Accept duel
+                </button>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Expires in {acceptSecondsLeft}s
+                </p>
+              </>
+            ) : (
+              <>
                 <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                  Searching opponent{".".repeat(searchPulse)}
+                  Waiting for {opponent.name} to accept...
                 </p>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
                   <div
-                    className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                    style={{ width: `${25 + searchPulse * 25}%` }}
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-1000"
+                    style={{
+                      width: `${(acceptSecondsLeft / ACCEPT_WINDOW_S) * 100}%`,
+                    }}
                   />
                 </div>
-                <button
-                  onClick={() => setMatchState("idle")}
-                  className="mt-6 rounded-xl border border-zinc-200 bg-white px-6 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition"
-                >
-                  Cancel Matchmaking
-                </button>
-              </div>
-            )}
-
-            {matchState === "found" && (
-              <div className="flex w-full max-w-md flex-col items-center gap-4 text-center py-4">
-                <div className="relative">
-                  <img
-                    src={opponent.avatar}
-                    alt={opponent.name}
-                    className="h-16 w-16 animate-pulse rounded-full border-2 border-emerald-400 object-cover"
-                  />
-                  <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500" />
-                </div>
-                <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                  Opponent found: {opponent.name}
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Cancelling in {acceptSecondsLeft}s
                 </p>
-                <button
-                  className="rounded-xl bg-zinc-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-                  onClick={startLiveMatch}
-                >
-                  Start Match
-                </button>
-              </div>
+              </>
             )}
-          </>
-        ) : (
-          <button
-            onClick={startAsyncMatch}
-            className="w-full py-4 px-6 flex flex-col items-center justify-center rounded-2xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 dark:border-blue-800/40 dark:bg-blue-950/10 dark:hover:bg-blue-950/20 transition hover:-translate-y-0.5"
-          >
-            <span className="text-xl font-bold text-blue-800 dark:text-blue-300">
-              {isSignedIn || hasAnonPlaysRemaining()
-                ? "Start Score Rush"
-                : "Sign in to keep playing Score Rush"}
-            </span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-              {isSignedIn || hasAnonPlaysRemaining()
-                ? "Climb async leaderboard rankings by matching words as fast as possible."
-                : "You've used your free Score Rush round. Sign in to keep climbing the leaderboard."}
-            </span>
-          </button>
+          </div>
         )}
 
         {searchError && (
@@ -459,38 +725,35 @@ const ChooseOneMultiplayerPage = () => {
             {searchError}
           </p>
         )}
-      </div>
 
-      <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900 mt-2">
-        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-          Leaderboard (Score Rush)
-        </p>
-        <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300">
-          {topAsyncPlayers.length === 0 ? (
-            <p className="text-zinc-500 italic">No entries yet for this level.</p>
-          ) : (
-            topAsyncPlayers.slice(0, 3).map((entry, index) => (
-              <p key={`${entry.name}-${index}`}>
-                #{index + 1} {entry.name} - {entry.score} pts -{" "}
-                {Math.round(entry.timeMs / 1000)}s
-              </p>
-            ))
-          )}
-        </div>
+        {acceptError && (
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            {acceptError}
+          </p>
+        )}
       </div>
 
       <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          Recent Matches
+          Recent Duels
         </p>
         <div className="mt-3 space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
           {recentMatches.length === 0 ? (
-            <p>No match history yet.</p>
+            <p>No duel history yet.</p>
           ) : (
             recentMatches.map((entry, index) => (
               <p key={`${entry.createdAt}-${index}`}>
-                {entry.mode === "live" ? "Live" : "Async"} - {entry.score} pts -{" "}
-                {entry.winner === "player" ? "Win" : "Loss"}
+                {entry.mode === "live"
+                  ? `Live vs ${entry.opponentName ?? "opponent"}`
+                  : "Bot"}{" "}
+                - {entry.score} pts -{" "}
+                {entry.winner === "player"
+                  ? "Win"
+                  : entry.winner === "draw"
+                    ? "Draw"
+                    : entry.winner === "opponent"
+                      ? "Loss"
+                      : "Unfinished"}
               </p>
             ))
           )}

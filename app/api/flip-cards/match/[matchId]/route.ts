@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { matchPlayers, matchQuestions, matches, users } from "@/db/schema";
-import { and, asc, eq } from "drizzle-orm";
-import { MATCH_COUNTDOWN_MS } from "@/app/api/flip-cards/_lib/server";
+import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { WINNING_CORRECT_ANSWERS } from "@/app/api/flip-cards/_lib/server";
 
 export async function GET(
   request: NextRequest,
@@ -24,57 +24,78 @@ export async function GET(
     return NextResponse.json({ error: "Match not found" }, { status: 404 });
   }
 
-  const me = await db.query.matchPlayers.findFirst({
-    where: and(
-      eq(matchPlayers.matchId, matchId),
-      eq(matchPlayers.userId, userId),
-    ),
-  });
-
-  if (!me) {
-    return NextResponse.json({ error: "Not in match" }, { status: 403 });
-  }
-
   const players = await db
     .select({
       id: users.id,
-      name: users.name,
+      // Duels show the friends-profile nickname; the account name is only a
+      // fallback for matches created before nicknames were recorded.
+      name: matchPlayers.displayName,
+      accountName: users.name,
       avatar: users.image,
       progress: matchPlayers.progress,
-      correctCount: matchPlayers.correctCount,
+      correct: matchPlayers.correctCount,
       side: matchPlayers.side,
+      acceptedAt: matchPlayers.acceptedAt,
     })
     .from(matchPlayers)
     .innerJoin(users, eq(matchPlayers.userId, users.id))
     .where(eq(matchPlayers.matchId, matchId));
 
+  const toPlayer = (row: (typeof players)[number]) => ({
+    id: row.id,
+    name: row.name ?? row.accountName ?? "Player",
+    avatar: row.avatar,
+    progress: row.progress,
+    correct: row.correct,
+    side: row.side,
+    accepted: row.acceptedAt !== null,
+  });
+
+  const meRow = players.find((player) => player.id === userId) ?? null;
+
+  if (!meRow) {
+    return NextResponse.json({ error: "Not in match" }, { status: 403 });
+  }
+
+  // In personal mode each player has their own set of prompts; returning the
+  // whole table would both leak the opponent's questions and inflate the
+  // player's question count.
   const questions = await db
     .select()
     .from(matchQuestions)
-    .where(eq(matchQuestions.matchId, matchId))
+    .where(
+      and(
+        eq(matchQuestions.matchId, matchId),
+        or(isNull(matchQuestions.userId), eq(matchQuestions.userId, userId)),
+      ),
+    )
     .orderBy(asc(matchQuestions.orderIndex));
 
-  const nextQuestion = questions[me.progress] ?? null;
-  const opponent = players.find((player) => player.id !== userId) ?? null;
+  const me = toPlayer(meRow);
+  const opponentRow = players.find((player) => player.id !== userId) ?? null;
+  const opponent = opponentRow ? toPlayer(opponentRow) : null;
+  const mapped = questions.map((question) => ({
+    id: question.id,
+    prompt: question.prompt,
+    options: question.options,
+    correctOption: question.correctOption,
+  }));
 
   return NextResponse.json({
     match: {
       id: match.id,
       status: match.status,
       winnerId: match.winnerUserId,
-      totalQuestions: questions.length,
+      totalQuestions: mapped.length,
+      targetCorrect: WINNING_CORRECT_ANSWERS,
       language: match.language,
       level: match.level,
-      startAt: match.createdAt.getTime() + MATCH_COUNTDOWN_MS,
+      // Null until both players accept - that is when the shared clock is set.
+      startAt: match.startAt?.getTime() ?? null,
     },
     me,
     opponent,
-    nextQuestion,
-    questions: questions.map((q) => ({
-      id: q.id,
-      prompt: q.prompt,
-      options: q.options,
-      correctOption: q.correctOption,
-    })),
+    nextQuestion: mapped[me.progress] ?? null,
+    questions: mapped,
   });
 }

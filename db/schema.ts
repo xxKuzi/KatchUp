@@ -73,9 +73,13 @@ export const matches = pgTable("matches", {
   nativeLang: text("native_lang"),
   level: text("level").notNull(),
   mode: text("mode").default("fair").notNull(),
+  // "pending" until both players accept, then "active", then "finished".
   status: text("status").notNull(),
   winnerUserId: uuid("winner_user_id"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  // Set when the second player accepts: the moment both clocks start, so the
+  // countdown is anchored to the same instant on both screens.
+  startAt: timestamp("start_at", { mode: "date" }),
   finishedAt: timestamp("finished_at", { mode: "date" }),
 });
 
@@ -88,8 +92,12 @@ export const matchPlayers = pgTable("match_players", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   side: text("side").notNull(),
+  // The player's friends-profile nickname. Duels show this instead of the
+  // account name, which is the real name people signed up with.
+  displayName: text("display_name"),
   progress: integer("progress").notNull().default(0),
   correctCount: integer("correct_count").notNull().default(0),
+  acceptedAt: timestamp("accepted_at", { mode: "date" }),
   finishedAt: timestamp("finished_at", { mode: "date" }),
 });
 

@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     nativeLang?: string;
     level?: string;
     mode?: string;
+    nickname?: string;
   };
 
   const learning = normalizeLang(body.language);
@@ -28,9 +29,14 @@ export async function POST(request: NextRequest) {
 
   const mode = body.mode === "personal" ? "personal" : "fair";
 
+  // Duels are played under the friends-profile nickname, never the account
+  // name people signed up with. The client is the only place that nickname
+  // lives, so it travels with the join request.
+  const nickname = body.nickname?.trim().slice(0, 24);
+
   const user = {
     userId,
-    name: session.user.name ?? "Player",
+    name: nickname || "Player",
     avatar: session.user.image ?? "https://i.pravatar.cc/100?img=12",
     language: learning,
     nativeLang,
@@ -44,10 +50,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: "waiting" });
   }
 
+  // An opponent was there, but there are no words to duel over at this level.
+  if (match.error === "no-words") {
+    return NextResponse.json(
+      { error: "No words available for this language pair and level yet." },
+      { status: 503 },
+    );
+  }
+
   return NextResponse.json({
     status: "matched",
     matchId: match.match.id,
     opponent: match.waiting,
-    matchStartAt: match.startAt,
   });
 }

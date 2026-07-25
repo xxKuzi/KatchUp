@@ -11,7 +11,7 @@ import {
   matches,
   users,
 } from "@/db/schema";
-import { eq, and, or, isNull, asc, desc } from "drizzle-orm";
+import { eq, and, or, isNull, asc, desc, ne, inArray } from "drizzle-orm";
 import { listDecksForUser, getDeckForUser } from "@/app/api/decks/_lib/deckStore";
 
 export interface MatchQuestionPayload {
@@ -27,15 +27,29 @@ interface PlayerSession {
   avatar: string;
 }
 
+/** A queue entry is a player plus the last time they proved they're still there. */
+type QueueEntry = PlayerSession & { joinedAt?: number };
+
 const QUEUE_KEY_PREFIX = "flipcards:queue";
 const USER_CHANNEL_PREFIX = "user-";
 const MATCH_CHANNEL_PREFIX = "match-";
-const WINNING_CORRECT_ANSWERS = 10;
+export const WINNING_CORRECT_ANSWERS = 10;
 const LIVE_QUESTION_COUNT = 30;
 // Buffer between match creation and the moment both players' clocks are
 // allowed to start, so both clients have time to be pushed the match,
 // navigate to the play screen, and show a synced 3-2-1 countdown.
 export const MATCH_COUNTDOWN_MS = 5000;
+// A searching client re-announces itself on every status poll (~1s), so an
+// entry that hasn't been touched in this long belongs to someone who closed
+// the tab. Pairing with them would leave the survivor waiting on a ghost.
+const QUEUE_ENTRY_TTL_MS = 15_000;
+// Matchmaking hands the match off to both clients immediately, so anything
+// older than this was not created by the search that's asking about it.
+export const FRESH_MATCH_MS = 60_000;
+// An active match nobody finished within this window is abandoned. Without
+// this, a half-played duel stays "active" forever and keeps being served back
+// to the players who left it.
+export const MATCH_STALE_MS = 15 * 60 * 1000;
 
 function shuffleArray<T>(items: T[]): T[] {
   const cloned = [...items];
@@ -162,6 +176,9 @@ async function createMatchQuestions({
 }
 
 export async function ensureUser(user: PlayerSession) {
+  // Only ever fills a missing row. `user.name` here is the duelling nickname,
+  // not the account name, and writing it back over `users.name` would rename
+  // the player everywhere else in the app.
   await db
     .insert(users)
     .values({
@@ -169,13 +186,71 @@ export async function ensureUser(user: PlayerSession) {
       name: user.name,
       image: user.avatar,
     })
-    .onConflictDoUpdate({
-      target: users.id,
-      set: {
-        name: user.name,
-        image: user.avatar,
-      },
-    });
+    .onConflictDoNothing({ target: users.id });
+}
+
+export interface QueueDescriptor {
+  language: Lang;
+  nativeLang: Lang;
+  level: CefrLevel;
+  mode?: string;
+}
+
+export function queueKeyFor({
+  language,
+  nativeLang,
+  level,
+  mode,
+}: QueueDescriptor) {
+  // The pair is part of the queue key: two players learning German only get
+  // matched if they also share the language the options are written in.
+  return `${QUEUE_KEY_PREFIX}:${nativeLang}:${language}:${level}:${mode || "fair"}`;
+}
+
+/**
+ * Drop every entry belonging to `userId`, whatever name/avatar it was stored
+ * with. Matching on the whole object the way `lrem` wants would leave stale
+ * copies behind as soon as a player's profile changed.
+ */
+async function removeFromQueue(queueKey: string, userId: string) {
+  const entries = await redis.lrange<QueueEntry>(queueKey, 0, -1);
+  for (const entry of entries) {
+    if (entry.userId === userId) {
+      await redis.lrem(queueKey, 0, entry);
+    }
+  }
+}
+
+/** Called when a player cancels matchmaking or navigates away from the lobby. */
+export async function leaveQueue(
+  descriptor: QueueDescriptor & { userId: string },
+) {
+  await removeFromQueue(queueKeyFor(descriptor), descriptor.userId);
+}
+
+/**
+ * Keep a searching player's entry alive. Clients call this on every status
+ * poll, which is what lets `tryMatch` treat silent entries as gone.
+ */
+export async function touchQueueEntry(
+  descriptor: QueueDescriptor & PlayerSession,
+) {
+  const queueKey = queueKeyFor(descriptor);
+  const entries = await redis.lrange<QueueEntry>(queueKey, 0, -1);
+  const mine = entries.find((entry) => entry.userId === descriptor.userId);
+
+  if (!mine) {
+    return false;
+  }
+
+  await removeFromQueue(queueKey, descriptor.userId);
+  await redis.rpush(queueKey, {
+    userId: descriptor.userId,
+    name: descriptor.name,
+    avatar: descriptor.avatar,
+    joinedAt: Date.now(),
+  } satisfies QueueEntry);
+  return true;
 }
 
 export async function tryMatch(
@@ -187,32 +262,91 @@ export async function tryMatch(
   },
 ) {
   const mode = user.mode || "fair";
-  // The pair is part of the queue key: two players learning German only get
-  // matched if they also share the language the options are written in.
-  const queueKey = `${QUEUE_KEY_PREFIX}:${user.nativeLang}:${user.language}:${user.level}:${mode}`;
+  const queueKey = queueKeyFor(user);
   await ensureUser(user);
 
-  const playerObj: PlayerSession = {
+  // Anything the player left half-played is resolved before they queue again,
+  // so a stale match can't be handed back to them as "your current duel".
+  await abandonMatchesForUser(user.userId);
+
+  const playerObj: QueueEntry = {
     userId: user.userId,
     name: user.name,
     avatar: user.avatar,
+    joinedAt: Date.now(),
   };
 
   // Remove existing entries for this user to avoid duplicates in the queue
-  await redis.lrem(queueKey, 0, playerObj);
+  await removeFromQueue(queueKey, user.userId);
   await redis.rpush(queueKey, playerObj);
 
-  const waitingQueue = await redis.lrange<PlayerSession>(queueKey, 0, -1);
-  const waiting = waitingQueue.find(
+  const waitingQueue = await redis.lrange<QueueEntry>(queueKey, 0, -1);
+  const cutoff = Date.now() - QUEUE_ENTRY_TTL_MS;
+  const candidates = waitingQueue.filter(
     (entry) => entry.userId !== user.userId,
   );
+
+  // Entries without a heartbeat were written by a client that has since gone
+  // away; clear them out rather than pairing someone with a ghost.
+  const stale = candidates.filter((entry) => (entry.joinedAt ?? 0) < cutoff);
+  for (const entry of stale) {
+    await redis.lrem(queueKey, 0, entry);
+  }
+
+  let waiting: QueueEntry | null = null;
+  for (const candidate of candidates) {
+    if ((candidate.joinedAt ?? 0) < cutoff) {
+      continue;
+    }
+
+    // A heartbeat that raced with the candidate's own match being created can
+    // leave them queued while they're already playing. Pairing with them would
+    // strand this player in a duel the other side never opens.
+    const alreadyPlaying = await activeMatchIdsForUser(candidate.userId);
+    if (alreadyPlaying.length > 0) {
+      await removeFromQueue(queueKey, candidate.userId);
+      continue;
+    }
+
+    waiting = candidate;
+    break;
+  }
 
   if (!waiting) {
     return null;
   }
 
-  await redis.lrem(queueKey, 1, waiting);
-  await redis.lrem(queueKey, 1, playerObj);
+  const pair = {
+    speak: user.nativeLang,
+    learning: user.language,
+    level: user.level,
+  };
+
+  // Questions are built *before* the match row exists. A language pair with no
+  // words at this level would otherwise create a match with nothing to answer
+  // and blow up on the empty insert, surfacing as "matchmaking unavailable".
+  const questionSets =
+    mode === "personal"
+      ? [
+          {
+            userId: user.userId,
+            questions: await createPersonalMatchQuestions(user.userId, pair),
+          },
+          {
+            userId: waiting.userId,
+            questions: await createPersonalMatchQuestions(waiting.userId, pair),
+          },
+        ]
+      : [{ userId: null, questions: await createMatchQuestions(pair) }];
+
+  if (questionSets.some((set) => set.questions.length === 0)) {
+    // Both players stay queued: the pair may well have words at another level,
+    // and someone else joining shouldn't be blocked by this attempt.
+    return { error: "no-words" as const };
+  }
+
+  await removeFromQueue(queueKey, waiting.userId);
+  await removeFromQueue(queueKey, user.userId);
 
   await ensureUser(waiting);
 
@@ -223,67 +357,43 @@ export async function tryMatch(
       nativeLang: user.nativeLang,
       level: user.level,
       mode: mode,
-      status: "active",
+      // The duel doesn't start until both players accept it.
+      status: "pending",
     })
     .returning();
 
-  if (mode === "personal") {
-    const pair = {
-      speak: user.nativeLang,
-      learning: user.language,
-      level: user.level,
-    };
-    const p1Questions = await createPersonalMatchQuestions(user.userId, pair);
-    const p2Questions = await createPersonalMatchQuestions(waiting.userId, pair);
-
-    await db.insert(matchQuestions).values([
-      ...p1Questions.map((question, orderIndex) => ({
+  await db.insert(matchQuestions).values(
+    questionSets.flatMap((set) =>
+      set.questions.map((question, orderIndex) => ({
         matchId: match.id,
-        userId: user.userId,
+        userId: set.userId,
         orderIndex,
         prompt: question.prompt,
         options: question.options,
         correctOption: question.correctOption,
       })),
-      ...p2Questions.map((question, orderIndex) => ({
-        matchId: match.id,
-        userId: waiting.userId,
-        orderIndex,
-        prompt: question.prompt,
-        options: question.options,
-        correctOption: question.correctOption,
-      })),
-    ]);
-  } else {
-    const questions = await createMatchQuestions({
-      speak: user.nativeLang,
-      learning: user.language,
-      level: user.level,
-    });
-    await db.insert(matchQuestions).values(
-      questions.map((question, orderIndex) => ({
-        matchId: match.id,
-        userId: null,
-        orderIndex,
-        prompt: question.prompt,
-        options: question.options,
-        correctOption: question.correctOption,
-      })),
-    );
-  }
+    ),
+  );
 
   const playerRows = [
-    { matchId: match.id, userId: user.userId, side: "player1" },
-    { matchId: match.id, userId: waiting.userId, side: "player2" },
+    {
+      matchId: match.id,
+      userId: user.userId,
+      side: "player1",
+      displayName: user.name,
+    },
+    {
+      matchId: match.id,
+      userId: waiting.userId,
+      side: "player2",
+      displayName: waiting.name,
+    },
   ];
   await db.insert(matchPlayers).values(playerRows);
-
-  const startAt = match.createdAt.getTime() + MATCH_COUNTDOWN_MS;
 
   await pusher.trigger(`${USER_CHANNEL_PREFIX}${user.userId}`, "match-found", {
     matchId: match.id,
     opponent: waiting,
-    startAt,
   });
   await pusher.trigger(
     `${USER_CHANNEL_PREFIX}${waiting.userId}`,
@@ -291,11 +401,188 @@ export async function tryMatch(
     {
       matchId: match.id,
       opponent: user,
-      startAt,
     },
   );
 
-  return { match, waiting, startAt };
+  return { match, waiting, error: null };
+}
+
+/**
+ * Record that a player accepted the duel. The match only goes live - and only
+ * then gets a start time - once both sides have said yes.
+ */
+export async function acceptMatch(matchId: string, userId: string) {
+  const match = await db.query.matches.findFirst({
+    where: eq(matches.id, matchId),
+  });
+
+  if (!match) {
+    return { ok: false as const, error: "Match not found" };
+  }
+
+  const rows = await db.query.matchPlayers.findMany({
+    where: eq(matchPlayers.matchId, matchId),
+  });
+
+  const me = rows.find((row) => row.userId === userId);
+  if (!me) {
+    return { ok: false as const, error: "Not in match" };
+  }
+
+  if (match.status === "finished") {
+    return { ok: false as const, error: "Match already finished" };
+  }
+
+  if (!me.acceptedAt) {
+    await db
+      .update(matchPlayers)
+      .set({ acceptedAt: new Date() })
+      .where(eq(matchPlayers.id, me.id));
+  }
+
+  const everyoneAccepted =
+    rows.length > 1 &&
+    rows.every((row) => row.userId === userId || row.acceptedAt !== null);
+
+  if (!everyoneAccepted) {
+    await pusher.trigger(
+      `${MATCH_CHANNEL_PREFIX}${matchId}`,
+      "match-accepted",
+      { userId },
+    );
+    return { ok: true as const, status: "pending" as const, startAt: null };
+  }
+
+  // Second acceptance wins the race to set the clock; if the other request got
+  // there first, keep its value so both screens count down together.
+  const startAt = match.startAt ?? new Date(Date.now() + MATCH_COUNTDOWN_MS);
+
+  if (match.status !== "active") {
+    await db
+      .update(matches)
+      .set({ status: "active", startAt })
+      .where(and(eq(matches.id, matchId), eq(matches.status, "pending")));
+  }
+
+  await pusher.trigger(`${MATCH_CHANNEL_PREFIX}${matchId}`, "match-ready", {
+    startAt: startAt.getTime(),
+  });
+
+  return {
+    ok: true as const,
+    status: "active" as const,
+    startAt: startAt.getTime(),
+  };
+}
+
+async function closeMatch(matchId: string, winnerUserId: string | null) {
+  await db
+    .update(matches)
+    .set({
+      status: "finished",
+      winnerUserId,
+      finishedAt: new Date(),
+    })
+    .where(and(eq(matches.id, matchId), ne(matches.status, "finished")));
+
+  await pusher.trigger(`${MATCH_CHANNEL_PREFIX}${matchId}`, "match-finished", {
+    winnerUserId,
+  });
+}
+
+/**
+ * Decide a match that ended without anyone reaching the target: most correct
+ * answers wins, and a tie goes to whoever got there first.
+ */
+function winnerByScore(
+  rows: Array<{ userId: string; correctCount: number; progress: number }>,
+  preferUserId?: string,
+): string | null {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const best = [...rows].sort(
+    (a, b) => b.correctCount - a.correctCount || a.progress - b.progress,
+  );
+
+  if (
+    best.length > 1 &&
+    best[0].correctCount === best[1].correctCount &&
+    best[0].progress === best[1].progress
+  ) {
+    return preferUserId ?? null;
+  }
+
+  return best[0].userId;
+}
+
+/** Matches this player is still tied to - awaiting acceptance or in progress. */
+async function activeMatchIdsForUser(userId: string, olderThanMs?: number) {
+  const rows = await db
+    .select({ id: matches.id, createdAt: matches.createdAt })
+    .from(matchPlayers)
+    .innerJoin(matches, eq(matchPlayers.matchId, matches.id))
+    .where(
+      and(
+        eq(matchPlayers.userId, userId),
+        inArray(matches.status, ["pending", "active"]),
+      ),
+    );
+
+  if (olderThanMs === undefined) {
+    return rows.map((row) => row.id);
+  }
+
+  const cutoff = Date.now() - olderThanMs;
+  return rows
+    .filter((row) => row.createdAt.getTime() < cutoff)
+    .map((row) => row.id);
+}
+
+/**
+ * End a live match because `userId` walked away. Their opponent takes the win
+ * so the match can't sit "active" waiting for answers that will never come.
+ */
+export async function forfeitMatch(matchId: string, userId: string) {
+  const match = await db.query.matches.findFirst({
+    where: eq(matches.id, matchId),
+  });
+
+  if (!match || match.status === "finished") {
+    return;
+  }
+
+  const rows = await db.query.matchPlayers.findMany({
+    where: eq(matchPlayers.matchId, matchId),
+  });
+
+  if (!rows.some((row) => row.userId === userId)) {
+    return;
+  }
+
+  const opponent = rows.find((row) => row.userId !== userId);
+  // A match neither side ever answered is just closed - handing out a win for
+  // a duel that was never played would show up as a phantom result.
+  const nobodyPlayed = rows.every((row) => row.progress === 0);
+  await closeMatch(matchId, nobodyPlayed ? null : (opponent?.userId ?? null));
+}
+
+/** Resolve every live match this player abandoned by walking away. */
+export async function abandonMatchesForUser(userId: string) {
+  for (const matchId of await activeMatchIdsForUser(userId)) {
+    await forfeitMatch(matchId, userId);
+  }
+}
+
+/** Resolve matches both sides have clearly left behind, on score. */
+export async function abandonStaleMatches(userId: string) {
+  for (const matchId of await activeMatchIdsForUser(userId, MATCH_STALE_MS)) {
+    const rows = await db.query.matchPlayers.findMany({
+      where: eq(matchPlayers.matchId, matchId),
+    });
+    await closeMatch(matchId, winnerByScore(rows));
+  }
 }
 
 export async function fetchMatchForUser(matchId: string, userId: string) {
@@ -387,8 +674,11 @@ export async function submitLiveAnswer(params: {
     .set({
       progress: nextProgress,
       correctCount: nextCorrectCount,
-      finishedAt:
-        nextCorrectCount >= WINNING_CORRECT_ANSWERS ? new Date() : null,
+      // Only ever set, never cleared - writing null here on each answer wiped
+      // the timestamp of a player who had already finished.
+      ...(nextCorrectCount >= WINNING_CORRECT_ANSWERS
+        ? { finishedAt: player.finishedAt ?? new Date() }
+        : {}),
     })
     .where(
       and(
@@ -401,25 +691,38 @@ export async function submitLiveAnswer(params: {
     where: eq(matchPlayers.matchId, params.matchId),
   });
 
-  const winner = matchRows.find(
+  const nextQuestionRow = await db.query.matchQuestions.findFirst({
+    where: and(
+      eq(matchQuestions.matchId, params.matchId),
+      eq(matchQuestions.orderIndex, nextProgress),
+      or(
+        isNull(matchQuestions.userId),
+        eq(matchQuestions.userId, params.userId),
+      ),
+    ),
+  });
+
+  const reachedTarget = matchRows.find(
     (row) => row.correctCount >= WINNING_CORRECT_ANSWERS,
   );
-  if (winner) {
-    await db
-      .update(matches)
-      .set({
-        status: "finished",
-        winnerUserId: winner.userId,
-        finishedAt: new Date(),
-      })
-      .where(eq(matches.id, params.matchId));
-    await pusher.trigger(
-      `${MATCH_CHANNEL_PREFIX}${params.matchId}`,
-      "match-finished",
-      {
-        winnerUserId: winner.userId,
-      },
-    );
+  // Running out of prompts also ends the duel. Without this the match would
+  // stay active forever with no question left to answer, which is what left
+  // players staring at the last word.
+  const outOfQuestions = !nextQuestionRow;
+
+  let winnerUserId: string | null = null;
+  let finished = false;
+
+  if (reachedTarget) {
+    winnerUserId = reachedTarget.userId;
+    finished = true;
+  } else if (outOfQuestions) {
+    winnerUserId = winnerByScore(matchRows, params.userId);
+    finished = true;
+  }
+
+  if (finished) {
+    await closeMatch(params.matchId, winnerUserId);
   } else {
     await pusher.trigger(
       `${MATCH_CHANNEL_PREFIX}${params.matchId}`,
@@ -433,17 +736,6 @@ export async function submitLiveAnswer(params: {
     );
   }
 
-  const nextQuestionRow = await db.query.matchQuestions.findFirst({
-    where: and(
-      eq(matchQuestions.matchId, params.matchId),
-      eq(matchQuestions.orderIndex, nextProgress),
-      or(
-        isNull(matchQuestions.userId),
-        eq(matchQuestions.userId, params.userId),
-      ),
-    ),
-  });
-
   const nextQuestion = nextQuestionRow
     ? {
         id: nextQuestionRow.id,
@@ -456,8 +748,8 @@ export async function submitLiveAnswer(params: {
   return {
     ok: true as const,
     isCorrect,
-    status: winner ? ("finished" as const) : ("active" as const),
-    winnerUserId: winner?.userId ?? null,
+    status: finished ? ("finished" as const) : ("active" as const),
+    winnerUserId,
     progress: nextProgress,
     correctCount: nextCorrectCount,
     nextQuestion,

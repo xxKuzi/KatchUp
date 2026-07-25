@@ -46,19 +46,19 @@ function GameCarousel() {
     },
     {
       name: "Score Rush",
-      url: "/games/choose-one-multiplayer?mode=async",
+      url: "/games/score-rush",
       img: "one_of_three.png",
       color: "red",
-      description: "Climb rankings in speed trials",
+      description: "30 seconds, as many words as you can",
 
       featureColor: "blue",
     },
     {
       name: "Live Duel",
-      url: "/games/choose-one-multiplayer?mode=live",
+      url: "/games/choose-one-multiplayer",
       img: "flip_cards.png",
       color: "blue",
-      description: "Match with an online opponent live",
+      description: "Duel an online opponent or the bot",
 
       featureColor: "emerald",
     },

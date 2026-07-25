@@ -15,20 +15,20 @@ interface Slide {
 const slides: Slide[] = [
   {
     name: "Live Duel",
-    url: "/games/choose-one-multiplayer?mode=live",
+    url: "/games/choose-one-multiplayer",
     img: "flip_cards.png",
     tagline: "Live 1v1 · Race to 10",
     description:
-      "Go head-to-head with another player in real time. Same ten prompts, pick the right translation faster than your rival. First to finish wins.",
+      "Go head-to-head with another player in real time. Pick the right translation faster than your rival - first to 10 correct answers wins. No one online? Duel the bot instead.",
     gradient: "from-emerald-900/90 via-emerald-900/40",
   },
   {
-    name: "Score Rush (Async)",
-    url: "/games/choose-one-multiplayer?mode=async",
+    name: "Score Rush",
+    url: "/games/score-rush",
     img: "one_of_three.png",
-    tagline: "Leaderboard Climb · Speed & Accuracy",
+    tagline: "30 Seconds · Speed & Accuracy",
     description:
-      "Compete asynchronously against other players' ghost records. Answer quickly and accurately to climb the high score ladder.",
+      "You against the clock. Answer as many translations as you can in 30 seconds, then push your score onto the leaderboard.",
     gradient: "from-blue-900/90 via-blue-900/40",
   },
   {

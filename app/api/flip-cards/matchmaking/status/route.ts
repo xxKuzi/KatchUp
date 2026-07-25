@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { normalizeLang } from "@/app/_lib/languages";
+import { isCefrLevel, normalizeLang } from "@/app/_lib/languages";
 import { db } from "@/lib/db";
 import { matchPlayers, matches, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
-import { MATCH_COUNTDOWN_MS } from "@/app/api/flip-cards/_lib/server";
+import { eq, and, desc, inArray } from "drizzle-orm";
+import {
+  FRESH_MATCH_MS,
+  touchQueueEntry,
+} from "@/app/api/flip-cards/_lib/server";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -14,48 +17,95 @@ export async function GET(request: NextRequest) {
   const userId = session.user.id;
 
   const { searchParams } = request.nextUrl;
-  const language = searchParams.get("language");
-  const level = searchParams.get("level");
+  const learning = normalizeLang(searchParams.get("language"));
+  const nativeLang = normalizeLang(searchParams.get("nativeLang")) ?? "en";
+  const level = searchParams.get("level")?.toUpperCase();
+  const mode = searchParams.get("mode") === "personal" ? "personal" : "fair";
+  const nickname = searchParams.get("nickname")?.trim().slice(0, 24);
 
-  if (!level || !normalizeLang(language)) {
+  if (!learning || !isCefrLevel(level)) {
     return NextResponse.json({ error: "Invalid query" }, { status: 400 });
   }
 
-  // Search for the user's active match
-  const activePlayerMatches = await db
+  // Only a match created by the search that's asking counts. Reporting "any
+  // active match" handed players back duels they had already left, which then
+  // dropped them straight onto the last question or the result screen.
+  const candidates = await db
     .select({
       matchId: matchPlayers.matchId,
       createdAt: matches.createdAt,
+      progress: matchPlayers.progress,
+      language: matches.language,
+      level: matches.level,
+      mode: matches.mode,
     })
     .from(matchPlayers)
     .innerJoin(matches, eq(matchPlayers.matchId, matches.id))
     .where(
       and(
         eq(matchPlayers.userId, userId),
-        eq(matches.status, "active")
-      )
+        inArray(matches.status, ["pending", "active"]),
+      ),
     )
-    .limit(1);
+    .orderBy(desc(matches.createdAt))
+    .limit(5);
 
-  if (activePlayerMatches.length === 0) {
+  const cutoff = Date.now() - FRESH_MATCH_MS;
+  const fresh = candidates.find(
+    (candidate) =>
+      candidate.createdAt.getTime() >= cutoff &&
+      candidate.progress === 0 &&
+      candidate.language === learning &&
+      candidate.level === level &&
+      candidate.mode === mode,
+  );
+
+  // Still searching: this poll doubles as the client's heartbeat. Without it
+  // their queue entry ages out and stops being matchable. It deliberately runs
+  // only when no match was found, so a player who has just been paired can't
+  // re-insert themselves into the queue as a ghost.
+  if (!fresh) {
+    await touchQueueEntry({
+      userId,
+      name: nickname || "Player",
+      avatar: session.user.image ?? "https://i.pravatar.cc/100?img=12",
+      language: learning,
+      nativeLang,
+      level,
+      mode,
+    });
     return NextResponse.json({ status: "waiting" });
   }
 
-  const activeMatchId = activePlayerMatches[0].matchId;
-  const matchStartAt =
-    activePlayerMatches[0].createdAt.getTime() + MATCH_COUNTDOWN_MS;
-
-  const opponent = await db
-    .select({ id: users.id, name: users.name, avatar: users.image })
+  const players = await db
+    .select({
+      id: users.id,
+      // The duelling nickname, falling back to the account name only for
+      // matches created before nicknames were recorded.
+      name: matchPlayers.displayName,
+      accountName: users.name,
+      avatar: users.image,
+    })
     .from(matchPlayers)
     .innerJoin(users, eq(matchPlayers.userId, users.id))
-    .where(eq(matchPlayers.matchId, activeMatchId))
+    .where(eq(matchPlayers.matchId, fresh.matchId))
     .limit(2);
+
+  const opponent = players.find((player) => player.id !== userId) ?? null;
+
+  // A match with nobody on the other side would strand the player on a
+  // countdown against no one.
+  if (!opponent) {
+    return NextResponse.json({ status: "waiting" });
+  }
 
   return NextResponse.json({
     status: "matched",
-    matchId: activeMatchId,
-    opponent: opponent.find((player) => player.id !== userId) ?? null,
-    matchStartAt,
+    matchId: fresh.matchId,
+    opponent: {
+      id: opponent.id,
+      name: opponent.name ?? opponent.accountName ?? "Opponent",
+      avatar: opponent.avatar,
+    },
   });
 }

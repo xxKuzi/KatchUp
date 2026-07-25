@@ -70,18 +70,18 @@ export default function Games() {
           <div className="flex flex-col gap-8">
             <GameBanner
               name="Live Duel "
-              url="/games/choose-one-multiplayer?mode=live"
+              url="/games/choose-one-multiplayer"
               img="flip_cards.png"
               tagline="Live 1v1 · Race to 10"
-              description="Go head-to-head with another player in real time. Same ten prompts, pick the right translation faster than your rival. First to finish wins."
+              description="Go head-to-head with another player in real time. Pick the right translation faster than your rival - first to 10 correct answers wins. No one online? Duel the bot instead."
               gradient="from-blue-900/90 via-blue-900/40"
             />
             <GameBanner
               name="Score Rush"
-              url="/games/choose-one-multiplayer?mode=async"
+              url="/games/score-rush"
               img="one_of_three.png"
-              tagline="Leaderboard Climb · Speed & Accuracy"
-              description="Compete asynchronously against other players' ghost records. Answer quickly and accurately to climb the high score ladder."
+              tagline="30 Seconds · Speed & Accuracy"
+              description="You against the clock. Answer as many translations as you can in 30 seconds, then push your score onto the leaderboard."
               gradient="from-red-700/90 via-yellow-900/40"
             />
           </div>
