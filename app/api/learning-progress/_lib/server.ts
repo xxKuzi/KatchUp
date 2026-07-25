@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { userWordProgress } from "@/db/schema";
-import { SupportedLanguage } from "@/app/games/_lib/learning/types";
+import type { Lang } from "@/app/_lib/languages";
 
 export interface WordProgressUpdate {
   wordId: string;
@@ -18,7 +18,7 @@ export interface WordProgressSnapshot {
 
 export async function fetchWordProgress(
   userId: string,
-  language: SupportedLanguage,
+  language: Lang,
 ): Promise<WordProgressSnapshot> {
   const rows = await db
     .select({
@@ -53,7 +53,7 @@ export async function fetchWordProgress(
 
 export async function syncWordProgress(
   userId: string,
-  language: SupportedLanguage,
+  language: Lang,
   updates: WordProgressUpdate[],
 ): Promise<void> {
   if (updates.length === 0) {
