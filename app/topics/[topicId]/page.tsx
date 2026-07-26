@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Crown } from "lucide-react";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useAuthState } from "@/app/_lib/auth";
 import FeatureGate from "@/app/_components/FeatureGate";
@@ -10,22 +11,25 @@ import DeckProgress from "@/app/_components/DeckProgress";
 import {
   DeckProgressSummary,
   fetchDeckLevelProgress,
+  LEGENDARY_PASS_PERCENT,
 } from "@/app/games/_lib/deckSessionClient";
 import {
   useCachedTopicProgress,
   writeTopicProgressCache,
 } from "../_lib/levelProgressCache";
 import {
-  ascendTopic,
   completeTopicLevel,
   getLevelsForTopic,
   loadTopicsState,
+  markKeyCelebrated,
   saveTopicsState,
   TOPICS,
   topicTitle,
   topicDescription,
+  useTopicsSync,
   useTopicsState,
 } from "../_lib/topicsProgress";
+import KeyEarnedPopup from "../_components/KeyEarnedPopup";
 
 /**
  * A level is finished once every word in it has been answered right at least
@@ -56,6 +60,7 @@ export default function TopicDetailPage() {
     DeckProgressSummary[] | null
   >(null);
   const state = useTopicsState(language);
+  useTopicsSync(language, learningLanguage, isSignedIn);
 
   const topic = useMemo(
     () => TOPICS.find((item) => item.id === topicId) ?? null,
@@ -124,9 +129,10 @@ export default function TopicDetailPage() {
     };
   }, [deckId, topic, foreignLang]);
 
-  // Keys and Ascend still run off the stored `completedLevels`, so a level the
-  // server says is cleared gets recorded here — including one cleared in another
-  // browser, which this page would otherwise never hear about.
+  // Keys and the crown run off `completedLevels`, so a level the server says is
+  // cleared gets recorded here — including one cleared in another browser, which
+  // this page would otherwise never hear about. The write syncs straight back up
+  // to the account.
   //
   // Additive on purpose: levels wrongly marked done by the old "played once"
   // rule stay recorded, because clearing them would revoke keys already spent.
@@ -177,7 +183,10 @@ export default function TopicDetailPage() {
   const topicProgress = state.topicProgress[topic.id];
   const levels = getLevelsForTopic(state, topic.id);
   const completedAll = Boolean(topicProgress?.isCompleted);
-  const ascended = Boolean(topicProgress?.isAscended);
+  const legendary = Boolean(topicProgress?.isLegendary);
+  // The key is granted the moment the fifth level clears, wherever that
+  // happened — the popup is only how the player finds out about it.
+  const showKeyPopup = completedAll && !topicProgress?.keyCelebrated;
 
   const clearedCount = levelProgress
     ? levelProgress.filter(isLevelCleared).length
@@ -193,13 +202,25 @@ export default function TopicDetailPage() {
     { total: 0, cleared: 0, known: 0 },
   );
 
-  // Ascending is the last thing there is to do on a finished pack, so it hands
-  // the player back to the topic list — with `completedTopic` set, which is what
-  // makes the card celebrate and points them at the pack their key unlocks.
-  const handleAscend = () => {
-    saveTopicsState(language, ascendTopic(state, topic.id));
+  const dismissKeyPopup = () => {
+    saveTopicsState(language, markKeyCelebrated(state, topic.id));
+  };
+
+  // Spending the key is the point of earning one, so the popup can hand the
+  // player straight to the pack list — `completedTopic` is what makes the card
+  // there celebrate.
+  const goSpendKey = () => {
+    saveTopicsState(language, markKeyCelebrated(state, topic.id));
     router.push(`/topics?completedTopic=${encodeURIComponent(topic.id)}`);
   };
+
+  // The review round: everything still unlearned, hardest first, topped up to
+  // thirty from the rest of the pack. Answering 85% of it right is what makes
+  // the pack legendary, and it stays available afterwards — once nothing is
+  // unlearned the server serves fifteen random words instead of an empty round.
+  const reviewHref = deckId
+    ? `/games/flip-cards?deck=${deckId}&mode=finish&topicId=${encodeURIComponent(topic.id)}&legendary=1`
+    : null;
 
   return (
     <div className="min-h-screen bg-background px-4 pb-20 pt-6 sm:px-8">
@@ -353,43 +374,80 @@ export default function TopicDetailPage() {
           </section>
 
           {completedAll && (
-            <section className="rounded-2xl border border-amber-300 bg-amber-50/90 p-6 text-center shadow-sm dark:border-amber-800 dark:bg-amber-950/60">
-              <h3 className="text-2xl font-bold text-amber-800 dark:text-amber-300">
-                {t("topics.completedTitle", "Topic completed")}
+            <section
+              className={`rounded-2xl border p-6 text-center shadow-sm ${
+                legendary
+                  ? "border-violet-300 bg-linear-to-br from-violet-50 via-amber-50 to-violet-100/70 dark:border-violet-800 dark:from-violet-950/70 dark:via-slate-950 dark:to-amber-950/40"
+                  : "border-amber-300 bg-amber-50/90 dark:border-amber-800 dark:bg-amber-950/60"
+              }`}
+            >
+              {legendary && (
+                <span className="mx-auto mb-3 inline-flex items-center gap-2 rounded-full border border-violet-300 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-violet-700 dark:border-violet-700 dark:bg-slate-950/60 dark:text-violet-300">
+                  <Crown size={14} />
+                  {t("topics.legendary", "Legendary")}
+                </span>
+              )}
+              <h3
+                className={`text-2xl font-bold ${legendary ? "text-violet-800 dark:text-violet-200" : "text-amber-800 dark:text-amber-300"}`}
+              >
+                {legendary
+                  ? t("topics.legendaryTitle", "Legendary pack")
+                  : t("topics.completedTitle", "Topic completed")}
               </h3>
-              <p className="mt-2 text-sm text-amber-700 dark:text-amber-200">
-                {t(
-                  "topics.completedText",
-                  "You earned a key. Return to topics to unlock a new pack.",
-                )}
+              <p
+                className={`mt-2 text-sm ${legendary ? "text-violet-700 dark:text-violet-200" : "text-amber-700 dark:text-amber-200"}`}
+              >
+                {legendary
+                  ? t(
+                      "topics.legendaryText",
+                      "You cleared the review round. Come back any time to keep these words sharp.",
+                    )
+                  : t(
+                      "topics.completedText",
+                      "You earned a key. Return to topics to unlock a new pack.",
+                    )}
               </p>
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  disabled={ascended}
-                  onClick={handleAscend}
-                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-500"
-                >
-                  {ascended
-                    ? t("topics.ascended", "Ascended")
-                    : t("topics.ascend", "Ascend this pack")}
-                </button>
 
-                {/* Clearing the ladder only means every word was met once. This
-                    is where met turns into learned: a finish round over the
-                    whole pack, weighted to the words that were missed. */}
-                {deckId && (
+              {/* Clearing the ladder only means every word was met once. This is
+                  where met turns into learned — and where the pack earns its
+                  crown. The button stays after that: the round then refreshes
+                  whatever the pack has, rather than disappearing. */}
+              {reviewHref && (
+                <div className="mt-4 flex flex-col items-center justify-center gap-2">
                   <Link
-                    href={`/games/flip-cards?deck=${deckId}&mode=finish`}
-                    className="rounded-lg border border-amber-400 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/50"
+                    href={reviewHref}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${
+                      legendary
+                        ? "bg-violet-600 hover:bg-violet-700"
+                        : "bg-amber-600 hover:bg-amber-700"
+                    }`}
                   >
+                    <Crown size={16} />
                     {t("topics.reviewTopic", "Review this topic")}
                   </Link>
-                )}
-              </div>
+                  {!legendary && (
+                    <span className="text-center text-xs font-medium text-amber-700 dark:text-amber-300">
+                      {t(
+                        "topics.legendaryHint",
+                        `30 words — score ${LEGENDARY_PASS_PERCENT}% to make this pack legendary.`,
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
             </section>
           )}
         </div>
+
+        {showKeyPopup && (
+          <KeyEarnedPopup
+            topicName={name.learning}
+            keys={state.keys}
+            onClose={dismissKeyPopup}
+            onSpend={goSpendKey}
+            reviewHref={reviewHref}
+          />
+        )}
       </FeatureGate>
     </div>
   );

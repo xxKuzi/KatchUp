@@ -83,6 +83,20 @@ export interface AttemptInput {
  */
 export const CONFIDENT_ANSWER_STEPS = 2;
 
+/**
+ * Words in a pack's legendary round: everything still unlearned, hardest first,
+ * topped up from the rest of the pack. Mirrors LEGENDARY_REVIEW_SIZE on the
+ * server, which is what actually picks them.
+ */
+export const LEGENDARY_REVIEW_SIZE = 30;
+
+/**
+ * How much of a legendary round has to come back "know it" for the pack to earn
+ * its crown. Playing the thirty cards through was enough at first, which made
+ * the title a matter of patience rather than of knowing the words.
+ */
+export const LEGENDARY_PASS_PERCENT = 85;
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {

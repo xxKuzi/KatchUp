@@ -20,7 +20,8 @@ interface TopicCardProps {
   levelCount: number;
   unlocked: boolean;
   justCompleted: boolean;
-  ascended: boolean;
+  /** Crowned by clearing the pack's review round. */
+  legendary: boolean;
   href: string;
   onUnlock: () => void;
   canUnlock: boolean;
@@ -89,7 +90,7 @@ function TopicCardContent({
   levelCount,
   unlocked,
   justCompleted,
-  ascended,
+  legendary,
   onUnlock,
   canUnlock,
 }: TopicCardContentProps) {
@@ -101,12 +102,31 @@ function TopicCardContent({
       <div className={`absolute inset-0 ${theme.glow} opacity-100`} />
       <div className="absolute inset-x-0 top-0 h-px bg-white/80 dark:bg-white/10" />
       <div
-        className={`absolute left-0 top-0 h-full w-2 bg-linear-to-b ${theme.stripe}`}
+        className={`absolute left-0 top-0 h-full w-2 bg-linear-to-b ${
+          legendary ? "from-violet-400 via-fuchsia-500 to-amber-400" : theme.stripe
+        }`}
       />
+
+      {/* Legendary packs read differently at a glance: a warm violet wash and a
+          shimmer that crosses the card every few seconds. */}
+      {legendary && (
+        <>
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(167,139,250,0.35),transparent_55%)]" />
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute inset-y-0 w-1/3 bg-linear-to-r from-transparent via-white/45 to-transparent animate-[legendaryShimmer_4.5s_ease-in-out_infinite] dark:via-white/12" />
+          </div>
+        </>
+      )}
 
       <div className="relative flex h-full flex-col p-6 sm:p-7">
         <div className="flex flex-1 items-start justify-between gap-4">
           <div className="min-w-0">
+            {legendary && (
+              <span className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-300/80 bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-violet-700 dark:border-violet-700/70 dark:bg-slate-950/60 dark:text-violet-300">
+                <Crown size={12} />
+                Legendary
+              </span>
+            )}
             <h2 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-[2rem]">
               {title}
             </h2>
@@ -153,8 +173,20 @@ function TopicCardContent({
 
         <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/70 pt-5 dark:border-slate-700/70">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
-            {unlocked ? <CheckCircle2 size={16} /> : <Lock size={16} />}
-            <span>{unlocked ? "Ready to play" : "Locked until unlocked"}</span>
+            {legendary ? (
+              <Crown size={16} className="text-violet-600 dark:text-violet-300" />
+            ) : unlocked ? (
+              <CheckCircle2 size={16} />
+            ) : (
+              <Lock size={16} />
+            )}
+            <span>
+              {legendary
+                ? "Legendary — mastered"
+                : unlocked
+                  ? "Ready to play"
+                  : "Locked until unlocked"}
+            </span>
           </div>
 
           {unlocked ? (
@@ -187,8 +219,11 @@ function TopicCardContent({
 }
 
 export default function TopicCard(props: TopicCardProps) {
-  const { unlocked, justCompleted, topic, href, title } = props;
-  const baseClass = `group relative overflow-hidden rounded-[2rem] border border-white/70 shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-1 ${themeVariants[topic.color].outline} transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.18)] dark:border-slate-800/70 dark:shadow-black/30`;
+  const { unlocked, justCompleted, legendary, topic, href, title } = props;
+  const ring = legendary
+    ? "ring-violet-400/70 dark:ring-violet-600/60"
+    : themeVariants[topic.color].outline;
+  const baseClass = `group relative overflow-hidden rounded-[2rem] border ${legendary ? "border-violet-200/80 dark:border-violet-900/70" : "border-white/70 dark:border-slate-800/70"} shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-1 ${ring} transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.18)] dark:shadow-black/30`;
   const animatedClass = justCompleted
     ? "animate-[topicPulse_1.1s_ease-in-out_3]"
     : "";

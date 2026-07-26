@@ -266,6 +266,46 @@ export const conceptTranslations = pgTable(
 );
 
 
+// The topic ladder: one row per (user, UI language, pack). Keys and unlocks used
+// to live in localStorage only, so signing in on a second device showed a player
+// with no keys, no unlocked packs and no crowns. Every column here only ever
+// moves forward, which is what lets two devices merge by union alone.
+//
+// The key balance is deliberately absent: it is derived from `is_completed` and
+// `unlocked` (see `deriveKeys`), because a counter cannot be merged without
+// double-spending or losing a key.
+export const userTopicProgress = pgTable(
+  "user_topic_progress",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // UI language the ladder is tracked under — progress is per language, the
+    // same way the packs themselves are.
+    language: text("language").notNull(),
+    // Topic key from TOPICS ("autos", "essen", ...).
+    topicId: text("topic_id").notNull(),
+    // Levels 1..5 answered through at least once.
+    completedLevels: integer("completed_levels").array().notNull().default([]),
+    unlocked: boolean("unlocked").notNull().default(false),
+    isCompleted: boolean("is_completed").notNull().default(false),
+    // Earned by scoring 85% on the pack's review round.
+    isLegendary: boolean("is_legendary").notNull().default(false),
+    keyCelebrated: boolean("key_celebrated").notNull().default(false),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userLanguageTopicUnique: uniqueIndex(
+      "user_topic_progress_user_id_language_topic_id_key",
+    ).on(table.userId, table.language, table.topicId),
+    userLanguageIdx: index("user_topic_progress_user_id_language_idx").on(
+      table.userId,
+      table.language,
+    ),
+  }),
+);
+
 // A learner's level normally follows their mastered-word count, but passing the
 // level test skips them straight to the first word count of the next band. That
 // promotion is recorded here as a floor: the effective count is

@@ -14,6 +14,18 @@ export const KNOWN_STREAK_THRESHOLD = 3;
 export const MAX_BOX = 5;
 export const DEFAULT_PRACTICE_SIZE = 10;
 export const DEFAULT_FINISH_SIZE = 20;
+/**
+ * The legendary round: every word still unlearned, hardest first, topped up from
+ * the rest of the pack to a full thirty. Clearing it is what turns a finished
+ * topic legendary.
+ */
+export const LEGENDARY_REVIEW_SIZE = 30;
+/**
+ * What a review round serves once nothing is left unlearned. The round used to
+ * come back empty there, which made the review button look broken on exactly the
+ * decks that had been played the most.
+ */
+export const REVIEW_REFRESH_SIZE = 15;
 // Levels a topic is split into. Mirrors the 5 levels the topics UI renders.
 export const TOPIC_LEVEL_COUNT = 5;
 
@@ -247,11 +259,21 @@ export async function selectSessionWords(
   let chosen: EnrichedWord[];
   if (mode === "finish") {
     const size = options.size ?? DEFAULT_FINISH_SIZE;
-    const failed = enriched.filter(
-      (entry) => !entry.stat?.known && seenCount(entry) > 0,
+    // Hardest first, then whatever else is still unlearned. A review round used
+    // to draw only from words already answered wrong, so a pack could be short
+    // of learned words and still report nothing to review.
+    const pending = [...enriched.filter((entry) => !entry.stat?.known)].sort(
+      compareHardest,
     );
-    failed.sort(compareHardest);
-    chosen = shuffle(failed.slice(0, size));
+
+    if (pending.length === 0) {
+      chosen = shuffle(enriched).slice(0, REVIEW_REFRESH_SIZE);
+    } else {
+      // Topped up from the learned words so the round is a full one — the point
+      // of the legendary round is the whole pack, not only its sore spots.
+      const filler = shuffle(enriched.filter((entry) => entry.stat?.known));
+      chosen = shuffle([...pending, ...filler].slice(0, size));
+    }
   } else {
     const size = options.size ?? DEFAULT_PRACTICE_SIZE;
     const pool = enriched.filter((entry) => !entry.stat?.known);

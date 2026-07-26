@@ -90,6 +90,79 @@ body {
   animation: marquee-lr 60s linear infinite;
 }
 
+/* The key a finished topic pack hands over: the dialog fades in, the key drops
+   in and settles, its glow breathes, and sparks fly out once behind it. */
+@keyframes keyPopupFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes keyPopupRise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes keyLand {
+  0% {
+    transform: scale(0.2) rotate(-35deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) rotate(8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes keyGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes keySpark {
+  0% {
+    transform: rotate(var(--angle)) translateY(-0.5rem) scale(0.4);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(-3.25rem) scale(0);
+    opacity: 0;
+  }
+}
+
+/* A legendary pack's card keeps a slow shimmer running across it. */
+@keyframes legendaryShimmer {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+
 @keyframes topicPulse {
   0% {
     transform: scale(1);

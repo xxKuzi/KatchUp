@@ -42,6 +42,8 @@ export function useDeckSession(
   mode: "practice" | "finish" = "practice",
   /** Topic level to scope the round to; omit for the whole deck. */
   level?: number,
+  /** How many words to draw; omit for the mode's default. */
+  size?: number,
 ): UseDeckSession {
   const [status, setStatus] = useState<DeckSessionStatus>(
     deckId ? "loading" : "idle",
@@ -65,7 +67,7 @@ export function useDeckSession(
 
     let cancelled = false;
 
-    fetchSession(deckId, { mode, level })
+    fetchSession(deckId, { mode, level, size })
       .then((result) => {
         if (cancelled) return;
         setSession(result);
@@ -86,7 +88,7 @@ export function useDeckSession(
     return () => {
       cancelled = true;
     };
-  }, [deckId, mode, level, nonce]);
+  }, [deckId, mode, level, size, nonce]);
 
   const recordResult = useCallback(
     (deckWordId: string, correct: boolean, steps?: number) => {

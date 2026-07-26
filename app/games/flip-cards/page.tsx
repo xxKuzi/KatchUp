@@ -15,11 +15,15 @@ import {
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
 import { fetchWordPairs } from "../_lib/wordPairs";
-import { CONFIDENT_ANSWER_STEPS } from "../_lib/deckSessionClient";
+import {
+  CONFIDENT_ANSWER_STEPS,
+  LEGENDARY_PASS_PERCENT,
+  LEGENDARY_REVIEW_SIZE,
+} from "../_lib/deckSessionClient";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useAuthState } from "@/app/_lib/auth";
-import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
+import { Check, Crown, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
 
 const DECK_SIZE = 15;
 const SWIPE_THRESHOLD = 110;
@@ -62,9 +66,16 @@ const FlipCardsPage = () => {
     deckLevel,
     backHref,
     markComplete,
+    isLegendaryRound,
+    submitLegendaryResults,
   } = useTopicLevel(deckId);
 
-  const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
+  const deckSession = useDeckSession(
+    deckId || null,
+    sessionMode,
+    deckLevel,
+    isLegendaryRound ? LEGENDARY_REVIEW_SIZE : undefined,
+  );
 
   const { speak, learning: defaultLearning } = useLanguagePair();
   const [learning, setLearning] = useState<Lang>(defaultLearning);
@@ -74,6 +85,14 @@ const FlipCardsPage = () => {
   // The player sees a level number; the word pool still needs a difficulty.
   const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
 
+
+  // Whether the review round took the crown is the server's call, not this
+  // screen's: the verdicts go up and come back graded. The percentage below is
+  // only what the player watches while that happens.
+  const [legendaryVerdict, setLegendaryVerdict] = useState<
+    "unplayed" | "grading" | "passed" | "failed"
+  >("unplayed");
+  const submittedRound = useRef(false);
 
   const [deck, setDeck] = useState<CardWord[]>([]);
   const [index, setIndex] = useState(0);
@@ -95,6 +114,9 @@ const FlipCardsPage = () => {
     setPractice([]);
     setDragX(0);
     setLeaving(null);
+    // A fresh round is a fresh attempt at the crown.
+    submittedRound.current = false;
+    setLegendaryVerdict("unplayed");
   };
 
   // Non-deck path: pull cards for the chosen pair. Flip-cards is a recall
@@ -172,6 +194,29 @@ const FlipCardsPage = () => {
       markComplete();
     }
   }, [levelDone, markComplete]);
+
+  // The crown is scored, not sat through: 85% of the review round has to come
+  // back "know it". Fall short and the pack stays as it was — the round can be
+  // played again, and the answers counted toward the words either way.
+  const answered = known.length + practice.length;
+  const scorePercent = answered
+    ? Math.round((known.length / answered) * 100)
+    : 0;
+
+  useEffect(() => {
+    if (!isLegendaryRound || !finished || submittedRound.current) {
+      return;
+    }
+    submittedRound.current = true;
+    setLegendaryVerdict("grading");
+
+    void submitLegendaryResults([
+      ...known.map((card) => ({ deckWordId: card.id, correct: true })),
+      ...practice.map((card) => ({ deckWordId: card.id, correct: false })),
+    ]).then((passed) => setLegendaryVerdict(passed ? "passed" : "failed"));
+  }, [finished, isLegendaryRound, known, practice, submitLegendaryResults]);
+
+  const legendaryPassed = legendaryVerdict === "passed";
 
   const remaining = Math.max(deck.length - index, 0);
   const progressPercent = deck.length
@@ -287,7 +332,7 @@ const FlipCardsPage = () => {
           {...GATE}
           title={
             sessionMode === "finish"
-              ? "No hard words to review yet"
+              ? "No words to review yet"
               : topicId
                 ? `You've mastered every word in level ${topicLevelNumber}! 🎉`
                 : "You've mastered every word in this deck! 🎉"
@@ -307,9 +352,6 @@ const FlipCardsPage = () => {
   const rotation = dragX / 18;
   const swipeHint: Verdict | null =
     dragX > 40 ? "known" : dragX < -40 ? "practice" : null;
-
-  const total = known.length + practice.length;
-  const knownPercent = total ? Math.round((known.length / total) * 100) : 0;
 
   return (
     <GamePage {...GATE}>
@@ -337,8 +379,12 @@ const FlipCardsPage = () => {
         {deckId && deckSession.session && (
           <p className="text-center text-sm font-semibold text-zinc-600 dark:text-zinc-300">
             {deckSession.session.deckName}
-            {topicId ? ` · Level ${topicLevelNumber}` : ""}
-            {sessionMode === "finish" ? " · Finish round" : ""}
+            {topicId && !isLegendaryRound ? ` · Level ${topicLevelNumber}` : ""}
+            {sessionMode === "finish"
+              ? isLegendaryRound
+                ? " · Legendary round"
+                : " · Finish round"
+              : ""}
           </p>
         )}
 
@@ -477,12 +523,40 @@ const FlipCardsPage = () => {
       ) : (
         finished && (
           <div className="mt-6 w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-sm uppercase tracking-wide text-zinc-500">
-              Deck complete
+            {isLegendaryRound ? (
+              legendaryPassed ? (
+                <p className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-600 dark:text-amber-300">
+                  <Crown className="h-4 w-4" />
+                  This pack is now legendary
+                </p>
+              ) : legendaryVerdict === "grading" ? (
+                <p className="text-sm font-bold uppercase tracking-wide text-zinc-500">
+                  Scoring the round...
+                </p>
+              ) : (
+                <p className="text-sm font-bold uppercase tracking-wide text-zinc-500">
+                  {LEGENDARY_PASS_PERCENT}% needed for legendary
+                </p>
+              )
+            ) : (
+              <p className="text-sm uppercase tracking-wide text-zinc-500">
+                Deck complete
+              </p>
+            )}
+            <p
+              className={`mt-2 text-4xl font-black ${
+                isLegendaryRound && !legendaryPassed
+                  ? "text-zinc-500 dark:text-zinc-400"
+                  : "text-zinc-900 dark:text-zinc-50"
+              }`}
+            >
+              {scorePercent}% known
             </p>
-            <p className="mt-2 text-4xl font-black text-zinc-900 dark:text-zinc-50">
-              {knownPercent}% known
-            </p>
+            {legendaryVerdict === "failed" && (
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                Run the round again to take the crown.
+              </p>
+            )}
             <div className="mt-5 flex items-center justify-center gap-8 text-sm">
               <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <Check className="h-4 w-4" /> {known.length} known
@@ -508,7 +582,9 @@ const FlipCardsPage = () => {
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Next round
+                  {legendaryVerdict === "failed"
+                    ? "Try the round again"
+                    : "Next round"}
                 </button>
               ) : (
                 <button

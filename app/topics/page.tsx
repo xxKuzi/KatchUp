@@ -10,6 +10,7 @@ import {
   topicTitle,
   topicDescription,
   useHasMounted,
+  useTopicsSync,
   useTopicsState,
 } from "./_lib/topicsProgress";
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +22,9 @@ export default function TopicsPage() {
   const { isSignedIn, isReady } = useAuthState();
   const state = useTopicsState(language);
   const hasMounted = useHasMounted();
+  // Keys, unlocks and crowns come from the account, so this list is right on a
+  // browser that has never seen the ladder before.
+  useTopicsSync(language, learningLanguage, isSignedIn);
   const [lastCompletedTopic, setLastCompletedTopic] = useState<string | null>(
     () => {
       if (typeof window === "undefined") {
@@ -65,7 +69,7 @@ export default function TopicsPage() {
         levelCount,
         unlocked,
         justCompleted,
-        ascended: Boolean(progress?.isAscended),
+        legendary: Boolean(progress?.isLegendary),
       };
     });
   }, [hasMounted, lastCompletedTopic, state]);
@@ -105,7 +109,7 @@ export default function TopicsPage() {
 
           <section className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 sm:gap-10">
             {topicCards.map(
-              ({ topic, levelCount, unlocked, justCompleted, ascended }) => {
+              ({ topic, levelCount, unlocked, justCompleted, legendary }) => {
                 const name = topicTitle(topic, learningLanguage, language);
 
                 return (
@@ -118,7 +122,7 @@ export default function TopicsPage() {
                     levelCount={levelCount}
                     unlocked={unlocked}
                     justCompleted={justCompleted}
-                    ascended={ascended}
+                    legendary={legendary}
                     href={`/topics/${topic.id}`}
                     onUnlock={() => handleUnlock(topic.id)}
                     canUnlock={state.keys > 0}

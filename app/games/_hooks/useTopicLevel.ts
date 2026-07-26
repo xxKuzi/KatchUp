@@ -7,6 +7,7 @@ import {
   completeTopicLevel,
   loadTopicsState,
   saveTopicsState,
+  submitLegendaryRound,
 } from "@/app/topics/_lib/topicsProgress";
 
 /** Levels a topic is split into; mirrors TOPIC_LEVEL_COUNT on the server. */
@@ -23,6 +24,16 @@ export interface TopicLevelContext {
   backHref: string;
   /** Records the level as done. Safe to call repeatedly; only the first sticks. */
   markComplete: () => void;
+  /** True when this round was launched as the pack's legendary review. */
+  isLegendaryRound: boolean;
+  /**
+   * Hands a finished review round to the server to be graded. Resolves to
+   * whether it took the crown — the browser reports the verdicts, the server
+   * decides. Only does anything on a legendary round.
+   */
+  submitLegendaryResults: (
+    results: { deckWordId: string; correct: boolean }[],
+  ) => Promise<boolean>;
 }
 
 /**
@@ -34,7 +45,7 @@ export interface TopicLevelContext {
  */
 export function useTopicLevel(deckId: string): TopicLevelContext {
   const searchParams = useSearchParams();
-  const { language } = useLanguage();
+  const { language, learningLanguage } = useLanguage();
   const saved = useRef<string | null>(null);
 
   const topicId = searchParams.get("topicId") ?? "";
@@ -58,12 +69,33 @@ export function useTopicLevel(deckId: string): TopicLevelContext {
     saveTopicsState(language, nextState);
   }, [language, level, topicId]);
 
+  const isLegendaryRound =
+    Boolean(topicId) && searchParams.get("legendary") === "1";
+
+  const submitLegendaryResults = useCallback(
+    async (results: { deckWordId: string; correct: boolean }[]) => {
+      if (!topicId || !isLegendaryRound) {
+        return false;
+      }
+      return submitLegendaryRound({
+        language,
+        foreignLang: learningLanguage,
+        topicId,
+        results,
+      });
+    },
+    [isLegendaryRound, language, learningLanguage, topicId],
+  );
+
   return {
     topicId,
     level,
+    isLegendaryRound,
+    submitLegendaryResults,
     // A custom deck opened straight from /my-decks has no level ladder, so it
-    // must keep drawing from the whole deck.
-    deckLevel: topicId ? level : undefined,
+    // must keep drawing from the whole deck — and so does the legendary round,
+    // which is a review of the pack rather than of one of its levels.
+    deckLevel: topicId && !isLegendaryRound ? level : undefined,
     backHref: topicId
       ? `/topics/${encodeURIComponent(topicId)}`
       : deckId

@@ -180,8 +180,16 @@ export const translations: Record<Language, Translations> = {
       markComplete: "Mark complete",
       completedTitle: "Topic completed",
       completedText: "You earned a key. Return to topics to unlock a new pack.",
-      ascend: "Ascend this pack",
-      ascended: "Ascended",
+      legendary: "Legendary",
+      legendaryTitle: "Legendary pack",
+      legendaryText:
+        "You cleared the review round. Come back any time to keep these words sharp.",
+      legendaryHint: "30 words - score 85% to make this pack legendary.",
+      keyEarnedTitle: "You earned a key!",
+      keyEarnedText:
+        "Every level of this pack is done. Spend the key to unlock a new pack - or go for the crown.",
+      spendKey: "Unlock a new pack",
+      stayHere: "Stay on this pack",
     },
     leaderboard: {
       title: "Friends League",
@@ -365,8 +373,16 @@ export const translations: Record<Language, Translations> = {
       completedTitle: "Tema dokonceno",
       completedText:
         "Ziskali jste klic. Vratte se na temata a odemknete novy balicek.",
-      ascend: "Povysit tento balicek",
-      ascended: "Povyseno",
+      legendary: "Legendarni",
+      legendaryTitle: "Legendarni balicek",
+      legendaryText:
+        "Zvladli jste opakovaci kolo. Vratte se kdykoli, at slovicka zustanou v hlave.",
+      legendaryHint: "30 slov - ziskejte 85 % a balicek bude legendarni.",
+      keyEarnedTitle: "Ziskali jste klic!",
+      keyEarnedText:
+        "Vsechny urovne tohoto balicku jsou hotove. Utratte klic za novy balicek - nebo si dojdete pro korunu.",
+      spendKey: "Odemknout novy balicek",
+      stayHere: "Zustat u tohoto balicku",
     },
     leaderboard: {
       title: "Liga přátel",
@@ -554,8 +570,16 @@ export const translations: Record<Language, Translations> = {
       completedTitle: "Thema abgeschlossen",
       completedText:
         "Du hast einen Schlussel erhalten. Gehe zur Themenubersicht, um ein neues Paket zu entsperren.",
-      ascend: "Dieses Paket aufwerten",
-      ascended: "Aufgewertet",
+      legendary: "Legendar",
+      legendaryTitle: "Legendares Paket",
+      legendaryText:
+        "Du hast die Wiederholungsrunde geschafft. Komm jederzeit wieder, damit die Worter sitzen.",
+      legendaryHint: "30 Worter - erreiche 85 %, damit das Paket legendar wird.",
+      keyEarnedTitle: "Du hast einen Schlussel erhalten!",
+      keyEarnedText:
+        "Alle Level dieses Pakets sind fertig. Loese damit ein neues Paket ein - oder hole dir die Krone.",
+      spendKey: "Neues Paket freischalten",
+      stayHere: "Bei diesem Paket bleiben",
     },
     leaderboard: {
       title: "Freunde-Rangliste",
