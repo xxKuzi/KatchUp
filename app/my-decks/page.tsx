@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../_lib/languageContext";
 import { useAuthState } from "../_lib/auth";
-import { DeckMeta, ApiError, listDecks } from "../games/_lib/deckSessionClient";
+import {
+  DeckMeta,
+  ApiError,
+  createDeck,
+  listDecks,
+} from "../games/_lib/deckSessionClient";
 import DeckProgress from "@/app/_components/DeckProgress";
+import WordCountSelect from "./_components/WordCountSelect";
 
 export default function MyDecksOverview() {
   const { t, language, learningLanguage } = useLanguage();
@@ -13,6 +19,23 @@ export default function MyDecksOverview() {
   const [decks, setDecks] = useState<DeckMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
+
+  // AI deck generation, mirroring the editor's panel.
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiCount, setAiCount] = useState(20);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiRemaining, setAiRemaining] = useState<number | null>(null);
+  const [aiLimit, setAiLimit] = useState(2);
+
+  const refreshDecks = useCallback(async () => {
+    const data = await listDecks({
+      nativeLang: language,
+      foreignLang: learningLanguage,
+    });
+    setDecks(data.decks);
+    return data.decks;
+  }, [language, learningLanguage]);
 
   useEffect(() => {
     if (isReady && !isSignedIn) {
@@ -26,7 +49,7 @@ export default function MyDecksOverview() {
 
     let cancelled = false;
     setLoading(true);
-    listDecks()
+    listDecks({ nativeLang: language, foreignLang: learningLanguage })
       .then((data) => {
         if (!cancelled) {
           setDecks(data.decks);
@@ -46,7 +69,87 @@ export default function MyDecksOverview() {
     return () => {
       cancelled = true;
     };
-  }, [isSignedIn, isReady]);
+  }, [isSignedIn, isReady, language, learningLanguage]);
+
+  // How many AI decks are still allowed today.
+  useEffect(() => {
+    if (!isSignedIn) {
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/decks/generate")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.remaining === "number") {
+          setAiRemaining(data.remaining);
+          if (typeof data.limit === "number") setAiLimit(data.limit);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn]);
+
+  const handleGenerateDeck = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAiError("");
+    const topic = aiTopic.trim();
+    if (!topic) {
+      setAiError(t("myDecks.ai.enterTopic", "Enter a topic first."));
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/decks/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          nativeLang: language,
+          foreignLang: learningLanguage,
+          count: aiCount,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setAiError(
+          data?.error ?? t("myDecks.ai.failed", "Failed to generate deck."),
+        );
+        if (typeof data?.remaining === "number") setAiRemaining(data.remaining);
+        return;
+      }
+
+      const words = Array.isArray(data?.words)
+        ? data.words
+            .map((word: { native?: string; foreign?: string }) => ({
+              native: (word.native ?? "").trim(),
+              foreign: (word.foreign ?? "").trim(),
+            }))
+            .filter(
+              (word: { native: string; foreign: string }) =>
+                word.native && word.foreign,
+            )
+        : [];
+
+      await createDeck({
+        name: topic,
+        nativeLang: language,
+        foreignLang: learningLanguage,
+        words,
+      });
+      await refreshDecks();
+      setAiTopic("");
+      if (typeof data?.remaining === "number") setAiRemaining(data.remaining);
+    } catch {
+      setAiError(
+        t("myDecks.ai.failed", "Something went wrong. Please try again."),
+      );
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const filteredDecks = useMemo(
     () =>
@@ -69,6 +172,62 @@ export default function MyDecksOverview() {
     );
     return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
   }, [filteredDecks]);
+
+  // Shaped like a deck card so it sits in the grid as the first tile — top-left
+  // on desktop — rather than as a separate panel above the decks.
+  const aiCard = (
+    <article className="flex flex-col rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900/60 dark:bg-violet-950/40">
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+          ✨ {t("myDecks.ai.title", "Generate with AI")}
+        </h4>
+        {aiRemaining !== null && (
+          <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-900/60 dark:text-violet-200">
+            {aiRemaining}/{aiLimit} {t("myDecks.ai.leftToday", "left today")}
+          </span>
+        )}
+      </div>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+        {t("myDecks.ai.description", "Describe a topic and let AI build the deck for you.")}
+      </p>
+
+      <form className="mt-4 space-y-3" onSubmit={handleGenerateDeck}>
+        <input
+          type="text"
+          value={aiTopic}
+          onChange={(event) => setAiTopic(event.target.value)}
+          placeholder={t("myDecks.ai.placeholder", "e.g. Ordering food at a café")}
+          maxLength={100}
+          disabled={aiLoading}
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        />
+        <label className="flex items-center justify-between gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+          {t("myDecks.ai.words", "Words")}
+          <WordCountSelect
+            value={aiCount}
+            onChange={setAiCount}
+            disabled={aiLoading}
+          />
+        </label>
+        {aiError && (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300">
+            {aiError}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={aiLoading || aiRemaining === 0}
+          className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-violet-500 dark:hover:bg-violet-400"
+        >
+          {aiLoading
+            ? t("myDecks.ai.generating", "Generating…")
+            : aiRemaining === 0
+              ? t("myDecks.ai.limitReached", "Daily limit reached")
+              : t("myDecks.ai.generate", "Generate deck")}
+        </button>
+      </form>
+    </article>
+  );
 
   return (
     <div className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
@@ -119,17 +278,21 @@ export default function MyDecksOverview() {
               {t("common.loading", "Loading…")}
             </div>
           ) : groupEntries.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              {t("common.noDecksYet")}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {aiCard}
+              <div className="flex items-center justify-center rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                {t("common.noDecksYet")}
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
-              {groupEntries.map(([languagePair, group]) => (
+              {groupEntries.map(([languagePair, group], groupIndex) => (
                 <div key={languagePair} className="space-y-3">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {languagePair}
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {groupIndex === 0 && aiCard}
                     {group.map((deck) => (
                       <article
                         key={deck.id}

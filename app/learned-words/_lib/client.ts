@@ -4,7 +4,7 @@ export interface LearnedWordItem {
   foreign: string;
   source: "deck" | "lecture";
   sourceLabel: string;
-  status: "learned" | "skipped";
+  status: "learned" | "practicing";
   times: number | null;
   updatedAt: string | null;
 }

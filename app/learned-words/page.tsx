@@ -173,7 +173,7 @@ function LearnedWordRow({
           ? `${t("learnedWords.learned")}${
               item.times != null ? ` ×${item.times}` : ""
             }`
-          : t("learnedWords.skipped")}
+          : t("learnedWords.inPractice")}
       </span>
     </li>
   );

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { isLang } from "@/app/_lib/languages";
 import {
   WordInput,
   createCustomDeck,
+  ensureDefaultDeck,
   listCustomDecks,
   listDecksForUser,
 } from "./_lib/deckStore";
@@ -27,6 +29,15 @@ export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // The pair the client is studying. When it is known, make sure the account
+  // owns a starter deck for it before listing, so a fresh user never sees an
+  // empty deck list.
+  const nativeLang = request.nextUrl.searchParams.get("nativeLang");
+  const foreignLang = request.nextUrl.searchParams.get("foreignLang");
+  if (isLang(nativeLang) && isLang(foreignLang)) {
+    await ensureDefaultDeck(session.user.id, nativeLang, foreignLang);
   }
 
   // ?scope=all also returns the shared topic decks; default is custom only.

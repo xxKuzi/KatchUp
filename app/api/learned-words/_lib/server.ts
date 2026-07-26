@@ -8,7 +8,7 @@ export interface LearnedWordItem {
   foreign: string;
   source: "deck";
   sourceLabel: string;
-  status: "learned" | "skipped";
+  status: "learned" | "practicing";
   times: number | null;
   updatedAt: string | null;
 }
@@ -43,7 +43,9 @@ async function fetchDeckItems(userId: string): Promise<LearnedWordItem[]> {
     foreign: row.foreign,
     source: "deck",
     sourceLabel: row.deckName,
-    status: row.known ? "learned" : "skipped",
+    // Anything short of mastery is still in rotation — it was never a word the
+    // user chose to skip, so the label says so.
+    status: row.known ? "learned" : "practicing",
     times: row.timesCorrect,
     updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,
   }));
@@ -62,7 +64,13 @@ export async function fetchLearnedWords(
   page: number,
   pageSize: number,
 ): Promise<LearnedWordsPage> {
+  // Learned words come first — the page is what the user has to show for the
+  // practice, so the mastered ones lead and the in-practice tail follows.
+  // Recency orders each group.
   const all = (await fetchDeckItems(userId)).sort((a, b) => {
+    if (a.status !== b.status) {
+      return a.status === "learned" ? -1 : 1;
+    }
     const aTime = a.updatedAt ? Date.parse(a.updatedAt) : 0;
     const bTime = b.updatedAt ? Date.parse(b.updatedAt) : 0;
     return bTime - aTime;

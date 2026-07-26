@@ -6,7 +6,6 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSession } from "@/lib/auth-client";
-import { useStartPlayingModal } from "./_components/StartPlayingModalProvider";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -379,12 +378,58 @@ function SpotlightCard({
   );
 }
 
+/**
+ * One of the two buttons under the hero headline.
+ *
+ * The look is a slot rather than a fixed property of either action: the blue
+ * one is whatever the visitor is most likely here to do, which is signing up
+ * while signed out and playing once signed in. Both keep their position either
+ * way, so the pair never rearranges itself under someone who just logged in.
+ */
+function HeroButton({
+  look,
+  onClick,
+  children,
+}: {
+  look: "blue" | "dark";
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  if (look === "blue") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="relative overflow-hidden group inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 px-7 py-3.5 font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 dark:from-blue-500 dark:to-indigo-500"
+      >
+        {/* Shimmer line */}
+        <div
+          className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full group-hover:animate-[shimmer_0.75s_ease-out]"
+          style={{ content: '""' }}
+        />
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="relative group inline-flex cursor-pointer items-center justify-center rounded-xl bg-slate-900 px-7 py-3.5 font-bold text-slate-100 border border-slate-800 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-950 dark:text-white dark:border-slate-850 dark:hover:border-slate-700"
+    >
+      {/* Glow border on hover */}
+      <div className="absolute -inset-px rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 opacity-0 group-hover:opacity-30 blur-xs transition-opacity duration-300 pointer-events-none" />
+      <span className="relative z-10 flex items-center gap-1.5">{children}</span>
+    </button>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const { data: session } = useSession();
-  const { openModal } = useStartPlayingModal();
 
   useGSAP(
     () => {
@@ -729,47 +774,27 @@ export default function Home() {
 
             <div className="hero-item mt-10 flex w-full max-w-md flex-col gap-4 sm:flex-row sm:justify-center">
               {session ? (
-                <button
-                  type="button"
+                <HeroButton
+                  look="dark"
                   onClick={() => router.push("/my-decks")}
-                  className="relative overflow-hidden group inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 px-7 py-3.5 font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 dark:from-blue-500 dark:to-indigo-500"
                 >
-                  {/* Shimmer line */}
-                  <div
-                    className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full group-hover:animate-[shimmer_0.75s_ease-out]"
-                    style={{ content: '""' }}
-                  />
                   Go to Decks
-                </button>
+                </HeroButton>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => router.push("/login")}
-                  className="relative overflow-hidden group inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 px-7 py-3.5 font-bold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 dark:from-blue-500 dark:to-indigo-500"
-                >
-                  {/* Shimmer line */}
-                  <div
-                    className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full group-hover:animate-[shimmer_0.75s_ease-out]"
-                    style={{ content: '""' }}
-                  />
+                <HeroButton look="blue" onClick={() => router.push("/login")}>
                   Login / Register
-                </button>
+                </HeroButton>
               )}
 
-              <button
-                type="button"
-                onClick={openModal}
-                className="relative group inline-flex cursor-pointer items-center justify-center rounded-xl bg-slate-900 px-7 py-3.5 font-bold text-slate-100 border border-slate-800 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-950 dark:text-white dark:border-slate-850 dark:hover:border-slate-700"
+              <HeroButton
+                look={session ? "blue" : "dark"}
+                onClick={() => router.push("/games")}
               >
-                {/* Glow border on hover */}
-                <div className="absolute -inset-px rounded-xl bg-linear-to-r from-cyan-500 to-blue-500 opacity-0 group-hover:opacity-30 blur-xs transition-opacity duration-300 pointer-events-none" />
-                <span className="relative z-10 flex items-center gap-1.5">
-                  Start Playing
-                  <span className="transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
+                Start Playing
+                <span className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
                 </span>
-              </button>
+              </HeroButton>
             </div>
           </div>
         </section>

@@ -3,9 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/Navbar";
 import OnboardingGate from "./_components/OnboardingGate";
+import ScrollToTop from "./_components/ScrollToTop";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./_lib/languageContext";
-import { StartPlayingModalProvider } from "./_components/StartPlayingModalProvider";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/lib/auth-client";
 
@@ -44,12 +44,11 @@ export default async function RootLayout({
         >
           <SessionProvider session={session}>
             <LanguageProvider>
-              <StartPlayingModalProvider>
-                <Navbar />
-                <main className="pb-20 lg:pb-0">
-                  <OnboardingGate>{children}</OnboardingGate>
-                </main>
-              </StartPlayingModalProvider>
+              <ScrollToTop />
+              <Navbar />
+              <main className="pb-20 lg:pb-0">
+                <OnboardingGate>{children}</OnboardingGate>
+              </main>
             </LanguageProvider>
           </SessionProvider>
         </ThemeProvider>

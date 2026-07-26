@@ -761,7 +761,7 @@ export default function ChooseOneMultiplayerPlayPage() {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 text-white font-sans">
         <div className="text-center animate-pulse">
-          <span className="text-xs uppercase tracking-widest text-emerald-400 font-extrabold">
+          <span className="text-xs uppercase tracking-widest text-blue-400 font-extrabold">
             Get Ready
           </span>
           <h1 className="mt-4 text-9xl font-black tracking-tight text-white transition-all duration-300 transform scale-110">
@@ -860,7 +860,7 @@ export default function ChooseOneMultiplayerPlayPage() {
                       ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : isWrongPick
                         ? "border-rose-500 bg-rose-50 text-rose-800 dark:border-rose-500 dark:bg-rose-950/40 dark:text-rose-300"
-                        : "border-zinc-300 text-zinc-800 hover:border-emerald-500 hover:bg-emerald-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                        : "border-zinc-300 text-zinc-800 hover:border-blue-500 hover:bg-blue-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
                   } ${reveal && !isCorrectOption && !isWrongPick ? "opacity-60" : ""}`}
                   onClick={() => void handleAnswer(option)}
                   disabled={isSubmitting}
@@ -912,7 +912,7 @@ export default function ChooseOneMultiplayerPlayPage() {
                 the lobby.
               </p>
               <button
-                className="mt-5 rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white transition hover:bg-emerald-500"
+                className="mt-5 rounded-xl bg-blue-500 px-5 py-2 font-semibold text-white transition hover:bg-blue-400"
                 onClick={backToPregame}
               >
                 Back to lobby
@@ -976,7 +976,7 @@ export default function ChooseOneMultiplayerPlayPage() {
                     `/login?callbackUrl=${encodeURIComponent("/")}`,
                   )
                 }
-                className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                className="mt-3 w-full rounded-xl bg-blue-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
               >
                 Sign in to keep playing
               </button>
@@ -986,7 +986,7 @@ export default function ChooseOneMultiplayerPlayPage() {
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
-              className="rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white transition hover:bg-emerald-500"
+              className="rounded-xl bg-blue-500 px-5 py-2 font-semibold text-white transition hover:bg-blue-400"
               onClick={restartMatch}
             >
               Play Again

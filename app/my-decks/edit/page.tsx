@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../_lib/languageContext";
 import { useAuthState } from "../../_lib/auth";
-import { LANGUAGES, Language } from "../../_lib/translations";
+import { LANG_LABELS } from "../../_lib/languages";
+import WordCountSelect from "../_components/WordCountSelect";
 import {
   DeckMeta,
   DeckWithWords,
@@ -54,10 +55,13 @@ function DeckEditorPage() {
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
 
   const refreshDecks = useCallback(async (): Promise<DeckMeta[]> => {
-    const data = await listDecks();
+    const data = await listDecks({
+      nativeLang: language,
+      foreignLang: learningLanguage,
+    });
     setDecks(data.decks);
     return data.decks;
-  }, []);
+  }, [language, learningLanguage]);
 
   // Initial load: list the user's decks and pick the requested / first one.
   useEffect(() => {
@@ -361,9 +365,10 @@ function DeckEditorPage() {
               )}
             </div>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Describe a topic and let AI build a deck for{" "}
-              {LANGUAGES[language as Language]} →{" "}
-              {LANGUAGES[learningLanguage as Language]}.
+              Describe a topic and let AI build the deck.
+            </p>
+            <p className="mt-1 text-sm font-medium text-violet-700 dark:text-violet-300">
+              {LANG_LABELS[language]} → {LANG_LABELS[learningLanguage]}
             </p>
 
             {!isReady ? null : !isSignedIn ? (
@@ -383,18 +388,11 @@ function DeckEditorPage() {
                 />
                 <label className="flex items-center justify-between gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                   Words
-                  <select
+                  <WordCountSelect
                     value={aiCount}
-                    onChange={(event) => setAiCount(Number(event.target.value))}
+                    onChange={setAiCount}
                     disabled={aiLoading}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  >
-                    {[20, 35, 50].map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
                 {aiError && (
                   <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300">
@@ -463,7 +461,7 @@ function DeckEditorPage() {
                   autoFocus
                   value={quickDeckName}
                   onChange={(event) => setQuickDeckName(event.target.value)}
-                  placeholder={`Deck name (${LANGUAGES[language as Language]} → ${LANGUAGES[learningLanguage as Language]})`}
+                  placeholder={`Deck name (${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]})`}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
                 <button

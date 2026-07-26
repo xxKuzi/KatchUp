@@ -127,11 +127,21 @@ async function apiFetch<T>(
   return data as T;
 }
 
-export async function listDecks(
-  scope?: "all",
-): Promise<{ decks: DeckMeta[] }> {
-  const query = scope ? `?scope=${scope}` : "";
-  return apiFetch(`/api/decks${query}`);
+/**
+ * Lists decks. Passing the language pair the user is studying also lets the
+ * server create their starter deck if they own no custom deck for it yet.
+ */
+export async function listDecks(options?: {
+  scope?: "all";
+  nativeLang?: string;
+  foreignLang?: string;
+}): Promise<{ decks: DeckMeta[] }> {
+  const params = new URLSearchParams();
+  if (options?.scope) params.set("scope", options.scope);
+  if (options?.nativeLang) params.set("nativeLang", options.nativeLang);
+  if (options?.foreignLang) params.set("foreignLang", options.foreignLang);
+  const query = params.toString();
+  return apiFetch(`/api/decks${query ? `?${query}` : ""}`);
 }
 
 export async function getDeck(deckId: string): Promise<{ deck: DeckWithWords }> {

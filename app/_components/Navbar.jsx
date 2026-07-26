@@ -20,7 +20,6 @@ import LevelBadge from "./LevelBadge";
 import { useLanguage } from "../_lib/languageContext";
 import { useEnergy, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
-import { useStartPlayingModal } from "./StartPlayingModalProvider";
 
 function getInitials(value) {
   const trimmed = (value || "").trim();
@@ -45,7 +44,6 @@ function Navbar() {
   const energy = useEnergy();
   const reset = useResetCountdown();
   const { data: session, status } = useSession();
-  const { openModal } = useStartPlayingModal();
   const [menuOpen, setMenuOpen] = useState(false);
   const [energyPopoverOpen, setEnergyPopoverOpen] = useState(false);
   const [langModalOpen, setLangModalOpen] = useState(false);
@@ -76,10 +74,6 @@ function Navbar() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const handleNavigate = (href) => {
-    if (gateActive && href === "/games") {
-      openModal();
-      return;
-    }
     router.push(href);
   };
 

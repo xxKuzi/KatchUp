@@ -582,7 +582,7 @@ const ChooseOneMultiplayerPage = () => {
               onClick={() => chooseMatchSettings("fair")}
               className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                 matchSettings === "fair"
-                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 ring-2 ring-blue-500/20"
                   : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
               }`}
             >
@@ -595,7 +595,7 @@ const ChooseOneMultiplayerPage = () => {
               onClick={() => chooseMatchSettings("personal")}
               className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                 matchSettings === "personal"
-                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 ring-2 ring-blue-500/20"
                   : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
               }`}
             >
@@ -613,7 +613,7 @@ const ChooseOneMultiplayerPage = () => {
           <div className="flex w-full max-w-md mt-6 flex-col items-center gap-3">
             <button
               onClick={() => void startFindingOpponent()}
-              className="w-full rounded-xl bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-emerald-500"
+              className="w-full rounded-xl bg-blue-500 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-blue-400"
             >
               Start Live Duel
             </button>
@@ -642,7 +642,7 @@ const ChooseOneMultiplayerPage = () => {
             </p>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                className="h-full rounded-full bg-blue-400 transition-all duration-500"
                 style={{ width: `${25 + searchPulse * 25}%` }}
               />
             </div>
@@ -655,7 +655,7 @@ const ChooseOneMultiplayerPage = () => {
               </button>
               <button
                 onClick={startBotDuel}
-                className="rounded-xl border border-blue-200 bg-blue-50/50 px-6 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50 dark:border-blue-800/40 dark:bg-blue-950/10 dark:text-blue-300 dark:hover:bg-blue-950/20 transition"
+                className="rounded-xl border border-zinc-200 bg-white px-6 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition"
               >
                 Duel the bot instead
               </button>
@@ -679,7 +679,7 @@ const ChooseOneMultiplayerPage = () => {
               <img
                 src={opponent.avatar}
                 alt={opponent.name}
-                className="h-16 w-16 rounded-full border-2 border-emerald-400 object-cover"
+                className="h-16 w-16 rounded-full border-2 border-blue-400 object-cover"
               />
               <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500" />
             </div>
@@ -690,7 +690,7 @@ const ChooseOneMultiplayerPage = () => {
             {matchState === "found" ? (
               <>
                 <button
-                  className="w-full rounded-xl bg-emerald-600 px-8 py-3 text-base font-semibold text-white transition hover:bg-emerald-500"
+                  className="w-full rounded-xl bg-blue-500 px-8 py-3 text-base font-semibold text-white transition hover:bg-blue-400"
                   onClick={() => void acceptMatch()}
                 >
                   Accept duel
@@ -706,7 +706,7 @@ const ChooseOneMultiplayerPage = () => {
                 </p>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
                   <div
-                    className="h-full rounded-full bg-emerald-500 transition-all duration-1000"
+                    className="h-full rounded-full bg-blue-400 transition-all duration-1000"
                     style={{
                       width: `${(acceptSecondsLeft / ACCEPT_WINDOW_S) * 100}%`,
                     }}
