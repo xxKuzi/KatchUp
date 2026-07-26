@@ -30,6 +30,8 @@ export interface DeckSession {
   deckId: string;
   deckName: string;
   mode: "practice" | "finish";
+  /** Topic level this session covers, or null for the whole deck. */
+  level: number | null;
   words: SessionWord[];
   summary: DeckProgressSummary;
 }
@@ -143,11 +145,17 @@ export async function deleteDeck(deckId: string): Promise<{ ok: boolean }> {
 
 export async function fetchSession(
   deckId: string,
-  options: { mode?: "practice" | "finish"; size?: number } = {},
+  options: {
+    mode?: "practice" | "finish";
+    size?: number;
+    /** Topic level 1..5; scopes the round to that level's slice of the deck. */
+    level?: number;
+  } = {},
 ): Promise<DeckSession> {
   const params = new URLSearchParams();
   if (options.mode) params.set("mode", options.mode);
   if (options.size) params.set("size", String(options.size));
+  if (options.level) params.set("level", String(options.level));
   const query = params.toString();
   return apiFetch(`/api/decks/${deckId}/session${query ? `?${query}` : ""}`);
 }
@@ -159,9 +167,11 @@ export async function fetchSession(
  */
 export async function fetchDeckProgress(
   deckId: string,
+  level?: number,
 ): Promise<DeckProgressSummary> {
+  const query = level ? `?level=${level}` : "";
   const data = await apiFetch<{ progress: DeckProgressSummary }>(
-    `/api/decks/${deckId}/progress`,
+    `/api/decks/${deckId}/progress${query}`,
   );
   return data.progress;
 }

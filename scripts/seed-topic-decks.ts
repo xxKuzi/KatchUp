@@ -6,6 +6,7 @@
  * word_concepts / concept_translations.
  *
  *   npx tsx scripts/seed-topic-decks.ts
+ *   npx tsx scripts/seed-topic-decks.ts --top-up   # grow existing decks
  */
 
 import { loadEnv } from "./_lib/conceptGen";
@@ -13,9 +14,8 @@ import { loadEnv } from "./_lib/conceptGen";
 loadEnv();
 
 async function run() {
-  const { seedTopicDecks, refreshTopicDeckWords } = await import(
-    "../app/api/decks/_lib/deckStore"
-  );
+  const { seedTopicDecks, refreshTopicDeckWords, topUpTopicDeckWords } =
+    await import("../app/api/decks/_lib/deckStore");
 
   // Rewrites words in decks that already exist. Destructive — it drops the
   // per-word stats users accumulated on those decks.
@@ -23,6 +23,15 @@ async function run() {
     const refreshed = await refreshTopicDeckWords();
     console.log(
       `Refreshed ${refreshed.refreshedDecks} existing decks (${refreshed.replacedWords} words replaced).`,
+    );
+  }
+
+  // Appends seed words that existing decks are missing. Non-destructive — run
+  // this after growing a topic's word list.
+  if (process.argv.includes("--top-up")) {
+    const toppedUp = await topUpTopicDeckWords();
+    console.log(
+      `Topped up ${toppedUp.toppedUpDecks} existing decks (${toppedUp.addedWords} words added).`,
     );
   }
 

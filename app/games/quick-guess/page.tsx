@@ -25,6 +25,15 @@ interface PracticeWord {
   foreign: string;
 }
 
+// Shared by the round and its status screens so the hero copy never changes
+// height between "loading" and the game itself.
+const GATE = {
+  name: "Speed Spelling",
+  description:
+    "Type the correct word before the timer runs out. Reach 70% to complete the lesson.",
+  bgImage: "flip_cards.png",
+};
+
 const QUESTION_SECONDS = 12;
 const MAX_WORDS = 10;
 const CORRECT_ADVANCE_DELAY_MS = 700;
@@ -121,7 +130,7 @@ const QuickGuessPage = () => {
 
   // Deck path: gate on auth/session status before rendering the round.
   if (deckId) {
-    const gate = { name: "Speed Spelling", description: "Type the correct word before the timer runs out.", bgImage: "flip_cards.png" };
+    const gate = GATE;
     if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
       return (
         <DeckMessage
@@ -390,11 +399,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
     : `Lesson ${safeLevel}`;
 
   return (
-    <GamePage
-      name="Speed Spelling"
-      description="Type the correct word before the timer runs out. Reach 70% to complete the lesson."
-      bgImage="flip_cards.png"
-    >
+    <GamePage {...GATE}>
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-sky-300 via-cyan-300 to-teal-300 p-5 dark:from-sky-700 dark:via-cyan-700 dark:to-teal-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-sky-100">

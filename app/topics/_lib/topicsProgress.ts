@@ -1,16 +1,17 @@
 "use client";
 
-import { Language } from "@/app/_lib/translations";
+import { useSyncExternalStore } from "react";
 import type { Lang } from "@/app/_lib/languages";
 
 export type GameMode = "flip-cards" | "one-of-three";
 
 export interface TopicDefinition {
   id: string;
-  icon: string;
   color: "yellow" | "red" | "blue" | "green";
-  names: Record<Language, string>;
-  descriptions: Record<Language, string>;
+  // Keyed by Lang so a topic can be shown in the language being learned, not
+  // just in the three languages the UI happens to be translated into.
+  names: Record<Lang, string>;
+  descriptions: Record<Lang, string>;
 }
 
 export interface TopicLevel {
@@ -36,77 +37,82 @@ const STORAGE_KEY = "katchup-topics-state-v1";
 export const TOPICS: TopicDefinition[] = [
   {
     id: "autos",
-    icon: "AUTO",
     color: "yellow",
     names: {
-      english: "Cars",
-      czech: "Auta",
-      deutsch: "Autos",
+      en: "Cars",
+      cs: "Auta",
+      de: "Autos",
+      es: "Coches",
     },
     descriptions: {
-      english: "Road words and driving basics",
-      czech: "Silnicni slova a zaklady rizeni",
-      deutsch: "Worter fur Strasse und Fahren",
+      en: "Road words and driving basics",
+      cs: "Silnicni slova a zaklady rizeni",
+      de: "Worter fur Strasse und Fahren",
+      es: "Palabras de carretera y conduccion basica",
     },
   },
   {
     id: "essen",
-    icon: "FOOD",
     color: "red",
     names: {
-      english: "Food",
-      czech: "Jidlo",
-      deutsch: "Essen",
+      en: "Food",
+      cs: "Jidlo",
+      de: "Essen",
+      es: "Comida",
     },
     descriptions: {
-      english: "Meals, drinks and table talk",
-      czech: "Jidla, napoje a konverzace u stolu",
-      deutsch: "Mahlzeiten, Getranke und Tischgesprache",
+      en: "Meals, drinks and table talk",
+      cs: "Jidla, napoje a konverzace u stolu",
+      de: "Mahlzeiten, Getranke und Tischgesprache",
+      es: "Comidas, bebidas y conversacion en la mesa",
     },
   },
   {
     id: "obst-gemuese",
-    icon: "FRUIT",
     color: "green",
     names: {
-      english: "Fruits & Vegetables",
-      czech: "Ovoce a zelenina",
-      deutsch: "Obst & Gemuse",
+      en: "Fruits & Vegetables",
+      cs: "Ovoce a zelenina",
+      de: "Obst & Gemuse",
+      es: "Frutas y verduras",
     },
     descriptions: {
-      english: "Fresh words from market life",
-      czech: "Cerstva slovni zasoba z trhu",
-      deutsch: "Frische Worter aus dem Marktalltag",
+      en: "Fresh words from market life",
+      cs: "Cerstva slovni zasoba z trhu",
+      de: "Frische Worter aus dem Marktalltag",
+      es: "Vocabulario fresco del mercado",
     },
   },
   {
     id: "reisen",
-    icon: "TRAVEL",
     color: "blue",
     names: {
-      english: "Travel",
-      czech: "Cestovani",
-      deutsch: "Reisen",
+      en: "Travel",
+      cs: "Cestovani",
+      de: "Reisen",
+      es: "Viajes",
     },
     descriptions: {
-      english: "Transport, hotel and booking vocab",
-      czech: "Doprava, hotel a rezervace",
-      deutsch: "Verkehr, Hotel und Buchungswortschatz",
+      en: "Transport, hotel and booking vocab",
+      cs: "Doprava, hotel a rezervace",
+      de: "Verkehr, Hotel und Buchungswortschatz",
+      es: "Transporte, hotel y reservas",
     },
   },
   {
     id: "alltag",
-    icon: "DAILY",
     color: "yellow",
     names: {
-      english: "Daily Life",
-      czech: "Kazdy den",
-      deutsch: "Alltag",
+      en: "Daily Life",
+      cs: "Kazdy den",
+      de: "Alltag",
+      es: "Vida diaria",
     },
     descriptions: {
-      english: "Routines and useful everyday phrases",
-      czech: "Rutina a uzitecne kazdodenni fraze",
-      deutsch: "Routine und nutzliche Alltagsphrasen",
+      en: "Routines and useful everyday phrases",
+      cs: "Rutina a uzitecne kazdodenni fraze",
+      de: "Routine und nutzliche Alltagsphrasen",
+      es: "Rutinas y frases utiles del dia a dia",
     },
   },
 ];
@@ -222,6 +228,83 @@ export function saveTopicsState(language: Lang, state: TopicsState): void {
   }
 
   window.localStorage.setItem(getStorageKey(language), JSON.stringify(state));
+  listeners.forEach((listener) => listener());
+}
+
+// --- Reading the state during render -----------------------------------------
+//
+// Progress lives in localStorage, which the server can't see, so reading it
+// straight into render made the server send `keys: 0` while the client rendered
+// the real number — a hydration mismatch. useSyncExternalStore is the supported
+// way out: React renders the server snapshot (defaults) through hydration, then
+// swaps in the stored one, and `saveTopicsState` notifies every subscriber so
+// two topic views never drift apart.
+
+const listeners = new Set<() => void>();
+
+/** The parsed state, memoised per raw string so the snapshot is referentially
+ * stable — returning a fresh object each read would loop forever. */
+let snapshotCache: { key: string; raw: string | null; value: TopicsState } | null =
+  null;
+
+const SERVER_SNAPSHOT = createDefaultState();
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  // Another tab writing the same key counts as a change too.
+  window.addEventListener("storage", listener);
+
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+function getSnapshot(language: Lang): TopicsState {
+  const key = getStorageKey(language);
+  const raw = window.localStorage.getItem(key);
+
+  if (snapshotCache && snapshotCache.key === key && snapshotCache.raw === raw) {
+    return snapshotCache.value;
+  }
+
+  let value: TopicsState;
+  try {
+    value = raw ? normalizeState(JSON.parse(raw) as unknown) : createDefaultState();
+  } catch {
+    value = createDefaultState();
+  }
+
+  snapshotCache = { key, raw, value };
+  return value;
+}
+
+/** Topic progress for `language`, kept in sync with every write to it. */
+export function useTopicsState(language: Lang): TopicsState {
+  return useSyncExternalStore(
+    subscribe,
+    () => getSnapshot(language),
+    () => SERVER_SNAPSHOT,
+  );
+}
+
+/**
+ * True once the client has taken over.
+ *
+ * For the handful of bits that can only be known in the browser (a query param
+ * read at mount, say) — render them behind this so the hydration pass still
+ * matches the server.
+ */
+export function useHasMounted(): boolean {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
+}
+
+function subscribeNever(): () => void {
+  return () => {};
 }
 
 export function getLevelsForTopic(
@@ -312,18 +395,34 @@ export function ascendTopic(state: TopicsState, topicId: string): TopicsState {
   };
 }
 
-// Topic display copy is only written for the three UI languages; anything else
-// (Spanish) reads it in English rather than rendering undefined.
-const LANG_TO_UI: Partial<Record<Lang, Language>> = {
-  en: "english",
-  cs: "czech",
-  de: "deutsch",
-};
-
 export function topicName(topic: TopicDefinition, lang: Lang): string {
-  return topic.names[LANG_TO_UI[lang] ?? "english"];
+  return topic.names[lang] ?? topic.names.en;
+}
+
+export interface TopicTitle {
+  /** The topic in the language being learned — what the pack teaches. */
+  learning: string;
+  /** The same topic in the user's own language, or null when it reads the same. */
+  native: string | null;
+}
+
+/**
+ * A topic headline: the word you're learning first, your own language second.
+ *
+ * Showing only the UI language meant a Czech speaker learning German never saw
+ * "Autos" anywhere, which is the word the pack is actually about.
+ */
+export function topicTitle(
+  topic: TopicDefinition,
+  learningLang: Lang,
+  nativeLang: Lang,
+): TopicTitle {
+  const learning = topicName(topic, learningLang);
+  const native = topicName(topic, nativeLang);
+
+  return { learning, native: native === learning ? null : native };
 }
 
 export function topicDescription(topic: TopicDefinition, lang: Lang): string {
-  return topic.descriptions[LANG_TO_UI[lang] ?? "english"];
+  return topic.descriptions[lang] ?? topic.descriptions.en;
 }

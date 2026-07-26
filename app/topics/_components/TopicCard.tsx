@@ -14,6 +14,8 @@ import type { TopicDefinition } from "../_lib/topicsProgress";
 interface TopicCardProps {
   topic: TopicDefinition;
   title: string;
+  /** The topic in the user's own language, shown under the learned one. */
+  subtitle?: string | null;
   description: string;
   levelCount: number;
   unlocked: boolean;
@@ -82,6 +84,7 @@ const themeVariants: Record<
 function TopicCardContent({
   topic,
   title,
+  subtitle,
   description,
   levelCount,
   unlocked,
@@ -104,9 +107,14 @@ function TopicCardContent({
       <div className="relative flex h-full flex-col p-6 sm:p-7">
         <div className="flex flex-1 items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="mt- text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-[2rem]">
+            <h2 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-[2rem]">
               {title}
             </h2>
+            {subtitle && (
+              <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                {subtitle}
+              </p>
+            )}
             <p className="mt-2 mb-2 max-w-xs text-sm leading-6 text-slate-600 dark:text-slate-300">
               {description}
             </p>

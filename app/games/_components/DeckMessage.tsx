@@ -10,6 +10,8 @@ export interface DeckMessageProps {
   title: string;
   body?: string;
   backHref?: string;
+  /** Label for the back link; defaults to "Back to decks". */
+  backLabel?: string;
   action?: { label: string; onClick: () => void };
 }
 
@@ -46,7 +48,7 @@ export default function DeckMessage(props: DeckMessageProps) {
               href={props.backHref}
               className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Back to decks
+              {props.backLabel ?? "Back to decks"}
             </Link>
           )}
         </div>

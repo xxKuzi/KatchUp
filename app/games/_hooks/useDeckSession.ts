@@ -37,6 +37,8 @@ export interface UseDeckSession {
 export function useDeckSession(
   deckId: string | null,
   mode: "practice" | "finish" = "practice",
+  /** Topic level to scope the round to; omit for the whole deck. */
+  level?: number,
 ): UseDeckSession {
   const [status, setStatus] = useState<DeckSessionStatus>(
     deckId ? "loading" : "idle",
@@ -60,7 +62,7 @@ export function useDeckSession(
 
     let cancelled = false;
 
-    fetchSession(deckId, { mode })
+    fetchSession(deckId, { mode, level })
       .then((result) => {
         if (cancelled) return;
         setSession(result);
@@ -81,7 +83,7 @@ export function useDeckSession(
     return () => {
       cancelled = true;
     };
-  }, [deckId, mode, nonce]);
+  }, [deckId, mode, level, nonce]);
 
   const recordResult = useCallback((deckWordId: string, correct: boolean) => {
     const id = deckIdRef.current;

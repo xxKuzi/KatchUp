@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
+import DeckLoading from "../_components/DeckLoading";
 import {
   LANGS,
   LANG_LABELS,
@@ -15,6 +16,7 @@ import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
 import { fetchWordPairs } from "../_lib/wordPairs";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useAuthState } from "@/app/_lib/auth";
 import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
 import DeckRoundProgress from "../_components/DeckRoundProgress";
@@ -24,7 +26,8 @@ const SWIPE_THRESHOLD = 110;
 const TAP_TOLERANCE = 8;
 const GATE = {
   name: "Flip Cards",
-  description: "A calm, self-paced flashcard deck.",
+  description:
+    "A calm, self-paced flashcard deck. Tap a card to flip between your language and the translation, then swipe right if you knew it or left to keep practicing it.",
   bgImage: "flip_cards.png",
 };
 
@@ -52,7 +55,16 @@ const FlipCardsPage = () => {
   const deckId = searchParams.get("deck") ?? "";
   const sessionMode =
     searchParams.get("mode") === "finish" ? "finish" : "practice";
-  const deckSession = useDeckSession(deckId || null, sessionMode);
+
+  const {
+    topicId,
+    level: topicLevelNumber,
+    deckLevel,
+    backHref,
+    markComplete,
+  } = useTopicLevel(deckId);
+
+  const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
 
   const { speak, learning: defaultLearning } = useLanguagePair();
   const [learning, setLearning] = useState<Lang>(defaultLearning);
@@ -144,6 +156,18 @@ const FlipCardsPage = () => {
 
   const currentCard = deck[index] ?? null;
   const finished = deck.length > 0 && index >= deck.length;
+
+  // Topic levels: swiping through the whole round completes the level, and an
+  // empty round means its words are already mastered. Either way the level
+  // should stop showing as pending on the topic page.
+  const levelDone =
+    Boolean(topicId) &&
+    (finished || (deckSession.status === "empty" && sessionMode === "practice"));
+  useEffect(() => {
+    if (levelDone) {
+      markComplete();
+    }
+  }, [levelDone, markComplete]);
 
   const remaining = Math.max(deck.length - index, 0);
   const progressPercent = deck.length
@@ -240,7 +264,7 @@ const FlipCardsPage = () => {
       );
     }
     if (deckSession.status === "loading" || deckSession.status === "idle") {
-      return <DeckMessage {...GATE} title="Loading deck…" />;
+      return <DeckLoading {...GATE} variant="cards" />;
     }
     if (deckSession.status === "notfound") {
       return (
@@ -254,9 +278,17 @@ const FlipCardsPage = () => {
           title={
             sessionMode === "finish"
               ? "No hard words to review yet"
-              : "You've mastered every word in this deck! 🎉"
+              : topicId
+                ? `You've mastered every word in level ${topicLevelNumber}! 🎉`
+                : "You've mastered every word in this deck! 🎉"
           }
-          backHref="/my-decks"
+          body={
+            topicId && sessionMode !== "finish"
+              ? "Pick another level to keep going."
+              : undefined
+          }
+          backHref={backHref}
+          backLabel={topicId ? "Back to topic" : undefined}
         />
       );
     }
@@ -270,11 +302,7 @@ const FlipCardsPage = () => {
   const knownPercent = total ? Math.round((known.length / total) * 100) : 0;
 
   return (
-    <GamePage
-      name="Flip Cards"
-      description="A calm, self-paced flashcard deck. Tap a card to flip between your language and the translation, then swipe right if you knew it or left to keep practicing it."
-      bgImage="flip_cards.png"
-    >
+    <GamePage {...GATE}>
       {/* Language + progress bar */}
       <div className="w-full max-w-xl">
         {!deckId && (
@@ -299,6 +327,7 @@ const FlipCardsPage = () => {
         {deckId && deckSession.session && (
           <p className="text-center text-sm font-semibold text-zinc-600 dark:text-zinc-300">
             {deckSession.session.deckName}
+            {topicId ? ` · Level ${topicLevelNumber}` : ""}
             {sessionMode === "finish" ? " · Finish round" : ""}
           </p>
         )}
@@ -453,7 +482,13 @@ const FlipCardsPage = () => {
               </span>
             </div>
 
-            {deckId && <DeckRoundProgress deckId={deckId} className="mt-5" />}
+            {deckId && (
+              <DeckRoundProgress
+                deckId={deckId}
+                level={deckLevel}
+                className="mt-5"
+              />
+            )}
 
             <div className="mt-7 flex flex-col gap-3">
               {practice.length > 0 && (
@@ -484,10 +519,10 @@ const FlipCardsPage = () => {
               )}
               {deckId && (
                 <Link
-                  href="/my-decks"
+                  href={backHref}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
                 >
-                  Back to decks
+                  {topicId ? "Back to topic" : "Back to decks"}
                 </Link>
               )}
             </div>

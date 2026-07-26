@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useAuthState } from "@/app/_lib/auth";
@@ -9,26 +9,22 @@ import FeatureGate from "@/app/_components/FeatureGate";
 import {
   ascendTopic,
   getLevelsForTopic,
-  loadTopicsState,
   saveTopicsState,
   TOPICS,
-  topicName,
+  topicTitle,
   topicDescription,
+  useTopicsState,
 } from "../_lib/topicsProgress";
 
 export default function TopicDetailPage() {
   const params = useParams<{ topicId: string }>();
+  const router = useRouter();
   const topicId = params.topicId;
 
   const { t, language, learningLanguage } = useLanguage();
   const { isReady, isSignedIn } = useAuthState();
-  const [refreshToken, setRefreshToken] = useState(0);
   const [deckId, setDeckId] = useState<string | null>(null);
-
-  const state = useMemo(() => {
-    void refreshToken;
-    return loadTopicsState(language);
-  }, [language, refreshToken]);
+  const state = useTopicsState(language);
 
   const topic = useMemo(
     () => TOPICS.find((item) => item.id === topicId) ?? null,
@@ -77,15 +73,18 @@ export default function TopicDetailPage() {
     );
   }
 
+  const name = topicTitle(topic, learningLanguage, language);
   const topicProgress = state.topicProgress[topic.id];
   const levels = getLevelsForTopic(state, topic.id);
   const completedAll = Boolean(topicProgress?.isCompleted);
   const ascended = Boolean(topicProgress?.isAscended);
 
+  // Ascending is the last thing there is to do on a finished pack, so it hands
+  // the player back to the topic list — with `completedTopic` set, which is what
+  // makes the card celebrate and points them at the pack their key unlocks.
   const handleAscend = () => {
-    const nextState = ascendTopic(state, topic.id);
-    saveTopicsState(language, nextState);
-    setRefreshToken((value) => value + 1);
+    saveTopicsState(language, ascendTopic(state, topic.id));
+    router.push(`/topics?completedTopic=${encodeURIComponent(topic.id)}`);
   };
 
   return (
@@ -106,8 +105,13 @@ export default function TopicDetailPage() {
               ← {t("topics.back", "Back to topics")}
             </Link>
             <h1 className="mt-4 text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">
-              {topic.icon} - {topicName(topic, language)}
+              {name.learning}
             </h1>
+            {name.native && (
+              <p className="mt-1 text-lg font-semibold text-slate-500 dark:text-slate-400">
+                {name.native}
+              </p>
+            )}
             <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
               {topicDescription(topic, language)}
             </p>

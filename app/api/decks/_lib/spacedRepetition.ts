@@ -14,6 +14,8 @@ export const KNOWN_STREAK_THRESHOLD = 3;
 export const MAX_BOX = 5;
 export const DEFAULT_PRACTICE_SIZE = 10;
 export const DEFAULT_FINISH_SIZE = 20;
+// Levels a topic is split into. Mirrors the 5 levels the topics UI renders.
+export const TOPIC_LEVEL_COUNT = 5;
 
 export type SessionMode = "practice" | "finish";
 
@@ -44,7 +46,10 @@ export interface SessionResult {
   deckId: string;
   deckName: string;
   mode: SessionMode;
+  /** Topic level this session was scoped to, or null for the whole deck. */
+  level: number | null;
   words: SessionWord[];
+  /** Progress over the session's scope — the level window when one is given. */
   summary: DeckProgressSummary;
 }
 
@@ -177,12 +182,40 @@ async function enrichDeck(
 export interface SelectOptions {
   mode?: SessionMode;
   size?: number;
+  /** Topic level 1..TOPIC_LEVEL_COUNT; omit to draw from the whole deck. */
+  level?: number;
+}
+
+/**
+ * The slice of a deck a topic level owns.
+ *
+ * The five levels of a topic used to share one pool, so mastering it emptied
+ * every level at once. Each level now practices one consecutive window of the
+ * deck in seed order, which is also why `topUpTopicDeckWords` appends rather
+ * than renumbering: a word must not drift between levels.
+ */
+function levelWindow<T>(entries: T[], level: number | undefined): T[] {
+  if (!level || entries.length === 0) {
+    return entries;
+  }
+
+  const clamped = Math.min(
+    Math.max(Math.floor(level), 1),
+    TOPIC_LEVEL_COUNT,
+  );
+  const size = Math.ceil(entries.length / TOPIC_LEVEL_COUNT);
+  const window = entries.slice((clamped - 1) * size, clamped * size);
+
+  // A deck with fewer words than levels leaves later windows empty; serving the
+  // whole deck beats serving an empty round.
+  return window.length > 0 ? window : entries;
 }
 
 /**
  * Picks the words for a practice session. Practice mode drops known words and
  * weights the rest toward unseen / most-failed / least-recently-seen. Finish
  * mode returns the hardest previously-failed words for an end-of-deck review.
+ * Passing a `level` narrows both the pool and the summary to that level's slice.
  * Returns null if the deck is not accessible to the user.
  */
 export async function selectSessionWords(
@@ -195,7 +228,7 @@ export async function selectSessionWords(
     return null;
   }
 
-  const enriched = await enrichDeck(userId, deck);
+  const enriched = levelWindow(await enrichDeck(userId, deck), options.level);
   const summary = buildSummary(enriched);
   const mode: SessionMode = options.mode === "finish" ? "finish" : "practice";
 
@@ -218,6 +251,7 @@ export async function selectSessionWords(
     deckId: deck.id,
     deckName: deck.name,
     mode,
+    level: options.level ?? null,
     words: chosen.map(presentWord),
     summary,
   };
@@ -361,16 +395,21 @@ export async function setWordKnown(
   return { ok: true };
 }
 
-/** Lightweight progress counts for a deck, for list/finish-gating UI. */
+/**
+ * Lightweight progress counts for a deck, for list/finish-gating UI. Pass a
+ * `level` to count only that level's slice, matching what a level's session
+ * actually practices.
+ */
 export async function getDeckProgress(
   userId: string,
   deckId: string,
+  level?: number,
 ): Promise<DeckProgressSummary | null> {
   const deck = await getDeckForUser(deckId, userId);
   if (!deck) {
     return null;
   }
-  return buildSummary(await enrichDeck(userId, deck));
+  return buildSummary(levelWindow(await enrichDeck(userId, deck), level));
 }
 
 /**

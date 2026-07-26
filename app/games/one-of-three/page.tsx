@@ -1,17 +1,12 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
-import { useLanguage } from "@/app/_lib/languageContext";
-import type { Lang } from "@/app/_lib/languages";
-import {
-  completeTopicLevel,
-  loadTopicsState,
-  saveTopicsState,
-} from "@/app/topics/_lib/topicsProgress";
+import DeckLoading from "../_components/DeckLoading";
+import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
@@ -34,7 +29,8 @@ interface SimpleWord {
 
 const GATE = {
   name: "One of Three",
-  description: "Pick the correct translation from three options.",
+  description:
+    "Pick the correct word from three options. Reach 70% to complete the lesson automatically.",
   bgImage: "one_of_three.png",
 };
 
@@ -102,21 +98,33 @@ function buildQuestions(
 
 const OneOfThreePage = () => {
   const searchParams = useSearchParams();
-  const { language } = useLanguage();
   const { isSignedIn, isReady, signIn } = useAuthState();
 
   const deckId = searchParams.get("deck") ?? "";
-  const topicId = searchParams.get("topicId") ?? "";
-  const level = Number(searchParams.get("level") ?? "1");
-  const safeLevel = Number.isFinite(level)
-    ? Math.max(1, Math.min(5, level))
-    : 1;
   const sessionMode =
     searchParams.get("mode") === "finish" ? "finish" : "practice";
 
+  const {
+    topicId,
+    level: safeLevel,
+    deckLevel,
+    backHref,
+    markComplete,
+  } = useTopicLevel(deckId);
+
   const [attempt, setAttempt] = useState(0);
 
-  const deckSession = useDeckSession(deckId || null, sessionMode);
+  const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
+
+  // Nothing left in this level's slice means it is already fully mastered, so
+  // the level should read as done rather than staying "Pending" forever.
+  const levelAlreadyMastered =
+    deckSession.status === "empty" && sessionMode === "practice";
+  useEffect(() => {
+    if (levelAlreadyMastered) {
+      markComplete();
+    }
+  }, [levelAlreadyMastered, markComplete]);
 
   const allWords = useFallbackWords();
   const roundSeed = deckId
@@ -159,7 +167,7 @@ const OneOfThreePage = () => {
       );
     }
     if (deckSession.status === "loading" || deckSession.status === "idle") {
-      return <DeckMessage {...GATE} title="Loading deck…" />;
+      return <DeckLoading {...GATE} variant="quiz" />;
     }
     if (deckSession.status === "notfound") {
       return (
@@ -173,9 +181,17 @@ const OneOfThreePage = () => {
           title={
             sessionMode === "finish"
               ? "No hard words to review yet"
-              : "You've mastered every word in this deck! 🎉"
+              : topicId
+                ? `You've mastered every word in level ${safeLevel}! 🎉`
+                : "You've mastered every word in this deck! 🎉"
           }
-          backHref="/my-decks"
+          body={
+            topicId && sessionMode !== "finish"
+              ? "Pick another level to keep going."
+              : undefined
+          }
+          backHref={backHref}
+          backLabel={topicId ? "Back to topic" : undefined}
         />
       );
     }
@@ -186,10 +202,12 @@ const OneOfThreePage = () => {
       key={roundSeed}
       questions={questions}
       deckId={deckId}
+      deckLevel={deckLevel}
       sessionMode={sessionMode}
       topicId={topicId}
       safeLevel={safeLevel}
-      language={language}
+      backHref={backHref}
+      onComplete={markComplete}
       onResult={deckId ? deckSession.recordResult : undefined}
       onKnown={deckId ? deckSession.markKnown : undefined}
       onReplay={() => {
@@ -206,10 +224,12 @@ const OneOfThreePage = () => {
 interface OneOfThreeRoundProps {
   questions: Question[];
   deckId: string;
+  deckLevel: number | undefined;
   sessionMode: "practice" | "finish";
   topicId: string;
   safeLevel: number;
-  language: Lang;
+  backHref: string;
+  onComplete: () => void;
   onResult?: (deckWordId: string, correct: boolean) => void;
   onKnown?: (deckWordId: string) => void;
   onReplay: () => void;
@@ -219,10 +239,12 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const {
     questions,
     deckId,
+    deckLevel,
     sessionMode,
     topicId,
     safeLevel,
-    language,
+    backHref,
+    onComplete,
     onResult,
     onKnown,
     onReplay,
@@ -233,7 +255,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
-  const completionSaved = useRef(false);
 
   const currentQuestion = questions[questionIndex] ?? null;
   const totalQuestions = questions.length;
@@ -255,17 +276,9 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
       setLessonPassed(passed);
       setIsFinished(true);
 
-      if (
-        passed &&
-        topicId &&
-        !deckId &&
-        !completionSaved.current &&
-        totalQuestions > 0
-      ) {
-        const state = loadTopicsState(language);
-        const { nextState } = completeTopicLevel(state, topicId, safeLevel);
-        saveTopicsState(language, nextState);
-        completionSaved.current = true;
+      // Deck-backed rounds count too: a topic level is played through a deck.
+      if (passed && topicId && totalQuestions > 0) {
+        onComplete();
       }
       return;
     }
@@ -304,18 +317,17 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const scorePercent =
     totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
-  const headerLabel = deckId
-    ? sessionMode === "finish"
+  const headerLabel =
+    sessionMode === "finish"
       ? "Finish Round"
-      : "Custom Deck"
-    : `Lesson ${safeLevel}`;
+      : topicId
+        ? `Level ${safeLevel}`
+        : deckId
+          ? "Custom Deck"
+          : `Lesson ${safeLevel}`;
 
   return (
-    <GamePage
-      name="One of Three"
-      description="Pick the correct word from three options. Reach 70% to complete the lesson automatically."
-      bgImage="one_of_three.png"
-    >
+    <GamePage {...GATE}>
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-amber-300 via-orange-300 to-rose-300 p-5 dark:from-amber-700 dark:via-orange-700 dark:to-rose-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-amber-100">
@@ -366,7 +378,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                           ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
                           : showWrong
                             ? "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200"
-                            : "border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-700"
+                            : "border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                       }`}
                     >
                       {option}
@@ -402,7 +414,11 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                 Score: {scorePercent}% ({correctCount}/{totalQuestions})
               </p>
               {deckId && (
-                <DeckRoundProgress deckId={deckId} className="mt-5" />
+                <DeckRoundProgress
+                  deckId={deckId}
+                  level={deckLevel}
+                  className="mt-5"
+                />
               )}
               <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold">
                 {lessonPassed ? (
@@ -424,20 +440,18 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
 
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href={
-                    deckId
-                      ? "/my-decks"
-                      : topicId
-                        ? `/topics/${encodeURIComponent(topicId)}`
-                        : "/topics"
-                  }
+                  href={backHref}
                   className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                 >
-                  {deckId ? "Back to decks" : "Back to topic"}
+                  {topicId ? "Back to topic" : "Back to decks"}
                 </Link>
                 {deckId && sessionMode !== "finish" && (
                   <Link
-                    href={`/games/one-of-three?deck=${deckId}&mode=finish`}
+                    href={`/games/one-of-three?deck=${deckId}&mode=finish${
+                      topicId
+                        ? `&topicId=${encodeURIComponent(topicId)}&level=${safeLevel}`
+                        : ""
+                    }`}
                     className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
                   >
                     🏁 Finish round
