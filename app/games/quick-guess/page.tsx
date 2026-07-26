@@ -14,6 +14,7 @@ import {
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
 import { useFallbackWords } from "../_lib/useFallbackWords";
+import { CONFIDENT_ANSWER_STEPS } from "../_lib/deckSessionClient";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
@@ -24,6 +25,15 @@ interface PracticeWord {
   native: string;
   foreign: string;
 }
+
+// Shared by the round and its status screens so the hero copy never changes
+// height between "loading" and the game itself.
+const GATE = {
+  name: "Speed Spelling",
+  description:
+    "Type the correct word before the timer runs out. Reach 70% to complete the lesson.",
+  bgImage: "flip_cards.png",
+};
 
 const QUESTION_SECONDS = 12;
 const MAX_WORDS = 10;
@@ -121,7 +131,7 @@ const QuickGuessPage = () => {
 
   // Deck path: gate on auth/session status before rendering the round.
   if (deckId) {
-    const gate = { name: "Speed Spelling", description: "Type the correct word before the timer runs out.", bgImage: "flip_cards.png" };
+    const gate = GATE;
     if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
       return (
         <DeckMessage
@@ -175,7 +185,14 @@ const QuickGuessPage = () => {
       language={language}
       isEnergyReview={isEnergyReview}
       onResult={deckId ? deckSession.recordResult : undefined}
-      onKnown={deckId ? deckSession.markKnown : undefined}
+      // "I already know this" is the same claim as swiping a flip card right, so
+      // it earns the same two practices rather than mastery on the spot.
+      onKnown={
+        deckId
+          ? (deckWordId: string) =>
+              deckSession.recordResult(deckWordId, true, CONFIDENT_ANSWER_STEPS)
+          : undefined
+      }
       onReplay={() => {
         if (deckId) {
           deckSession.reload();
@@ -306,8 +323,8 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
     );
   };
 
-  // Deck path only: "I already know this" marks the word known and skips it
-  // without counting as a scored attempt.
+  // Deck path only: "I already know this" credits the word two practices and
+  // skips it without counting as a scored attempt.
   const handleKnowIt = () => {
     if (!currentWord || lockedRef.current) {
       return;
@@ -315,7 +332,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
     lockedRef.current = true;
     setIsLocked(true);
     onKnown?.(currentWord.id);
-    setBanner({ tone: "good", text: "Marked as known" });
+    setBanner({ tone: "good", text: "Counted as practice" });
     window.setTimeout(() => goToNext(correctCount), CORRECT_ADVANCE_DELAY_MS);
   };
 
@@ -390,11 +407,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
     : `Lesson ${safeLevel}`;
 
   return (
-    <GamePage
-      name="Speed Spelling"
-      description="Type the correct word before the timer runs out. Reach 70% to complete the lesson."
-      bgImage="flip_cards.png"
-    >
+    <GamePage {...GATE}>
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-sky-300 via-cyan-300 to-teal-300 p-5 dark:from-sky-700 dark:via-cyan-700 dark:to-teal-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-sky-100">

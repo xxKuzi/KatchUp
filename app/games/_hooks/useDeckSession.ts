@@ -22,8 +22,11 @@ export interface UseDeckSession {
   status: DeckSessionStatus;
   session: DeckSession | null;
   error: string | null;
-  /** Records one answer (fire-and-forget upsert to the server). */
-  recordResult: (deckWordId: string, correct: boolean) => void;
+  /**
+   * Records one answer (fire-and-forget upsert to the server). `steps` weights
+   * how far a correct answer moves the streak toward known; 1 by default.
+   */
+  recordResult: (deckWordId: string, correct: boolean, steps?: number) => void;
   /** Marks a word known/unknown immediately. */
   markKnown: (deckWordId: string, known?: boolean) => void;
   /** Reload the session (e.g. to start a fresh round or switch mode). */
@@ -37,6 +40,10 @@ export interface UseDeckSession {
 export function useDeckSession(
   deckId: string | null,
   mode: "practice" | "finish" = "practice",
+  /** Topic level to scope the round to; omit for the whole deck. */
+  level?: number,
+  /** How many words to draw; omit for the mode's default. */
+  size?: number,
 ): UseDeckSession {
   const [status, setStatus] = useState<DeckSessionStatus>(
     deckId ? "loading" : "idle",
@@ -60,7 +67,7 @@ export function useDeckSession(
 
     let cancelled = false;
 
-    fetchSession(deckId, { mode })
+    fetchSession(deckId, { mode, level, size })
       .then((result) => {
         if (cancelled) return;
         setSession(result);
@@ -81,14 +88,17 @@ export function useDeckSession(
     return () => {
       cancelled = true;
     };
-  }, [deckId, mode, nonce]);
+  }, [deckId, mode, level, size, nonce]);
 
-  const recordResult = useCallback((deckWordId: string, correct: boolean) => {
-    const id = deckIdRef.current;
-    if (!id) return;
-    // Fire-and-forget: the UI shouldn't block on stat persistence.
-    void postAttempts(id, [{ deckWordId, correct }]).catch(() => {});
-  }, []);
+  const recordResult = useCallback(
+    (deckWordId: string, correct: boolean, steps?: number) => {
+      const id = deckIdRef.current;
+      if (!id) return;
+      // Fire-and-forget: the UI shouldn't block on stat persistence.
+      void postAttempts(id, [{ deckWordId, correct, steps }]).catch(() => {});
+    },
+    [],
+  );
 
   const markKnown = useCallback(
     (deckWordId: string, known = true) => {

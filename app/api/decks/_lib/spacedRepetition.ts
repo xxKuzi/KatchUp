@@ -14,6 +14,20 @@ export const KNOWN_STREAK_THRESHOLD = 3;
 export const MAX_BOX = 5;
 export const DEFAULT_PRACTICE_SIZE = 10;
 export const DEFAULT_FINISH_SIZE = 20;
+/**
+ * The legendary round: every word still unlearned, hardest first, topped up from
+ * the rest of the pack to a full thirty. Clearing it is what turns a finished
+ * topic legendary.
+ */
+export const LEGENDARY_REVIEW_SIZE = 30;
+/**
+ * What a review round serves once nothing is left unlearned. The round used to
+ * come back empty there, which made the review button look broken on exactly the
+ * decks that had been played the most.
+ */
+export const REVIEW_REFRESH_SIZE = 15;
+// Levels a topic is split into. Mirrors the 5 levels the topics UI renders.
+export const TOPIC_LEVEL_COUNT = 5;
 
 export type SessionMode = "practice" | "finish";
 
@@ -38,13 +52,23 @@ export interface DeckProgressSummary {
   known: number;
   learning: number; // seen at least once, not yet known
   unseen: number;
+  /**
+   * Answered right at least once — "you have met this word", the bar a topic
+   * level clears on. `known` is the stricter tier above it and counts here too:
+   * needing three clean rounds to finish a level meant a correct answer moved
+   * nothing on screen.
+   */
+  cleared: number;
 }
 
 export interface SessionResult {
   deckId: string;
   deckName: string;
   mode: SessionMode;
+  /** Topic level this session was scoped to, or null for the whole deck. */
+  level: number | null;
   words: SessionWord[];
+  /** Progress over the session's scope — the level window when one is given. */
   summary: DeckProgressSummary;
 }
 
@@ -136,6 +160,7 @@ function buildSummary(entries: EnrichedWord[]): DeckProgressSummary {
   let known = 0;
   let learning = 0;
   let unseen = 0;
+  let cleared = 0;
   for (const entry of entries) {
     if (entry.stat?.known) {
       known += 1;
@@ -144,8 +169,12 @@ function buildSummary(entries: EnrichedWord[]): DeckProgressSummary {
     } else {
       unseen += 1;
     }
+
+    if (entry.stat?.known || (entry.stat?.timesCorrect ?? 0) > 0) {
+      cleared += 1;
+    }
   }
-  return { total: entries.length, known, learning, unseen };
+  return { total: entries.length, known, learning, unseen, cleared };
 }
 
 async function enrichDeck(
@@ -177,12 +206,40 @@ async function enrichDeck(
 export interface SelectOptions {
   mode?: SessionMode;
   size?: number;
+  /** Topic level 1..TOPIC_LEVEL_COUNT; omit to draw from the whole deck. */
+  level?: number;
+}
+
+/**
+ * The slice of a deck a topic level owns.
+ *
+ * The five levels of a topic used to share one pool, so mastering it emptied
+ * every level at once. Each level now practices one consecutive window of the
+ * deck in seed order, which is also why `topUpTopicDeckWords` appends rather
+ * than renumbering: a word must not drift between levels.
+ */
+function levelWindow<T>(entries: T[], level: number | undefined): T[] {
+  if (!level || entries.length === 0) {
+    return entries;
+  }
+
+  const clamped = Math.min(
+    Math.max(Math.floor(level), 1),
+    TOPIC_LEVEL_COUNT,
+  );
+  const size = Math.ceil(entries.length / TOPIC_LEVEL_COUNT);
+  const window = entries.slice((clamped - 1) * size, clamped * size);
+
+  // A deck with fewer words than levels leaves later windows empty; serving the
+  // whole deck beats serving an empty round.
+  return window.length > 0 ? window : entries;
 }
 
 /**
  * Picks the words for a practice session. Practice mode drops known words and
  * weights the rest toward unseen / most-failed / least-recently-seen. Finish
  * mode returns the hardest previously-failed words for an end-of-deck review.
+ * Passing a `level` narrows both the pool and the summary to that level's slice.
  * Returns null if the deck is not accessible to the user.
  */
 export async function selectSessionWords(
@@ -195,18 +252,28 @@ export async function selectSessionWords(
     return null;
   }
 
-  const enriched = await enrichDeck(userId, deck);
+  const enriched = levelWindow(await enrichDeck(userId, deck), options.level);
   const summary = buildSummary(enriched);
   const mode: SessionMode = options.mode === "finish" ? "finish" : "practice";
 
   let chosen: EnrichedWord[];
   if (mode === "finish") {
     const size = options.size ?? DEFAULT_FINISH_SIZE;
-    const failed = enriched.filter(
-      (entry) => !entry.stat?.known && seenCount(entry) > 0,
+    // Hardest first, then whatever else is still unlearned. A review round used
+    // to draw only from words already answered wrong, so a pack could be short
+    // of learned words and still report nothing to review.
+    const pending = [...enriched.filter((entry) => !entry.stat?.known)].sort(
+      compareHardest,
     );
-    failed.sort(compareHardest);
-    chosen = shuffle(failed.slice(0, size));
+
+    if (pending.length === 0) {
+      chosen = shuffle(enriched).slice(0, REVIEW_REFRESH_SIZE);
+    } else {
+      // Topped up from the learned words so the round is a full one — the point
+      // of the legendary round is the whole pack, not only its sore spots.
+      const filler = shuffle(enriched.filter((entry) => entry.stat?.known));
+      chosen = shuffle([...pending, ...filler].slice(0, size));
+    }
   } else {
     const size = options.size ?? DEFAULT_PRACTICE_SIZE;
     const pool = enriched.filter((entry) => !entry.stat?.known);
@@ -218,6 +285,7 @@ export async function selectSessionWords(
     deckId: deck.id,
     deckName: deck.name,
     mode,
+    level: options.level ?? null,
     words: chosen.map(presentWord),
     summary,
   };
@@ -226,39 +294,61 @@ export async function selectSessionWords(
 export interface AttemptInput {
   deckWordId: string;
   correct: boolean;
+  /**
+   * How much of the streak toward `known` one correct answer is worth. Defaults
+   * to 1. Swiping a flip card right is a stronger claim than picking one of
+   * three options, so it counts double and two swipes reach mastery — it used to
+   * declare the word known outright, on evidence nothing had tested.
+   */
+  steps?: number;
+}
+
+/** Keeps a caller from handing out mastery in a single answer. */
+function clampSteps(steps: number | undefined): number {
+  if (typeof steps !== "number" || !Number.isFinite(steps)) {
+    return 1;
+  }
+  return Math.min(Math.max(Math.floor(steps), 1), KNOWN_STREAK_THRESHOLD - 1);
 }
 
 async function applyAttempt(
   userId: string,
   deckWordId: string,
   correct: boolean,
+  rawSteps?: number,
 ): Promise<void> {
   const now = new Date();
   const target = [userWordStats.userId, userWordStats.deckWordId] as const;
 
   if (correct) {
+    // Steps measure how confident one answer was, so they move the streak but
+    // not the counts of how many times the word has been seen or answered.
+    const steps = clampSteps(rawSteps);
+
     await db
       .insert(userWordStats)
       .values({
         userId,
         deckWordId,
         box: 1,
-        streak: 1,
+        streak: steps,
         timesSeen: 1,
         timesCorrect: 1,
         timesWrong: 0,
-        known: 1 >= KNOWN_STREAK_THRESHOLD,
+        // Never on a first answer: `clampSteps` keeps one attempt below the
+        // threshold, so mastery always takes at least two.
+        known: false,
         lastSeenAt: now,
         updatedAt: now,
       })
       .onConflictDoUpdate({
         target: [...target],
         set: {
-          streak: sql`${userWordStats.streak} + 1`,
+          streak: sql`${userWordStats.streak} + ${steps}`,
           box: sql`LEAST(${userWordStats.box} + 1, ${MAX_BOX})`,
           timesSeen: sql`${userWordStats.timesSeen} + 1`,
           timesCorrect: sql`${userWordStats.timesCorrect} + 1`,
-          known: sql`((${userWordStats.streak} + 1) >= ${KNOWN_STREAK_THRESHOLD}) OR ${userWordStats.known}`,
+          known: sql`((${userWordStats.streak} + ${steps}) >= ${KNOWN_STREAK_THRESHOLD}) OR ${userWordStats.known}`,
           lastSeenAt: now,
           updatedAt: now,
         },
@@ -266,7 +356,9 @@ async function applyAttempt(
     return;
   }
 
-  // Wrong answer: reset streak, drop a box, and un-know the word so it resurfaces.
+  // Wrong answer: step the streak back one, drop a box, and un-know the word so
+  // it resurfaces. The streak used to reset to zero, which threw away two clean
+  // rounds for one slip and left words stuck at 0 however often they came up.
   await db
     .insert(userWordStats)
     .values({
@@ -284,7 +376,7 @@ async function applyAttempt(
     .onConflictDoUpdate({
       target: [...target],
       set: {
-        streak: 0,
+        streak: sql`GREATEST(${userWordStats.streak} - 1, 0)`,
         box: sql`GREATEST(${userWordStats.box} - 1, 0)`,
         timesSeen: sql`${userWordStats.timesSeen} + 1`,
         timesWrong: sql`${userWordStats.timesWrong} + 1`,
@@ -314,7 +406,12 @@ export async function recordAttempts(
   const valid = attempts.filter((attempt) => validIds.has(attempt.deckWordId));
 
   for (const attempt of valid) {
-    await applyAttempt(userId, attempt.deckWordId, attempt.correct);
+    await applyAttempt(
+      userId,
+      attempt.deckWordId,
+      attempt.correct,
+      attempt.steps,
+    );
   }
 
   return { recorded: valid.length };
@@ -361,16 +458,44 @@ export async function setWordKnown(
   return { ok: true };
 }
 
-/** Lightweight progress counts for a deck, for list/finish-gating UI. */
+/**
+ * Lightweight progress counts for a deck, for list/finish-gating UI. Pass a
+ * `level` to count only that level's slice, matching what a level's session
+ * actually practices.
+ */
 export async function getDeckProgress(
   userId: string,
   deckId: string,
+  level?: number,
 ): Promise<DeckProgressSummary | null> {
   const deck = await getDeckForUser(deckId, userId);
   if (!deck) {
     return null;
   }
-  return buildSummary(await enrichDeck(userId, deck));
+  return buildSummary(levelWindow(await enrichDeck(userId, deck), level));
+}
+
+/**
+ * Progress for every topic level of a deck, from a single deck read.
+ *
+ * The topic page needs all five at once to tell a mastered level from a merely
+ * played one; asking `getDeckProgress` five times would re-read the same deck
+ * and stats five times over.
+ */
+export async function getDeckLevelProgress(
+  userId: string,
+  deckId: string,
+): Promise<DeckProgressSummary[] | null> {
+  const deck = await getDeckForUser(deckId, userId);
+  if (!deck) {
+    return null;
+  }
+
+  const enriched = await enrichDeck(userId, deck);
+
+  return Array.from({ length: TOPIC_LEVEL_COUNT }, (_, index) =>
+    buildSummary(levelWindow(enriched, index + 1)),
+  );
 }
 
 /**

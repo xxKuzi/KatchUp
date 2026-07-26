@@ -1,22 +1,19 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
-import { useLanguage } from "@/app/_lib/languageContext";
-import type { Lang } from "@/app/_lib/languages";
-import {
-  completeTopicLevel,
-  loadTopicsState,
-  saveTopicsState,
-} from "@/app/topics/_lib/topicsProgress";
+import DeckLoading from "../_components/DeckLoading";
+import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
-import DeckRoundProgress from "../_components/DeckRoundProgress";
+
+/** How many times one missed word can come back inside a single round. */
+const MAX_RETRIES_PER_WORD = 2;
 
 interface Question {
   id: string;
@@ -34,7 +31,8 @@ interface SimpleWord {
 
 const GATE = {
   name: "One of Three",
-  description: "Pick the correct translation from three options.",
+  description:
+    "Pick the correct word from three options. Reach 70% to complete the lesson automatically.",
   bgImage: "one_of_three.png",
 };
 
@@ -102,21 +100,33 @@ function buildQuestions(
 
 const OneOfThreePage = () => {
   const searchParams = useSearchParams();
-  const { language } = useLanguage();
   const { isSignedIn, isReady, signIn } = useAuthState();
 
   const deckId = searchParams.get("deck") ?? "";
-  const topicId = searchParams.get("topicId") ?? "";
-  const level = Number(searchParams.get("level") ?? "1");
-  const safeLevel = Number.isFinite(level)
-    ? Math.max(1, Math.min(5, level))
-    : 1;
   const sessionMode =
     searchParams.get("mode") === "finish" ? "finish" : "practice";
 
+  const {
+    topicId,
+    level: safeLevel,
+    deckLevel,
+    backHref,
+    markComplete,
+  } = useTopicLevel(deckId);
+
   const [attempt, setAttempt] = useState(0);
 
-  const deckSession = useDeckSession(deckId || null, sessionMode);
+  const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
+
+  // Nothing left in this level's slice means it is already fully mastered, so
+  // the level should read as done rather than staying "Pending" forever.
+  const levelAlreadyMastered =
+    deckSession.status === "empty" && sessionMode === "practice";
+  useEffect(() => {
+    if (levelAlreadyMastered) {
+      markComplete();
+    }
+  }, [levelAlreadyMastered, markComplete]);
 
   const allWords = useFallbackWords();
   const roundSeed = deckId
@@ -159,7 +169,7 @@ const OneOfThreePage = () => {
       );
     }
     if (deckSession.status === "loading" || deckSession.status === "idle") {
-      return <DeckMessage {...GATE} title="Loading deck…" />;
+      return <DeckLoading {...GATE} variant="quiz" />;
     }
     if (deckSession.status === "notfound") {
       return (
@@ -173,9 +183,17 @@ const OneOfThreePage = () => {
           title={
             sessionMode === "finish"
               ? "No hard words to review yet"
-              : "You've mastered every word in this deck! 🎉"
+              : topicId
+                ? `You've mastered every word in level ${safeLevel}! 🎉`
+                : "You've mastered every word in this deck! 🎉"
           }
-          backHref="/my-decks"
+          body={
+            topicId && sessionMode !== "finish"
+              ? "Pick another level to keep going."
+              : undefined
+          }
+          backHref={backHref}
+          backLabel={topicId ? "Back to topic" : undefined}
         />
       );
     }
@@ -189,9 +207,12 @@ const OneOfThreePage = () => {
       sessionMode={sessionMode}
       topicId={topicId}
       safeLevel={safeLevel}
-      language={language}
+      backHref={backHref}
+      // On the deck path mastery decides when a level is done — see the
+      // `levelAlreadyMastered` effect above — so finishing a round no longer
+      // marks it. Without a deck there is nothing else to go on.
+      onComplete={deckId ? undefined : markComplete}
       onResult={deckId ? deckSession.recordResult : undefined}
-      onKnown={deckId ? deckSession.markKnown : undefined}
       onReplay={() => {
         if (deckId) {
           deckSession.reload();
@@ -209,9 +230,10 @@ interface OneOfThreeRoundProps {
   sessionMode: "practice" | "finish";
   topicId: string;
   safeLevel: number;
-  language: Lang;
+  backHref: string;
+  /** Marks the topic level done. Omitted on the deck path, where mastery does. */
+  onComplete?: () => void;
   onResult?: (deckWordId: string, correct: boolean) => void;
-  onKnown?: (deckWordId: string) => void;
   onReplay: () => void;
 }
 
@@ -222,57 +244,75 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     sessionMode,
     topicId,
     safeLevel,
-    language,
+    backHref,
+    onComplete,
     onResult,
-    onKnown,
     onReplay,
   } = props;
 
+  // A missed word comes back at the end of the round rather than being gone for
+  // good: a level is finished by getting every word right once, so a round that
+  // ended on words you never got right would leave it stuck one short.
+  const [queue, setQueue] = useState<Question[]>(questions);
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
+  const [correctIds, setCorrectIds] = useState<Set<string>>(new Set());
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
-  const completionSaved = useRef(false);
+  const retriesUsed = useRef(new Map<string, number>());
 
-  const currentQuestion = questions[questionIndex] ?? null;
+  const currentQuestion = queue[questionIndex] ?? null;
+  // Scored over the words of the round, not over how many times they were asked,
+  // so retries can't push the score past 100% or make passing harder.
   const totalQuestions = questions.length;
+  const correctCount = correctIds.size;
   const progressPercent =
-    totalQuestions > 0 ? Math.round((questionIndex / totalQuestions) * 100) : 0;
+    queue.length > 0 ? Math.round((questionIndex / queue.length) * 100) : 0;
 
-  const goToNext = (nextCorrectCount: number) => {
+  const goToNext = (nextCorrectIds: Set<string>, nextQueue: Question[]) => {
     const nextIndex = questionIndex + 1;
 
-    if (nextIndex >= totalQuestions) {
+    if (nextIndex >= nextQueue.length) {
       const scorePercent =
         totalQuestions > 0
-          ? Math.round((nextCorrectCount / totalQuestions) * 100)
+          ? Math.round((nextCorrectIds.size / totalQuestions) * 100)
           : 0;
       const passed = scorePercent >= 70;
 
       spendEnergy();
-      setCorrectCount(nextCorrectCount);
       setLessonPassed(passed);
       setIsFinished(true);
 
-      if (
-        passed &&
-        topicId &&
-        !deckId &&
-        !completionSaved.current &&
-        totalQuestions > 0
-      ) {
-        const state = loadTopicsState(language);
-        const { nextState } = completeTopicLevel(state, topicId, safeLevel);
-        saveTopicsState(language, nextState);
-        completionSaved.current = true;
+      if (passed && topicId && totalQuestions > 0) {
+        onComplete?.();
       }
       return;
     }
 
-    setCorrectCount(nextCorrectCount);
     setQuestionIndex(nextIndex);
     setSelectedOption(null);
+  };
+
+  /** Puts a missed question back at the end of the round, up to twice. */
+  const requeue = (question: Question): Question[] => {
+    const used = retriesUsed.current.get(question.wordId) ?? 0;
+    if (used >= MAX_RETRIES_PER_WORD) {
+      return queue;
+    }
+
+    retriesUsed.current.set(question.wordId, used + 1);
+    const nextQueue = [
+      ...queue,
+      { ...question, id: `${question.id}-retry-${used + 1}` },
+    ];
+    setQueue(nextQueue);
+    return nextQueue;
+  };
+
+  const markCorrect = (wordId: string): Set<string> => {
+    const next = new Set(correctIds).add(wordId);
+    setCorrectIds(next);
+    return next;
   };
 
   const handleAnswer = (option: string) => {
@@ -287,35 +327,30 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
       onResult?.(currentQuestion.wordId, isCorrect);
     }
 
-    window.setTimeout(() => {
-      goToNext(correctCount + (isCorrect ? 1 : 0));
-    }, 380);
-  };
+    const nextCorrectIds = isCorrect
+      ? markCorrect(currentQuestion.wordId)
+      : correctIds;
+    const nextQueue = isCorrect ? queue : requeue(currentQuestion);
 
-  const handleKnowIt = () => {
-    if (!currentQuestion || selectedOption) {
-      return;
-    }
-    setSelectedOption(currentQuestion.correctOption);
-    onKnown?.(currentQuestion.wordId);
-    window.setTimeout(() => goToNext(correctCount), 380);
+    window.setTimeout(() => {
+      goToNext(nextCorrectIds, nextQueue);
+    }, 380);
   };
 
   const scorePercent =
     totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
-  const headerLabel = deckId
-    ? sessionMode === "finish"
+  const headerLabel =
+    sessionMode === "finish"
       ? "Finish Round"
-      : "Custom Deck"
-    : `Lesson ${safeLevel}`;
+      : topicId
+        ? `Level ${safeLevel}`
+        : deckId
+          ? "Custom Deck"
+          : `Lesson ${safeLevel}`;
 
   return (
-    <GamePage
-      name="One of Three"
-      description="Pick the correct word from three options. Reach 70% to complete the lesson automatically."
-      bgImage="one_of_three.png"
-    >
+    <GamePage {...GATE}>
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-amber-300 via-orange-300 to-rose-300 p-5 dark:from-amber-700 dark:via-orange-700 dark:to-rose-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-amber-100">
@@ -366,7 +401,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                           ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
                           : showWrong
                             ? "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200"
-                            : "border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-700"
+                            : "border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                       }`}
                     >
                       {option}
@@ -379,16 +414,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Correct answers: {correctCount}/{totalQuestions}
                 </p>
-                {deckId && onKnown && (
-                  <button
-                    type="button"
-                    onClick={handleKnowIt}
-                    disabled={Boolean(selectedOption)}
-                    className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                  >
-                    ✓ I already know this
-                  </button>
-                )}
               </div>
             </>
           )}
@@ -401,9 +426,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
               <p className="mt-3 text-slate-600 dark:text-slate-300">
                 Score: {scorePercent}% ({correctCount}/{totalQuestions})
               </p>
-              {deckId && (
-                <DeckRoundProgress deckId={deckId} className="mt-5" />
-              )}
               <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold">
                 {lessonPassed ? (
                   <>
@@ -424,20 +446,18 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
 
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href={
-                    deckId
-                      ? "/my-decks"
-                      : topicId
-                        ? `/topics/${encodeURIComponent(topicId)}`
-                        : "/topics"
-                  }
+                  href={backHref}
                   className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                 >
-                  {deckId ? "Back to decks" : "Back to topic"}
+                  {topicId ? "Back to topic" : "Back to decks"}
                 </Link>
                 {deckId && sessionMode !== "finish" && (
                   <Link
-                    href={`/games/one-of-three?deck=${deckId}&mode=finish`}
+                    href={`/games/one-of-three?deck=${deckId}&mode=finish${
+                      topicId
+                        ? `&topicId=${encodeURIComponent(topicId)}&level=${safeLevel}`
+                        : ""
+                    }`}
                     className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
                   >
                     🏁 Finish round

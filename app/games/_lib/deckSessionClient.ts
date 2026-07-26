@@ -24,12 +24,16 @@ export interface DeckProgressSummary {
   known: number;
   learning: number;
   unseen: number;
+  /** Answered right at least once — the tier a topic level finishes on. */
+  cleared: number;
 }
 
 export interface DeckSession {
   deckId: string;
   deckName: string;
   mode: "practice" | "finish";
+  /** Topic level this session covers, or null for the whole deck. */
+  level: number | null;
   words: SessionWord[];
   summary: DeckProgressSummary;
 }
@@ -67,7 +71,31 @@ export interface WordInput {
 export interface AttemptInput {
   deckWordId: string;
   correct: boolean;
+  /** Streak weight of one correct answer; defaults to 1 on the server. */
+  steps?: number;
 }
+
+/**
+ * Streak weight of saying "I know this" outright — swiping a flip card right or
+ * tapping the know-it button. A stronger claim than picking one of three
+ * options, so it counts as two practices and the second one earns mastery.
+ * These used to mark the word known on the spot, off a single unverified tap.
+ */
+export const CONFIDENT_ANSWER_STEPS = 2;
+
+/**
+ * Words in a pack's legendary round: everything still unlearned, hardest first,
+ * topped up from the rest of the pack. Mirrors LEGENDARY_REVIEW_SIZE on the
+ * server, which is what actually picks them.
+ */
+export const LEGENDARY_REVIEW_SIZE = 30;
+
+/**
+ * How much of a legendary round has to come back "know it" for the pack to earn
+ * its crown. Playing the thirty cards through was enough at first, which made
+ * the title a matter of patience rather than of knowing the words.
+ */
+export const LEGENDARY_PASS_PERCENT = 85;
 
 export class ApiError extends Error {
   status: number;
@@ -143,11 +171,17 @@ export async function deleteDeck(deckId: string): Promise<{ ok: boolean }> {
 
 export async function fetchSession(
   deckId: string,
-  options: { mode?: "practice" | "finish"; size?: number } = {},
+  options: {
+    mode?: "practice" | "finish";
+    size?: number;
+    /** Topic level 1..5; scopes the round to that level's slice of the deck. */
+    level?: number;
+  } = {},
 ): Promise<DeckSession> {
   const params = new URLSearchParams();
   if (options.mode) params.set("mode", options.mode);
   if (options.size) params.set("size", String(options.size));
+  if (options.level) params.set("level", String(options.level));
   const query = params.toString();
   return apiFetch(`/api/decks/${deckId}/session${query ? `?${query}` : ""}`);
 }
@@ -159,11 +193,23 @@ export async function fetchSession(
  */
 export async function fetchDeckProgress(
   deckId: string,
+  level?: number,
 ): Promise<DeckProgressSummary> {
+  const query = level ? `?level=${level}` : "";
   const data = await apiFetch<{ progress: DeckProgressSummary }>(
-    `/api/decks/${deckId}/progress`,
+    `/api/decks/${deckId}/progress${query}`,
   );
   return data.progress;
+}
+
+/** Mastery counts for every topic level of a deck, in level order (1..5). */
+export async function fetchDeckLevelProgress(
+  deckId: string,
+): Promise<DeckProgressSummary[]> {
+  const data = await apiFetch<{ levels: DeckProgressSummary[] }>(
+    `/api/decks/${deckId}/progress/levels`,
+  );
+  return data.levels;
 }
 
 export async function postAttempts(

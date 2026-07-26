@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
+import DeckLoading from "../_components/DeckLoading";
 import {
   LANGS,
   LANG_LABELS,
@@ -14,17 +15,23 @@ import {
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
 import { fetchWordPairs } from "../_lib/wordPairs";
+import {
+  CONFIDENT_ANSWER_STEPS,
+  LEGENDARY_PASS_PERCENT,
+  LEGENDARY_REVIEW_SIZE,
+} from "../_lib/deckSessionClient";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useAuthState } from "@/app/_lib/auth";
-import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
-import DeckRoundProgress from "../_components/DeckRoundProgress";
+import { Check, Crown, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
 
 const DECK_SIZE = 15;
 const SWIPE_THRESHOLD = 110;
 const TAP_TOLERANCE = 8;
 const GATE = {
   name: "Flip Cards",
-  description: "A calm, self-paced flashcard deck.",
+  description:
+    "A calm, self-paced flashcard deck. Tap a card to flip between your language and the translation, then swipe right if you knew it or left to keep practicing it.",
   bgImage: "flip_cards.png",
 };
 
@@ -52,7 +59,23 @@ const FlipCardsPage = () => {
   const deckId = searchParams.get("deck") ?? "";
   const sessionMode =
     searchParams.get("mode") === "finish" ? "finish" : "practice";
-  const deckSession = useDeckSession(deckId || null, sessionMode);
+
+  const {
+    topicId,
+    level: topicLevelNumber,
+    deckLevel,
+    backHref,
+    markComplete,
+    isLegendaryRound,
+    submitLegendaryResults,
+  } = useTopicLevel(deckId);
+
+  const deckSession = useDeckSession(
+    deckId || null,
+    sessionMode,
+    deckLevel,
+    isLegendaryRound ? LEGENDARY_REVIEW_SIZE : undefined,
+  );
 
   const { speak, learning: defaultLearning } = useLanguagePair();
   const [learning, setLearning] = useState<Lang>(defaultLearning);
@@ -62,6 +85,14 @@ const FlipCardsPage = () => {
   // The player sees a level number; the word pool still needs a difficulty.
   const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
 
+
+  // Whether the review round took the crown is the server's call, not this
+  // screen's: the verdicts go up and come back graded. The percentage below is
+  // only what the player watches while that happens.
+  const [legendaryVerdict, setLegendaryVerdict] = useState<
+    "unplayed" | "grading" | "passed" | "failed"
+  >("unplayed");
+  const submittedRound = useRef(false);
 
   const [deck, setDeck] = useState<CardWord[]>([]);
   const [index, setIndex] = useState(0);
@@ -83,6 +114,9 @@ const FlipCardsPage = () => {
     setPractice([]);
     setDragX(0);
     setLeaving(null);
+    // A fresh round is a fresh attempt at the crown.
+    submittedRound.current = false;
+    setLegendaryVerdict("unplayed");
   };
 
   // Non-deck path: pull cards for the chosen pair. Flip-cards is a recall
@@ -145,6 +179,45 @@ const FlipCardsPage = () => {
   const currentCard = deck[index] ?? null;
   const finished = deck.length > 0 && index >= deck.length;
 
+  // Topic levels: swiping through a round used to be enough on its own, so a
+  // level read "Done" at 3 of 6 words. On the deck path an empty practice round
+  // means there is nothing left to learn here; the topic page does the finer
+  // check against the server's counts when you land back on it. Rounds without a
+  // deck have nothing to check against, so there finishing still counts.
+  const levelDone =
+    Boolean(topicId) &&
+    (deckId
+      ? deckSession.status === "empty" && sessionMode === "practice"
+      : finished);
+  useEffect(() => {
+    if (levelDone) {
+      markComplete();
+    }
+  }, [levelDone, markComplete]);
+
+  // The crown is scored, not sat through: 85% of the review round has to come
+  // back "know it". Fall short and the pack stays as it was — the round can be
+  // played again, and the answers counted toward the words either way.
+  const answered = known.length + practice.length;
+  const scorePercent = answered
+    ? Math.round((known.length / answered) * 100)
+    : 0;
+
+  useEffect(() => {
+    if (!isLegendaryRound || !finished || submittedRound.current) {
+      return;
+    }
+    submittedRound.current = true;
+    setLegendaryVerdict("grading");
+
+    void submitLegendaryResults([
+      ...known.map((card) => ({ deckWordId: card.id, correct: true })),
+      ...practice.map((card) => ({ deckWordId: card.id, correct: false })),
+    ]).then((passed) => setLegendaryVerdict(passed ? "passed" : "failed"));
+  }, [finished, isLegendaryRound, known, practice, submitLegendaryResults]);
+
+  const legendaryPassed = legendaryVerdict === "passed";
+
   const remaining = Math.max(deck.length - index, 0);
   const progressPercent = deck.length
     ? Math.min((index / deck.length) * 100, 100)
@@ -161,7 +234,13 @@ const FlipCardsPage = () => {
     if (verdict === "known") {
       setKnown((previous) => [...previous, currentCard]);
       if (deckId) {
-        deckSession.markKnown(currentCard.id);
+        // A right swipe is a claim, not a tested answer — worth two practices,
+        // so the second swipe is what earns mastery.
+        deckSession.recordResult(
+          currentCard.id,
+          true,
+          CONFIDENT_ANSWER_STEPS,
+        );
       }
     } else {
       setPractice((previous) => [...previous, currentCard]);
@@ -240,7 +319,7 @@ const FlipCardsPage = () => {
       );
     }
     if (deckSession.status === "loading" || deckSession.status === "idle") {
-      return <DeckMessage {...GATE} title="Loading deck…" />;
+      return <DeckLoading {...GATE} variant="cards" />;
     }
     if (deckSession.status === "notfound") {
       return (
@@ -253,10 +332,18 @@ const FlipCardsPage = () => {
           {...GATE}
           title={
             sessionMode === "finish"
-              ? "No hard words to review yet"
-              : "You've mastered every word in this deck! 🎉"
+              ? "No words to review yet"
+              : topicId
+                ? `You've mastered every word in level ${topicLevelNumber}! 🎉`
+                : "You've mastered every word in this deck! 🎉"
           }
-          backHref="/my-decks"
+          body={
+            topicId && sessionMode !== "finish"
+              ? "Pick another level to keep going."
+              : undefined
+          }
+          backHref={backHref}
+          backLabel={topicId ? "Back to topic" : undefined}
         />
       );
     }
@@ -266,15 +353,8 @@ const FlipCardsPage = () => {
   const swipeHint: Verdict | null =
     dragX > 40 ? "known" : dragX < -40 ? "practice" : null;
 
-  const total = known.length + practice.length;
-  const knownPercent = total ? Math.round((known.length / total) * 100) : 0;
-
   return (
-    <GamePage
-      name="Flip Cards"
-      description="A calm, self-paced flashcard deck. Tap a card to flip between your language and the translation, then swipe right if you knew it or left to keep practicing it."
-      bgImage="flip_cards.png"
-    >
+    <GamePage {...GATE}>
       {/* Language + progress bar */}
       <div className="w-full max-w-xl">
         {!deckId && (
@@ -299,7 +379,12 @@ const FlipCardsPage = () => {
         {deckId && deckSession.session && (
           <p className="text-center text-sm font-semibold text-zinc-600 dark:text-zinc-300">
             {deckSession.session.deckName}
-            {sessionMode === "finish" ? " · Finish round" : ""}
+            {topicId && !isLegendaryRound ? ` · Level ${topicLevelNumber}` : ""}
+            {sessionMode === "finish"
+              ? isLegendaryRound
+                ? " · Legendary round"
+                : " · Finish round"
+              : ""}
           </p>
         )}
 
@@ -438,12 +523,40 @@ const FlipCardsPage = () => {
       ) : (
         finished && (
           <div className="mt-6 w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-sm uppercase tracking-wide text-zinc-500">
-              Deck complete
+            {isLegendaryRound ? (
+              legendaryPassed ? (
+                <p className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-600 dark:text-amber-300">
+                  <Crown className="h-4 w-4" />
+                  This pack is now legendary
+                </p>
+              ) : legendaryVerdict === "grading" ? (
+                <p className="text-sm font-bold uppercase tracking-wide text-zinc-500">
+                  Scoring the round...
+                </p>
+              ) : (
+                <p className="text-sm font-bold uppercase tracking-wide text-zinc-500">
+                  {LEGENDARY_PASS_PERCENT}% needed for legendary
+                </p>
+              )
+            ) : (
+              <p className="text-sm uppercase tracking-wide text-zinc-500">
+                Deck complete
+              </p>
+            )}
+            <p
+              className={`mt-2 text-4xl font-black ${
+                isLegendaryRound && !legendaryPassed
+                  ? "text-zinc-500 dark:text-zinc-400"
+                  : "text-zinc-900 dark:text-zinc-50"
+              }`}
+            >
+              {scorePercent}% known
             </p>
-            <p className="mt-2 text-4xl font-black text-zinc-900 dark:text-zinc-50">
-              {knownPercent}% known
-            </p>
+            {legendaryVerdict === "failed" && (
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                Run the round again to take the crown.
+              </p>
+            )}
             <div className="mt-5 flex items-center justify-center gap-8 text-sm">
               <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <Check className="h-4 w-4" /> {known.length} known
@@ -452,8 +565,6 @@ const FlipCardsPage = () => {
                 <Sparkles className="h-4 w-4" /> {practice.length} still learning
               </span>
             </div>
-
-            {deckId && <DeckRoundProgress deckId={deckId} className="mt-5" />}
 
             <div className="mt-7 flex flex-col gap-3">
               {practice.length > 0 && (
@@ -471,7 +582,9 @@ const FlipCardsPage = () => {
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Next round
+                  {legendaryVerdict === "failed"
+                    ? "Try the round again"
+                    : "Next round"}
                 </button>
               ) : (
                 <button
@@ -484,10 +597,10 @@ const FlipCardsPage = () => {
               )}
               {deckId && (
                 <Link
-                  href="/my-decks"
+                  href={backHref}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
                 >
-                  Back to decks
+                  {topicId ? "Back to topic" : "Back to decks"}
                 </Link>
               )}
             </div>

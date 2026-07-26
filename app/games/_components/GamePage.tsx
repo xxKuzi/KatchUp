@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Navbar from "@/app/_components/Navbar";
 
 interface GamePageProps {
   name: string;
@@ -15,10 +14,16 @@ export default function GamePage(props: GamePageProps) {
   const normalizedBgImage = bgImage.startsWith("/") ? bgImage : `/${bgImage}`;
 
   return (
+    // The root layout already renders the Navbar (and the spacer that clears
+    // the fixed bar), so this only lays out the page below it.
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <Navbar />
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-10 sm:px-8">
+        {/* The board comes first: the title card is context, not something you
+            need to read before playing. */}
+        <section className="flex flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          {children}
+        </section>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-10 pt-4 sm:px-8">
         <section
           style={{ backgroundImage: `url('${normalizedBgImage}')` }}
           className="relative overflow-hidden rounded-2xl border border-white/20 bg-cover bg-center px-6 py-10 text-white shadow-lg"
@@ -31,11 +36,7 @@ export default function GamePage(props: GamePageProps) {
             </p>
           </div>
         </section>
-
-        <section className="flex flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          {children}
-        </section>
-      </main>
+      </div>
     </div>
   );
 }

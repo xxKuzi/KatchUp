@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { selectSessionWords } from "../../_lib/spacedRepetition";
+import {
+  selectSessionWords,
+  TOPIC_LEVEL_COUNT,
+} from "../../_lib/spacedRepetition";
 
 interface RouteContext {
   params: Promise<{ deckId: string }>;
@@ -23,9 +26,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
       ? parsedSize
       : undefined;
 
+  const levelParam = params.get("level");
+  const parsedLevel = levelParam ? Number.parseInt(levelParam, 10) : NaN;
+  const level =
+    Number.isFinite(parsedLevel) &&
+    parsedLevel >= 1 &&
+    parsedLevel <= TOPIC_LEVEL_COUNT
+      ? parsedLevel
+      : undefined;
+
   const result = await selectSessionWords(session.user.id, deckId, {
     mode,
     size,
+    level,
   });
 
   if (!result) {

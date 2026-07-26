@@ -28,7 +28,8 @@ interface PracticeWord {
 const MAX_PAIRS = 6;
 const GATE = {
   name: "Word Pairing",
-  description: "Match each word with its translation.",
+  description:
+    "Match each word with its translation before the mistakes pile up. Reach 70% accuracy to complete the lesson.",
   bgImage: "guess_match.png",
 };
 
@@ -352,11 +353,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     }`;
 
   return (
-    <GamePage
-      name="Word Pairing"
-      description="Match each word with its translation before the mistakes pile up. Reach 70% accuracy to complete the lesson."
-      bgImage="guess_match.png"
-    >
+    <GamePage {...GATE}>
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300 p-5 dark:from-emerald-700 dark:via-teal-700 dark:to-cyan-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-emerald-100">

@@ -4,21 +4,27 @@ import { useAuthState } from "@/app/_lib/auth";
 import { useLanguage } from "@/app/_lib/languageContext";
 import FeatureGate from "@/app/_components/FeatureGate";
 import {
-  loadTopicsState,
   saveTopicsState,
   TOPICS,
   unlockTopic,
-  topicName,
+  topicTitle,
   topicDescription,
+  useHasMounted,
+  useTopicsSync,
+  useTopicsState,
 } from "./_lib/topicsProgress";
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import TopicCard from "./_components/TopicCard";
 
 export default function TopicsPage() {
-  const { t, language } = useLanguage();
+  const { t, language, learningLanguage } = useLanguage();
   const { isSignedIn, isReady } = useAuthState();
-  const [refreshToken, setRefreshToken] = useState(0);
+  const state = useTopicsState(language);
+  const hasMounted = useHasMounted();
+  // Keys, unlocks and crowns come from the account, so this list is right on a
+  // browser that has never seen the ladder before.
+  useTopicsSync(language, learningLanguage, isSignedIn);
   const [lastCompletedTopic, setLastCompletedTopic] = useState<string | null>(
     () => {
       if (typeof window === "undefined") {
@@ -32,11 +38,6 @@ export default function TopicsPage() {
         : null;
     },
   );
-
-  const state = useMemo(() => {
-    void refreshToken;
-    return loadTopicsState(language);
-  }, [language, refreshToken]);
 
   useEffect(() => {
     if (lastCompletedTopic) {
@@ -60,22 +61,21 @@ export default function TopicsPage() {
       const progress = state.topicProgress[topic.id];
       const levelCount = progress?.completedLevels.length ?? 0;
       const unlocked = state.unlockedTopicIds.includes(topic.id);
-      const justCompleted = lastCompletedTopic === topic.id;
+      // Read from the URL at mount, so it can't be part of the server render.
+      const justCompleted = hasMounted && lastCompletedTopic === topic.id;
 
       return {
         topic,
         levelCount,
         unlocked,
         justCompleted,
-        ascended: Boolean(progress?.isAscended),
+        legendary: Boolean(progress?.isLegendary),
       };
     });
-  }, [lastCompletedTopic, state]);
+  }, [hasMounted, lastCompletedTopic, state]);
 
   const handleUnlock = (topicId: string) => {
-    const next = unlockTopic(state, topicId);
-    saveTopicsState(language, next);
-    setRefreshToken((value) => value + 1);
+    saveTopicsState(language, unlockTopic(state, topicId));
   };
 
   return (
@@ -109,17 +109,20 @@ export default function TopicsPage() {
 
           <section className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 sm:gap-10">
             {topicCards.map(
-              ({ topic, levelCount, unlocked, justCompleted, ascended }) => {
+              ({ topic, levelCount, unlocked, justCompleted, legendary }) => {
+                const name = topicTitle(topic, learningLanguage, language);
+
                 return (
                   <TopicCard
                     key={topic.id}
                     topic={topic}
-                    title={`${topic.icon} - ${topicName(topic, language)}`}
+                    title={name.learning}
+                    subtitle={name.native}
                     description={topicDescription(topic, language)}
                     levelCount={levelCount}
                     unlocked={unlocked}
                     justCompleted={justCompleted}
-                    ascended={ascended}
+                    legendary={legendary}
                     href={`/topics/${topic.id}`}
                     onUnlock={() => handleUnlock(topic.id)}
                     canUnlock={state.keys > 0}
