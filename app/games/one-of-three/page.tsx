@@ -11,7 +11,6 @@ import { useFallbackWords } from "../_lib/useFallbackWords";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
-import DeckRoundProgress from "../_components/DeckRoundProgress";
 
 /** How many times one missed word can come back inside a single round. */
 const MAX_RETRIES_PER_WORD = 2;
@@ -205,7 +204,6 @@ const OneOfThreePage = () => {
       key={roundSeed}
       questions={questions}
       deckId={deckId}
-      deckLevel={deckLevel}
       sessionMode={sessionMode}
       topicId={topicId}
       safeLevel={safeLevel}
@@ -230,7 +228,6 @@ const OneOfThreePage = () => {
 interface OneOfThreeRoundProps {
   questions: Question[];
   deckId: string;
-  deckLevel: number | undefined;
   sessionMode: "practice" | "finish";
   topicId: string;
   safeLevel: number;
@@ -246,7 +243,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const {
     questions,
     deckId,
-    deckLevel,
     sessionMode,
     topicId,
     safeLevel,
@@ -453,13 +449,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
               <p className="mt-3 text-slate-600 dark:text-slate-300">
                 Score: {scorePercent}% ({correctCount}/{totalQuestions})
               </p>
-              {deckId && (
-                <DeckRoundProgress
-                  deckId={deckId}
-                  level={deckLevel}
-                  className="mt-5"
-                />
-              )}
               <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold">
                 {lessonPassed ? (
                   <>

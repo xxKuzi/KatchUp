@@ -19,7 +19,6 @@ import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useAuthState } from "@/app/_lib/auth";
 import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
-import DeckRoundProgress from "../_components/DeckRoundProgress";
 
 const DECK_SIZE = 15;
 const SWIPE_THRESHOLD = 110;
@@ -485,14 +484,6 @@ const FlipCardsPage = () => {
                 <Sparkles className="h-4 w-4" /> {practice.length} still learning
               </span>
             </div>
-
-            {deckId && (
-              <DeckRoundProgress
-                deckId={deckId}
-                level={deckLevel}
-                className="mt-5"
-              />
-            )}
 
             <div className="mt-7 flex flex-col gap-3">
               {practice.length > 0 && (
