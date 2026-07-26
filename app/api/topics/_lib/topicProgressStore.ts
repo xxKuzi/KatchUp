@@ -111,6 +111,21 @@ async function deriveClearedLevels(
   return cleared;
 }
 
+/** A read of the ladder, in both the shapes the callers need. */
+interface TopicsRead {
+  /** Stored rows plus the levels the word stats show as cleared. */
+  state: TopicsState;
+  /**
+   * Only what the rows themselves say.
+   *
+   * Writes diff against this rather than against `state`: cleared levels are
+   * derived on every read, so a state that has already had them folded in
+   * compares equal to itself and the row never catches up. This is the baseline
+   * that makes `completed_levels` follow the stats instead of drifting.
+   */
+  rows: TopicsState;
+}
+
 /**
  * The ladder as the account knows it. Pass the language being learned to fold in
  * levels the word stats show as cleared; without it the stored rows stand alone
@@ -121,6 +136,14 @@ export async function readTopicsState(
   language: string,
   foreignLang?: string | null,
 ): Promise<TopicsState> {
+  return (await readTopics(userId, language, foreignLang)).state;
+}
+
+async function readTopics(
+  userId: string,
+  language: string,
+  foreignLang?: string | null,
+): Promise<TopicsRead> {
   const [rows, derived] = await Promise.all([
     db
       .select()
@@ -136,6 +159,7 @@ export async function readTopicsState(
       : Promise.resolve(new Map<string, number[]>()),
   ]);
 
+  const rowProgress: Record<string, TopicProgress> = {};
   const topicProgress: Record<string, TopicProgress> = {};
   const unlockedTopicIds = [...DEFAULT_UNLOCKED];
 
@@ -143,14 +167,14 @@ export async function readTopicsState(
     if (!TOPIC_IDS.includes(row.topicId)) {
       continue;
     }
-    topicProgress[row.topicId] = rowToProgress(row);
+    rowProgress[row.topicId] = rowToProgress(row);
     if (row.unlocked && !unlockedTopicIds.includes(row.topicId)) {
       unlockedTopicIds.push(row.topicId);
     }
   }
 
   for (const topicId of TOPIC_IDS) {
-    const stored = topicProgress[topicId] ?? createDefaultTopicProgress();
+    const stored = rowProgress[topicId] ?? createDefaultTopicProgress();
     // Union rather than replacement: levels recorded before the word counts
     // existed stay recorded, because dropping them would revoke a key already
     // spent on an unlock.
@@ -158,6 +182,7 @@ export async function readTopicsState(
       new Set([...stored.completedLevels, ...(derived.get(topicId) ?? [])]),
     ).sort((a, b) => a - b);
 
+    rowProgress[topicId] = stored;
     topicProgress[topicId] = {
       ...stored,
       completedLevels,
@@ -165,7 +190,14 @@ export async function readTopicsState(
     };
   }
 
-  return normalizeState({ unlockedTopicIds, keys: 0, topicProgress });
+  return {
+    state: normalizeState({ unlockedTopicIds, keys: 0, topicProgress }),
+    rows: normalizeState({
+      unlockedTopicIds,
+      keys: 0,
+      topicProgress: rowProgress,
+    }),
+  };
 }
 
 /**
@@ -181,7 +213,7 @@ export async function mergeTopicsStateForUser(
   incoming: TopicsState,
   foreignLang?: string | null,
 ): Promise<TopicsState> {
-  const stored = await readTopicsState(userId, language, foreignLang);
+  const { state: stored, rows } = await readTopics(userId, language, foreignLang);
 
   const topicProgress = TOPIC_IDS.reduce<Record<string, TopicProgress>>(
     (acc, topicId) => {
@@ -214,7 +246,7 @@ export async function mergeTopicsStateForUser(
     }),
   );
 
-  await writeChangedRows(userId, language, stored, merged);
+  await writeChangedRows(userId, language, rows, merged);
   return merged;
 }
 
@@ -229,7 +261,7 @@ export async function awardLegendary(
   topicId: string,
   foreignLang?: string | null,
 ): Promise<TopicsState> {
-  const stored = await readTopicsState(userId, language, foreignLang);
+  const { state: stored, rows } = await readTopics(userId, language, foreignLang);
   const progress = stored.topicProgress[topicId];
 
   if (!progress || progress.isLegendary) {
@@ -244,11 +276,19 @@ export async function awardLegendary(
     },
   };
 
-  await writeChangedRows(userId, language, stored, merged);
+  await writeChangedRows(userId, language, rows, merged);
   return merged;
 }
 
-/** Writes only the packs that actually moved. */
+/**
+ * Writes only the packs that actually moved.
+ *
+ * `before` must be the rows as they stand in the table — not the derived state —
+ * so that levels the word stats have cleared since the last write are seen as a
+ * change and land in `completed_levels`. The column stays a mirror of the
+ * derivation rather than the source of it: nothing reads it back as authority,
+ * so a row that somehow goes wrong is repaired by the next sync.
+ */
 async function writeChangedRows(
   userId: string,
   language: string,
