@@ -265,3 +265,26 @@ export const conceptTranslations = pgTable(
   }),
 );
 
+
+// A learner's level normally follows their mastered-word count, but passing the
+// level test skips them straight to the first word count of the next band. That
+// promotion is recorded here as a floor: the effective count is
+// max(actual mastered words, wordFloor), so real study still moves them onward.
+export const userLevelProgress = pgTable(
+  "user_level_progress",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Canonical language code of the language being learned ("de", "en", ...).
+    language: text("language").notNull(),
+    wordFloor: integer("word_floor").notNull().default(0),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userLanguageUnique: uniqueIndex(
+      "user_level_progress_user_id_language_key",
+    ).on(table.userId, table.language),
+  }),
+);

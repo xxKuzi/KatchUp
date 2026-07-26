@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
+import LevelBadge from "./LevelBadge";
 import { useLanguage } from "../_lib/languageContext";
 import { useEnergy, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
@@ -40,7 +41,7 @@ function getInitials(value) {
 function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useLanguage();
+  const { t, learningLanguage } = useLanguage();
   const energy = useEnergy();
   const reset = useResetCountdown();
   const { data: session, status } = useSession();
@@ -234,6 +235,14 @@ function Navbar() {
               <Newspaper className="h-3.5 w-3.5" />
             </button>
 
+            {/* CEFR level for the language being learned — hides itself when signed out */}
+            <div className={gatedItemClass}>
+              <LevelBadge
+                learningLanguage={learningLanguage}
+                isHomePage={isHomePage}
+              />
+            </div>
+
             {/* Always-visible daily energy — locked to a single pip until signed in */}
             <div className="relative" ref={energyRef}>
               <button
@@ -375,18 +384,19 @@ function Navbar() {
               {menuOpen && (
                 <div className="absolute right-0 top-[120%] mt-2 w-72 origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl backdrop-blur-xl transition-all dark:border-slate-700 dark:bg-slate-950/95 sm:w-80">
                   <div className="flex flex-col gap-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/learned-words");
+                      }}
+                      className={`rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800${gatedItemClass}`}
+                    >
+                      {t("navbar.learnedWords", "Learned Words")}
+                    </button>
+
                     {/* Mobile Links - Only visible on small screens */}
                     <div className="flex flex-col space-y-1 lg:hidden">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          router.push("/learned-words");
-                        }}
-                        className={`rounded-xl px-4 py-3 text-left font-semibold text-slate-800 transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800${gatedItemClass}`}
-                      >
-                        {t("navbar.learnedWords", "Learned Words")}
-                      </button>
                       <button
                         type="button"
                         onClick={() => {

@@ -3,9 +3,10 @@
 import FeatureGate from "@/app/_components/FeatureGate";
 import { useAuthState } from "@/app/_lib/auth";
 import { useLanguage } from "@/app/_lib/languageContext";
+import { useLearningLevelState } from "@/app/_lib/useLearningLevel";
 import QRCode from "qrcode";
 import { Pencil } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   addFriendToState,
@@ -30,6 +31,7 @@ import {
   CUTE_ICONS,
   buildProfileUrl,
   createInitialFriendProfileIdentity,
+  createPlaceholderFriendProfileIdentity,
   createPublicFriendProfile,
   friendFromPublicProfile,
   getAvatarBackground,
@@ -83,7 +85,9 @@ function readPracticeXp(): number {
 export default function FriendsPage() {
   const router = useRouter();
   const { isSignedIn, isReady, session } = useAuthState();
-  const { t } = useLanguage();
+  const { t, learningLanguage } = useLanguage();
+  const { level: learningLevel, status: levelStatus } =
+    useLearningLevelState(learningLanguage);
   const userKey = session?.user?.email ?? session?.user?.name ?? "player";
   const fullName = session?.user?.name ?? "You";
   const displayName = fullName.trim().split(/\s+/)[0] || "You";
@@ -102,8 +106,11 @@ export default function FriendsPage() {
   const [statusMessage, setStatusMessage] = useState(
     "Pick a friend and tackle this week's tasks together.",
   );
+  // Deliberately deterministic: the real identity (random avatar, colour and
+  // code) is minted or read from localStorage in an effect, because generating
+  // it during render makes the server and client disagree.
   const [profileIdentity, setProfileIdentity] = useState<FriendProfileIdentity>(
-    () => createInitialFriendProfileIdentity(displayName),
+    () => createPlaceholderFriendProfileIdentity(displayName),
   );
   const [profileHydrated, setProfileHydrated] = useState(false);
   const [profileUrl, setProfileUrl] = useState("");
@@ -114,6 +121,14 @@ export default function FriendsPage() {
     "idle" | "checking" | "available" | "taken" | "too-short" | "error"
   >("idle");
   const [now, setNow] = useState(() => new Date());
+  // False during SSR and the first client render, true afterwards — the
+  // subscribe-to-nothing form of useSyncExternalStore, which is the hydration-
+  // safe way to say "client only" without a setState-in-effect.
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!isReady || !isSignedIn) {
@@ -531,12 +546,23 @@ export default function FriendsPage() {
                     {state.friends.length}
                   </p>
                 </div>
+                {/* The learner's level in the language being learned, not a
+                    points total — it's the number people actually care about. */}
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 dark:border-white/[0.08] dark:bg-white/[0.05]">
                   <p className="text-[0.7rem] font-bold text-emerald-500/90 dark:text-emerald-300/80">
-                    ✨ Duo XP
+                    🎓 Level
                   </p>
                   <p className="mt-1 text-xl font-black text-slate-800 dark:text-slate-100">
-                    {formatXp(state.taskXp)}
+                    {learningLevel ? learningLevel.level : "—"}
+                  </p>
+                  <p className="truncate text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400">
+                    {learningLevel
+                      ? `${learningLevel.masteredCount} words mastered`
+                      : levelStatus === "signedOut"
+                        ? "Sign in to see it"
+                        : levelStatus === "error"
+                          ? "Couldn't load it"
+                          : "Loading..."}
                   </p>
                 </div>
               </div>
@@ -549,7 +575,7 @@ export default function FriendsPage() {
                   Unique code
                 </p>
                 <p className="mt-1 inline-block rounded-xl bg-white/70 px-3 py-1 text-xl font-black tracking-wide text-rose-500 dark:bg-white/5 dark:text-rose-300">
-                  {profileIdentity.profileCode}
+                  {profileIdentity.profileCode || "..."}
                 </p>
                 <div className="mt-3 rounded-2xl bg-white p-2.5 shadow-sm shadow-rose-500/10 dark:bg-white/5">
                   {qrCodeDataUrl ? (
@@ -715,8 +741,13 @@ export default function FriendsPage() {
                         ? `${completedTaskCount}/${duoTasks.tasks.length} done`
                         : "Pick a partner"}
                   </span>
+                  {/* Clock-derived, and the week boundary is computed in the
+                      local timezone — so it only renders once mounted, or the
+                      server's UTC answer would disagree with the browser's. */}
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    resets in {weeklyRemaining.days}d {weeklyRemaining.hours}h
+                    {isMounted
+                      ? `resets in ${weeklyRemaining.days}d ${weeklyRemaining.hours}h`
+                      : "resets soon"}
                   </span>
                 </div>
               </div>

@@ -110,6 +110,27 @@ export function createInitialFriendProfileIdentity(
   };
 }
 
+/**
+ * The identity to render before the real one is read from localStorage.
+ *
+ * `createInitialFriendProfileIdentity` picks a random icon, colour and code, so
+ * using it as initial React state produced a different avatar on the server
+ * than on the client and broke hydration. This is deterministic: the server and
+ * the client always agree on it, and the effect that loads (or mints) the real
+ * identity replaces it right after mount.
+ */
+export function createPlaceholderFriendProfileIdentity(
+  nickname: string,
+): FriendProfileIdentity {
+  return {
+    profileCode: "",
+    nickname: nickname.trim() || "Me",
+    avatarBackgroundId: AVATAR_BACKGROUNDS[0].id,
+    avatarIcon: CUTE_ICONS[0],
+    updatedAt: "",
+  };
+}
+
 export function parseStoredFriendProfileIdentity(
   rawValue: string | null,
   fallbackNickname: string,

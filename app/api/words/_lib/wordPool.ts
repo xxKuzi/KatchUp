@@ -1,4 +1,4 @@
-import { and, eq, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import { conceptTranslations } from "@/db/schema";
@@ -148,6 +148,36 @@ export async function getDistractors({
     .limit(Math.min(Math.max(1, count), MAX_COUNT));
 
   return rows.map((row) => row.text);
+}
+
+/**
+ * The wording of specific concepts in one language, keyed by concept id.
+ *
+ * Lets a server-graded quiz re-derive the right answer from the database
+ * instead of trusting whatever the client says the answer was.
+ */
+export async function getTranslationsForConcepts(
+  conceptIds: string[],
+  lang: Lang,
+): Promise<Map<string, string>> {
+  if (conceptIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({
+      conceptId: conceptTranslations.conceptId,
+      text: conceptTranslations.text,
+    })
+    .from(conceptTranslations)
+    .where(
+      and(
+        eq(conceptTranslations.lang, lang),
+        inArray(conceptTranslations.conceptId, conceptIds.slice(0, MAX_COUNT)),
+      ),
+    );
+
+  return new Map(rows.map((row) => [row.conceptId, row.text]));
 }
 
 /** How many concepts a pair has available — used to validate a selection. */

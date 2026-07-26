@@ -790,7 +790,7 @@ export default function ChooseOneMultiplayerPlayPage() {
               {LANG_LABELS[speak]} → {LANG_LABELS[learning]}
             </span>
           </p>
-          <p className="text-xs">Level {level} (preselected)</p>
+          <p className="text-xs">Difficulty matched to your level</p>
         </div>
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-300">

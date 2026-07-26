@@ -59,10 +59,8 @@ const FlipCardsPage = () => {
   // Bumped to pull a fresh set of cards for the same pair.
   const [reshuffleToken, setReshuffleToken] = useState(0);
   const learningLevel = useLearningLevel(learning);
-  const level: CefrLevel =
-    learningLevel && learningLevel.label !== "C2"
-      ? (learningLevel.label as CefrLevel)
-      : "A1";
+  // The player sees a level number; the word pool still needs a difficulty.
+  const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
 
 
   const [deck, setDeck] = useState<CardWord[]>([]);

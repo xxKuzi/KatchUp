@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { countKnownWordsForLanguage } from "../_lib/spacedRepetition";
+import { getEffectiveMasteredCount } from "../_lib/levelProgress";
 
 /**
  * Returns how many words the signed-in user has mastered in a given
- * language, used to derive the navbar's CEFR-style level badge.
- * GET /api/decks/level?language=deutsch
+ * language, used to derive the navbar's CEFR-style level badge. The count
+ * includes any head start earned by passing a level test.
+ * GET /api/decks/level?language=de
  */
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -21,10 +22,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const masteredCount = await countKnownWordsForLanguage(
-    session.user.id,
-    language,
-  );
+  const { masteredCount, knownWords, wordFloor } =
+    await getEffectiveMasteredCount(session.user.id, language);
 
-  return NextResponse.json({ masteredCount });
+  return NextResponse.json({ masteredCount, knownWords, wordFloor });
 }

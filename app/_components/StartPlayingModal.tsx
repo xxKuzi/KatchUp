@@ -8,7 +8,6 @@ import { useSession } from "@/lib/auth-client";
 import { useLanguage } from "../_lib/languageContext";
 import { LanguagePicker } from "./LanguageSwitcher";
 import {
-  CEFR_LEVELS,
   detectBrowserLang,
   LANGS,
   LANG_FLAGS,
@@ -21,6 +20,22 @@ import { getPlayerProfile } from "../games/choose-one-multiplayer/_lib/playerPro
 import { hasAnonPlaysRemaining } from "../games/_lib/anonPlayGate";
 
 const LANGUAGE_STORAGE_KEY = "katchup-language";
+
+/**
+ * The starting-difficulty choice, in words rather than CEFR codes. The value
+ * behind each option is the tag the vocabulary carries, which is the only
+ * place those codes still live.
+ */
+const STARTING_POINTS: {
+  difficulty: CefrLevel;
+  label: string;
+  hint: string;
+}[] = [
+  { difficulty: "A1", label: "Just starting", hint: "First words" },
+  { difficulty: "A2", label: "Some basics", hint: "Everyday words" },
+  { difficulty: "B1", label: "Getting by", hint: "Full sentences" },
+  { difficulty: "C1", label: "Pretty fluent", hint: "Rare words" },
+];
 
 export default function StartPlayingModal({
   open,
@@ -39,6 +54,9 @@ export default function StartPlayingModal({
   const [learningLanguage, setLearningLanguageChoice] = useState<Lang | null>(
     null,
   );
+  // Players never see CEFR codes — they pick how much of the language they
+  // already have, and that maps onto the difficulty the word pool is tagged
+  // with. Each option also says which level a new account starts on.
   const [level, setLevel] = useState<CefrLevel>("A1");
 
   // Every language is learnable now, including English — the only one excluded
@@ -187,23 +205,26 @@ export default function StartPlayingModal({
 
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
-              Your level
+              How much do you know?
             </p>
-            <div className="grid grid-cols-5 gap-2">
-              {CEFR_LEVELS.map((option) => {
-                const active = option === level;
+            <div className="grid grid-cols-2 gap-2">
+              {STARTING_POINTS.map((option) => {
+                const active = option.difficulty === level;
                 return (
                   <button
-                    key={option}
+                    key={option.difficulty}
                     type="button"
-                    onClick={() => setLevel(option)}
-                    className={`flex items-center justify-center rounded-2xl border px-2 py-3 text-xs font-semibold transition ${
+                    onClick={() => setLevel(option.difficulty)}
+                    className={`flex flex-col items-start gap-0.5 rounded-2xl border px-3 py-3 text-left text-xs font-semibold transition ${
                       active
                         ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-300"
                         : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     }`}
                   >
-                    {option}
+                    <span>{option.label}</span>
+                    <span className="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">
+                      {option.hint}
+                    </span>
                   </button>
                 );
               })}

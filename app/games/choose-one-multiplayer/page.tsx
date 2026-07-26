@@ -73,10 +73,8 @@ const ChooseOneMultiplayerPage = () => {
   const [acceptSecondsLeft, setAcceptSecondsLeft] = useState(ACCEPT_WINDOW_S);
   const [recentMatches, setRecentMatches] = useState<MatchHistoryEntry[]>([]);
   const learningLevel = useLearningLevel(learning);
-  const level: CefrLevel =
-    learningLevel && learningLevel.label !== "C2"
-      ? (learningLevel.label as CefrLevel)
-      : "A1";
+  // The player sees a level number; the word pool still needs a difficulty.
+  const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
   const isHydrated = learningLevel !== null;
 
   useEffect(() => {

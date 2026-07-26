@@ -26,12 +26,10 @@ const ScoreRushPage = () => {
   const [recentRuns, setRecentRuns] = useState<RunHistoryEntry[]>([]);
 
   // Derived from how many words you've actually mastered in the target
-  // language; null while loading or signed out, in which case we start at A1.
+  // language; null while loading or signed out, in which case we start easy.
   const learningLevel = useLearningLevel(learning);
-  const level: CefrLevel =
-    learningLevel && learningLevel.label !== "C2"
-      ? (learningLevel.label as CefrLevel)
-      : "A1";
+  // The player sees a level number; the word pool still needs a difficulty.
+  const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
   const isHydrated = learningLevel !== null;
 
   useEffect(() => {
@@ -113,7 +111,9 @@ const ScoreRushPage = () => {
               Preselected level
             </p>
             <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-              {isHydrated ? `${level} (auto from your progress)` : "Loading..."}
+              {isHydrated && learningLevel
+                ? `Level ${learningLevel.level} (auto from your progress)`
+                : "Loading..."}
             </p>
           </div>
         </div>

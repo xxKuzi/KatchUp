@@ -64,7 +64,7 @@ export default function LanguageSwitcher({
         aria-label={`Change languages (learning ${LANG_LABELS[learningLanguage]})`}
         title={
           level
-            ? `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]} · ${level.label} (${level.masteredCount} words mastered)`
+            ? `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]} · level ${level.level} (${level.masteredCount} words mastered)`
             : `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]}`
         }
         className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-lg leading-none shadow-sm transition hover:scale-105 ${
@@ -74,17 +74,6 @@ export default function LanguageSwitcher({
         }`}
       >
         <span aria-hidden>{LANG_FLAGS[learningLanguage]}</span>
-        {level && (
-          <span
-            className={`rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold leading-none ${
-              isHomePage
-                ? "bg-blue-500/20 text-blue-200"
-                : "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
-            }`}
-          >
-            {level.label}
-          </span>
-        )}
       </button>
 
       {open &&

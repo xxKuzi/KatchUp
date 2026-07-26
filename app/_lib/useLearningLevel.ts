@@ -1,45 +1,100 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { type Lang } from "./languages";
-import { CefrProgress, cefrProgressFromMasteredCount } from "./cefrLevel";
+import { LevelProgress, levelProgressFromMasteredCount } from "./level";
+
+/**
+ * Broadcast after the level test promotes someone, so every badge on screen
+ * (navbar, profile) re-reads the level without a page reload.
+ */
+const LEVEL_CHANGED_EVENT = "katchup:level-changed";
+
+export function notifyLevelChanged(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(LEVEL_CHANGED_EVENT));
+  }
+}
+
+/**
+ * Why the level might not be a number yet. "loading" and "signedOut" look the
+ * same to a component that only gets `null`, which made a signed-in user read
+ * "sign in to see it" for as long as the fetch took — so callers get the
+ * reason, not just the absence.
+ */
+export type LearningLevelStatus = "loading" | "signedOut" | "ready" | "error";
+
+export interface LearningLevelState {
+  level: LevelProgress | null;
+  status: LearningLevelStatus;
+}
 
 /**
  * Fetches the signed-in user's mastered-word count for the language they're
- * learning and turns it into a CEFR-style level (A1-C2). Returns null while
- * loading or when signed out.
+ * learning and turns it into a numeric level (1-40), alongside a status
+ * that says why there's no level when there isn't one.
  */
-export function useLearningLevel(learningLanguage: Lang): CefrProgress | null {
-  const { data: session, status } = useSession();
-  const [progress, setProgress] = useState<CefrProgress | null>(null);
+export function useLearningLevelState(
+  learningLanguage: Lang,
+): LearningLevelState {
+  const { data: session, status: sessionStatus } = useSession();
+  const [state, setState] = useState<LearningLevelState>({
+    level: null,
+    status: "loading",
+  });
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const reload = useCallback(() => setReloadToken((value) => value + 1), []);
 
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.id) {
-      setProgress(null);
+    window.addEventListener(LEVEL_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(LEVEL_CHANGED_EVENT, reload);
+  }, [reload]);
+
+  useEffect(() => {
+    if (sessionStatus === "loading") {
+      return;
+    }
+
+    if (sessionStatus !== "authenticated" || !session?.user?.id) {
+      setState({ level: null, status: "signedOut" });
       return;
     }
 
     let cancelled = false;
 
     fetch(`/api/decks/level?language=${encodeURIComponent(learningLanguage)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { masteredCount?: number } | null) => {
-        if (cancelled || !data) {
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Level request failed (${res.status})`);
+        }
+        return (await res.json()) as { masteredCount?: number };
+      })
+      .then((data) => {
+        if (cancelled) {
           return;
         }
-        setProgress(cefrProgressFromMasteredCount(data.masteredCount ?? 0));
+        setState({
+          level: levelProgressFromMasteredCount(data.masteredCount ?? 0),
+          status: "ready",
+        });
       })
       .catch(() => {
         if (!cancelled) {
-          setProgress(null);
+          setState({ level: null, status: "error" });
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [learningLanguage, status, session?.user?.id]);
+  }, [learningLanguage, sessionStatus, session?.user?.id, reloadToken]);
 
-  return progress;
+  return state;
+}
+
+/** Level only, for the games that just want a difficulty to fetch words at. */
+export function useLearningLevel(learningLanguage: Lang): LevelProgress | null {
+  return useLearningLevelState(learningLanguage).level;
 }
