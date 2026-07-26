@@ -176,7 +176,7 @@ export default function TopicDetailPage() {
         </p>
         <Link
           href="/topics"
-          className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700"
+          className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-500"
         >
           {t("topics.back", "Back to topics")}
         </Link>
@@ -187,7 +187,8 @@ export default function TopicDetailPage() {
   const name = topicTitle(topic, learningLanguage, language);
   const topicProgress = state.topicProgress[topic.id];
   const levels = getLevelsForTopic(state, topic.id);
-  const completedAll = !awaitingFreshState && Boolean(topicProgress?.isCompleted);
+  const completedAll =
+    !awaitingFreshState && Boolean(topicProgress?.isCompleted);
   const legendary = !awaitingFreshState && Boolean(topicProgress?.isLegendary);
   // The key is granted the moment the fifth level clears, wherever that
   // happened — the popup is only how the player finds out about it. Never off a
@@ -246,7 +247,7 @@ export default function TopicDetailPage() {
           <section className="first-section-static-glow rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-950/70 sm:p-8 min-[900px]:py-6">
             <Link
               href="/topics"
-              className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition hover:text-blue-700 dark:text-blue-300"
+              className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition hover:text-blue-500 dark:text-blue-300"
             >
               {/* Bigger and bolder than the label it sits next to — at text size
                   the arrow was easy to miss under a 3xl heading. */}

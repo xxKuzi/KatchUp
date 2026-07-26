@@ -12,7 +12,7 @@ interface KeyEarnedPopupProps {
   keys: number;
   /** Dismiss without leaving the page. */
   onClose: () => void;
-  /** Dismiss and go spend the key on the topic list. */
+  /** Take the key: dismisses and goes to the pack list to spend it. */
   onSpend: () => void;
   /** The legendary review round, when the pack resolved to a real deck. */
   reviewHref: string | null;
@@ -110,6 +110,8 @@ export default function KeyEarnedPopup({
           {t("topics.keys", "Keys")}: {keys}
         </p>
 
+        {/* Two ways on: go for the crown, or take the key to the pack list —
+            which is where it gets spent, so that is what "back to topics" is. */}
         <div className="mt-6 flex flex-col gap-2">
           {reviewHref && (
             <Link
@@ -118,23 +120,15 @@ export default function KeyEarnedPopup({
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white transition hover:bg-violet-700"
             >
               <Crown size={16} />
-              {t("topics.reviewTopic", "Review this topic")}
+              {t("topics.makeLegendary", "Make this deck legendary")}
             </Link>
           )}
           <button
             type="button"
             onClick={onSpend}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+            className="mt-2 text-sm font-medium text-slate-500 transition hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
-            <KeyRound size={16} />
-            {t("topics.spendKey", "Unlock a new pack")}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm font-medium text-slate-500 transition hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-          >
-            {t("topics.stayHere", "Stay on this pack")}
+            {t("topics.back", "Back to topics")}
           </button>
         </div>
       </div>

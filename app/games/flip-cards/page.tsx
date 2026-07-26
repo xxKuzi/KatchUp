@@ -7,6 +7,9 @@ import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
 import DeckLoading from "../_components/DeckLoading";
 import NextLevelButton from "../_components/NextLevelButton";
+import PackKeyCelebration, {
+  PACK_COMPLETE_BUTTON_CLASS,
+} from "../_components/PackKeyCelebration";
 import { predictLevelCleared } from "../_lib/levelCompletion";
 import {
   LANGS,
@@ -24,8 +27,16 @@ import {
 } from "../_lib/deckSessionClient";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
+import { usePackCompleted } from "../_hooks/usePackCompleted";
 import { useAuthState } from "@/app/_lib/auth";
-import { Check, Crown, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
+import {
+  Check,
+  Crown,
+  KeyRound,
+  Sparkles,
+  RefreshCw,
+  ArrowLeftRight,
+} from "lucide-react";
 
 const DECK_SIZE = 15;
 const SWIPE_THRESHOLD = 110;
@@ -86,7 +97,6 @@ const FlipCardsPage = () => {
   const learningLevel = useLearningLevel(learning);
   // The player sees a level number; the word pool still needs a difficulty.
   const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
-
 
   // Whether the review round took the crown is the server's call, not this
   // screen's: the verdicts go up and come back graded. The percentage below is
@@ -240,16 +250,24 @@ const FlipCardsPage = () => {
     return predictLevelCleared(session.summary, session.words, metWordIds);
   }, [finished, session, topicId, isLegendaryRound, metWordIds]);
 
+  // The fifth level clearing finishes the pack, and a key comes with it. Said
+  // here rather than left for the player to find on the way back.
+  const packCompleted = usePackCompleted(
+    topicId,
+    topicLevelNumber,
+    deckId,
+    // `levelDone` covers the round that never happens: a level whose words are
+    // all learned serves nothing, and that empty session is itself proof the
+    // level is cleared.
+    deckId ? levelCleared || levelDone : finished && !isLegendaryRound,
+  );
+
   // On a topic level, cards swiped "still learning" are the thing to do next,
   // and the amber button above the row already offers exactly them — replaying
   // the whole lesson alongside it is only a way to lose that shorter path. It
   // comes back once nothing is left over. A failed legendary round is the one
   // case where running it all again is the point.
-  const showRoundAgain = !(
-    topicId &&
-    !isLegendaryRound &&
-    practice.length > 0
-  );
+  const showRoundAgain = !(topicId && !isLegendaryRound && practice.length > 0);
 
   const remaining = Math.max(deck.length - index, 0);
   const progressPercent = deck.length
@@ -270,11 +288,7 @@ const FlipCardsPage = () => {
       if (deckId) {
         // A right swipe is a claim, not a tested answer — worth two practices,
         // so the second swipe is what earns mastery.
-        deckSession.recordResult(
-          currentCard.id,
-          true,
-          CONFIDENT_ANSWER_STEPS,
-        );
+        deckSession.recordResult(currentCard.id, true, CONFIDENT_ANSWER_STEPS);
       }
     } else {
       setPractice((previous) => [...previous, currentCard]);
@@ -361,24 +375,37 @@ const FlipCardsPage = () => {
       );
     }
     if (deckSession.status === "empty") {
+      // A level with nothing left to serve is a level long since cleared, and it
+      // can be the one that finishes the pack — so the key is handed over here
+      // too rather than only on a results screen this round never reaches.
       return (
-        <DeckMessage
-          {...GATE}
-          title={
-            sessionMode === "finish"
-              ? "No words to review yet"
-              : topicId
-                ? `You've mastered every word in level ${topicLevelNumber}! 🎉`
-                : "You've mastered every word in this deck! 🎉"
-          }
-          body={
-            topicId && sessionMode !== "finish"
-              ? "Pick another level to keep going."
-              : undefined
-          }
-          backHref={backHref}
-          backLabel={topicId ? "Back to topic" : undefined}
-        />
+        <>
+          <DeckMessage
+            {...GATE}
+            title={
+              sessionMode === "finish"
+                ? "No words to review yet"
+                : topicId
+                  ? `You've mastered every word in level ${topicLevelNumber}! 🎉`
+                  : "You've mastered every word in this deck! 🎉"
+            }
+            body={
+              topicId && sessionMode !== "finish"
+                ? "Pick another level to keep going."
+                : undefined
+            }
+            backHref={backHref}
+            backLabel={topicId ? "Back to topic" : undefined}
+            highlightBack={packCompleted}
+          />
+          {packCompleted && (
+            <PackKeyCelebration
+              topicId={topicId}
+              level={topicLevelNumber}
+              deckId={deckId}
+            />
+          )}
+        </>
       );
     }
   }
@@ -393,21 +420,19 @@ const FlipCardsPage = () => {
       <div className="w-full max-w-xl">
         {!deckId && (
           <div className="flex items-center justify-center gap-2">
-            {LANGS.filter((lang) => lang !== speak).map(
-              (lang) => (
-                <button
-                  key={lang}
-                  onClick={() => switchLanguage(lang)}
-                  className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                    learning === lang
-                      ? "border-blue-600 bg-blue-600 text-white"
-                      : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-                  }`}
-                >
-                  {LANG_LABELS[lang]}
-                </button>
-              ),
-            )}
+            {LANGS.filter((lang) => lang !== speak).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => switchLanguage(lang)}
+                className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                  learning === lang
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                }`}
+              >
+                {LANG_LABELS[lang]}
+              </button>
+            ))}
           </div>
         )}
         {deckId && deckSession.session && (
@@ -557,6 +582,13 @@ const FlipCardsPage = () => {
       ) : (
         finished && (
           <div className="mt-6 w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+            {packCompleted && (
+              <PackKeyCelebration
+                topicId={topicId}
+                level={topicLevelNumber}
+                deckId={deckId}
+              />
+            )}
             {isLegendaryRound ? (
               legendaryPassed ? (
                 <p className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-600 dark:text-amber-300">
@@ -596,7 +628,8 @@ const FlipCardsPage = () => {
                 <Check className="h-4 w-4" /> {known.length} known
               </span>
               <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                <Sparkles className="h-4 w-4" /> {practice.length} still learning
+                <Sparkles className="h-4 w-4" /> {practice.length} still
+                learning
               </span>
             </div>
 
@@ -616,10 +649,22 @@ const FlipCardsPage = () => {
                   round again. */}
               <div className="flex flex-wrap items-center justify-center gap-3">
                 {deckId && (
+                  // Once the pack is done this is the way to its key, so it
+                  // trades the plain dark button for the gold one.
                   <Link
                     href={backHref}
-                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                    className={
+                      packCompleted
+                        ? `${PACK_COMPLETE_BUTTON_CLASS} inline-flex items-center gap-2`
+                        : "rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                    }
                   >
+                    {packCompleted && (
+                      <>
+                        <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md animate-[legendaryShimmer_2.6s_linear_infinite]" />
+                        <KeyRound size={16} />
+                      </>
+                    )}
                     {topicId ? "Back to topic" : "Back to decks"}
                   </Link>
                 )}

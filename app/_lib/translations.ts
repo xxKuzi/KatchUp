@@ -189,7 +189,8 @@ export const translations: Record<Language, Translations> = {
       keyEarnedText:
         "Every level of this pack is done. Spend the key to unlock a new pack - or go for the crown.",
       spendKey: "Unlock a new pack",
-      stayHere: "Stay on this pack",
+      stayHere: "Stay on this deck",
+      makeLegendary: "Make this deck legendary",
     },
     leaderboard: {
       title: "Friends League",
@@ -383,6 +384,7 @@ export const translations: Record<Language, Translations> = {
         "Vsechny urovne tohoto balicku jsou hotove. Utratte klic za novy balicek - nebo si dojdete pro korunu.",
       spendKey: "Odemknout novy balicek",
       stayHere: "Zustat u tohoto balicku",
+      makeLegendary: "Udelej z tohoto balicku legendu",
     },
     leaderboard: {
       title: "Liga přátel",
@@ -580,6 +582,7 @@ export const translations: Record<Language, Translations> = {
         "Alle Level dieses Pakets sind fertig. Loese damit ein neues Paket ein - oder hole dir die Krone.",
       spendKey: "Neues Paket freischalten",
       stayHere: "Bei diesem Paket bleiben",
+      makeLegendary: "Mach dieses Paket legendaer",
     },
     leaderboard: {
       title: "Freunde-Rangliste",

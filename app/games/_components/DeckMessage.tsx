@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { KeyRound } from "lucide-react";
 import GamePage from "./GamePage";
+import { PACK_COMPLETE_BUTTON_CLASS } from "./PackKeyCelebration";
 
 export interface DeckMessageProps {
   name: string;
@@ -12,6 +14,11 @@ export interface DeckMessageProps {
   backHref?: string;
   /** Label for the back link; defaults to "Back to decks". */
   backLabel?: string;
+  /**
+   * Dresses the back link as the way to a finished pack's key — the same gold
+   * button the results screens use, since from here it is the same journey.
+   */
+  highlightBack?: boolean;
   action?: { label: string; onClick: () => void };
 }
 
@@ -46,8 +53,18 @@ export default function DeckMessage(props: DeckMessageProps) {
           {props.backHref && (
             <Link
               href={props.backHref}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              className={
+                props.highlightBack
+                  ? `${PACK_COMPLETE_BUTTON_CLASS} inline-flex items-center gap-2`
+                  : "rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              }
             >
+              {props.highlightBack && (
+                <>
+                  <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md animate-[legendaryShimmer_2.6s_linear_infinite]" />
+                  <KeyRound size={16} />
+                </>
+              )}
               {props.backLabel ?? "Back to decks"}
             </Link>
           )}

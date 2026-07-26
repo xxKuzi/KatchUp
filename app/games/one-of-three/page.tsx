@@ -2,12 +2,16 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, KeyRound, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
 import DeckLoading from "../_components/DeckLoading";
 import NextLevelButton from "../_components/NextLevelButton";
+import PackKeyCelebration, {
+  PACK_COMPLETE_BUTTON_CLASS,
+} from "../_components/PackKeyCelebration";
 import { TOPIC_LEVEL_COUNT, useTopicLevel } from "../_hooks/useTopicLevel";
+import { usePackCompleted } from "../_hooks/usePackCompleted";
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
@@ -130,6 +134,16 @@ const OneOfThreePage = () => {
     }
   }, [levelAlreadyMastered, markComplete]);
 
+  // A level with nothing left to serve is a level long since cleared, and it can
+  // be the one that finishes the pack — so the key is handed over on that screen
+  // too, rather than only on a results screen this round never reaches.
+  const packCompleted = usePackCompleted(
+    topicId,
+    safeLevel,
+    deckId,
+    levelAlreadyMastered,
+  );
+
   const allWords = useFallbackWords();
   const roundSeed = deckId
     ? `deck:${deckId}:${sessionMode}:${
@@ -192,23 +206,33 @@ const OneOfThreePage = () => {
     }
     if (deckSession.status === "empty") {
       return (
-        <DeckMessage
-          {...GATE}
-          title={
-            sessionMode === "finish"
-              ? "No hard words to review yet"
-              : topicId
-                ? `You've mastered every word in level ${safeLevel}! 🎉`
-                : "You've mastered every word in this deck! 🎉"
-          }
-          body={
-            topicId && sessionMode !== "finish"
-              ? "Pick another level to keep going."
-              : undefined
-          }
-          backHref={backHref}
-          backLabel={topicId ? "Back to topic" : undefined}
-        />
+        <>
+          <DeckMessage
+            {...GATE}
+            title={
+              sessionMode === "finish"
+                ? "No hard words to review yet"
+                : topicId
+                  ? `You've mastered every word in level ${safeLevel}! 🎉`
+                  : "You've mastered every word in this deck! 🎉"
+            }
+            body={
+              topicId && sessionMode !== "finish"
+                ? "Pick another level to keep going."
+                : undefined
+            }
+            backHref={backHref}
+            backLabel={topicId ? "Back to topic" : undefined}
+            highlightBack={packCompleted}
+          />
+          {packCompleted && (
+            <PackKeyCelebration
+              topicId={topicId}
+              level={safeLevel}
+              deckId={deckId}
+            />
+          )}
+        </>
       );
     }
   }
@@ -364,6 +388,17 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const scorePercent =
     totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
+  // The fifth level clearing finishes the pack, and a key comes with it. Said
+  // here rather than left for the player to find on the way back. Without a
+  // deck there are no word counts to clear, so passing the round is the bar —
+  // the same one that marks the level done on that path.
+  const packCompleted = usePackCompleted(
+    topicId,
+    safeLevel,
+    deckId,
+    deckId ? levelCleared : lessonPassed,
+  );
+
   // Words are still outstanding whenever the level didn't finish, and going
   // round again is the way to meet them — so with nothing else to move on to,
   // that button is the one to reach for rather than the quiet outline next to
@@ -450,6 +485,14 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
             </>
           )}
 
+          {isFinished && packCompleted && (
+            <PackKeyCelebration
+              topicId={topicId}
+              level={safeLevel}
+              deckId={deckId}
+            />
+          )}
+
           {isFinished && (
             <div className="text-center">
               <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">
@@ -477,10 +520,22 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
               </div>
 
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                {/* Once the pack is done this is the way to its key, so it
+                    trades the plain dark button for the gold one. */}
                 <Link
                   href={backHref}
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  className={
+                    packCompleted
+                      ? `${PACK_COMPLETE_BUTTON_CLASS} inline-flex items-center gap-2`
+                      : "rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  }
                 >
+                  {packCompleted && (
+                    <>
+                      <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md animate-[legendaryShimmer_2.6s_linear_infinite]" />
+                      <KeyRound size={16} />
+                    </>
+                  )}
                   {topicId ? "Back to topic" : "Back to decks"}
                 </Link>
                 {deckId && topicId && (
