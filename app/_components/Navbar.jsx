@@ -53,13 +53,13 @@ function Navbar() {
   const energyRef = useRef(null);
   const isSignedIn = status === "authenticated";
   const isHomePage = pathname === "/";
-  const isLoginPage = pathname === "/login";
-  // First-time-visitor onboarding: on the landing page, while signed out, the
-  // navbar is locked down to just Home/Games so new visitors get funneled
-  // into a free Score Rush round before browsing the rest of the app. Stays
-  // locked through the login page too, so it doesn't unblur the instant you
-  // click "sign in" — only once you're actually authenticated.
-  const gateActive = (isHomePage || isLoginPage) && !isSignedIn;
+  // First-time-visitor onboarding: while signed out, the navbar is locked down
+  // to just Home/Games/Blog so new visitors get funneled into a free Score Rush
+  // round before browsing the rest of the app. The gate applies on every page,
+  // not only the landing page, because OnboardingGate bounces signed-out
+  // visitors off the locked routes — an unblurred link would only lead back
+  // to "/". It lifts once you're actually authenticated.
+  const gateActive = !isSignedIn;
   const gatedItemClass = gateActive
     ? " pointer-events-none blur-[3px] opacity-50 select-none"
     : "";
@@ -213,7 +213,7 @@ function Navbar() {
                 <button
                   type="button"
                   onClick={handleOpenLogin}
-                  className={`inline-flex cursor-pointer items-center justify-center rounded-lg border border-blue-500 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400${gatedItemClass}`}
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-blue-500 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 dark:border-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
                 >
                   {t("auth.loginRegister", "Login / Register")}
                 </button>
@@ -230,7 +230,7 @@ function Navbar() {
                 isHomePage
                   ? "border-slate-700/80 bg-slate-900/80 text-slate-100 hover:bg-slate-800"
                   : "border-slate-300/80 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
-              }${gatedItemClass}`}
+              }`}
             >
               <Newspaper className="h-3.5 w-3.5" />
             </button>
@@ -451,7 +451,7 @@ function Navbar() {
                         </button>
                       </div>
                     ) : (
-                      <div className={`pt-2 lg:hidden${gatedItemClass}`}>
+                      <div className="pt-2 lg:hidden">
                         <button
                           type="button"
                           onClick={handleOpenLogin}
