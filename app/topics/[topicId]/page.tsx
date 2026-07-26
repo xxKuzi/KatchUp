@@ -12,6 +12,10 @@ import {
   fetchDeckLevelProgress,
 } from "@/app/games/_lib/deckSessionClient";
 import {
+  useCachedTopicProgress,
+  writeTopicProgressCache,
+} from "../_lib/levelProgressCache";
+import {
   ascendTopic,
   completeTopicLevel,
   getLevelsForTopic,
@@ -39,8 +43,8 @@ export default function TopicDetailPage() {
 
   const { t, language, learningLanguage } = useLanguage();
   const { isReady, isSignedIn } = useAuthState();
-  const [deckId, setDeckId] = useState<string | null>(null);
-  const [levelProgress, setLevelProgress] = useState<
+  const [fetchedDeckId, setFetchedDeckId] = useState<string | null>(null);
+  const [fetchedProgress, setFetchedProgress] = useState<
     DeckProgressSummary[] | null
   >(null);
   const state = useTopicsState(language);
@@ -53,6 +57,13 @@ export default function TopicDetailPage() {
   // Resolve the DB topic deck for (topicKey, foreignLang) so levels can link
   // with a real deck ID and use DB words + spaced-repetition tracking.
   const foreignLang = learningLanguage;
+
+  // Both of those are two round trips away, so until they land the page shows
+  // the numbers it left with rather than a set of loading skeletons — coming
+  // back from a round used to mean watching the cards fill in all over again.
+  const cached = useCachedTopicProgress(topicId, foreignLang);
+  const deckId = fetchedDeckId ?? cached?.deckId ?? null;
+  const levelProgress = fetchedProgress ?? cached?.levels ?? null;
   const fetchDeckId = useCallback(async () => {
     if (!topic) return;
     try {
@@ -61,7 +72,7 @@ export default function TopicDetailPage() {
       );
       if (res.ok) {
         const data = (await res.json()) as { deckId: string };
-        setDeckId(data.deckId);
+        setFetchedDeckId(data.deckId);
       }
     } catch {
       // silently fall back to non-deck mode
@@ -74,29 +85,32 @@ export default function TopicDetailPage() {
     }
   }, [isSignedIn, fetchDeckId]);
 
-  // How many of each level's words are actually mastered. A level used to read
-  // "Done" as soon as its cards had been swiped through once, which said Done at
-  // 3 of 6 words learned; these counts are what the cards report now.
+  // How many of each level's words have been met, and how many are learned for
+  // good. A level used to read "Done" as soon as its cards had been swiped
+  // through once; these counts are what the cards report now.
   useEffect(() => {
-    if (!deckId) {
+    if (!deckId || !topic) {
       return;
     }
 
     let cancelled = false;
     fetchDeckLevelProgress(deckId)
       .then((levels) => {
-        if (!cancelled) {
-          setLevelProgress(levels);
+        if (cancelled) {
+          return;
         }
+        setFetchedProgress(levels);
+        writeTopicProgressCache(topic.id, foreignLang, { deckId, levels });
       })
       .catch(() => {
-        // Non-critical: the cards fall back to the stored played/not-played flag.
+        // Non-critical: the cards fall back to the cache, or to the stored
+        // played/not-played flag when there is nothing cached either.
       });
 
     return () => {
       cancelled = true;
     };
-  }, [deckId]);
+  }, [deckId, topic, foreignLang]);
 
   // Keys and Ascend still run off the stored `completedLevels`, so a level the
   // server says is cleared gets recorded here — including one cleared in another
@@ -262,8 +276,17 @@ export default function TopicDetailPage() {
                   ? `${progress.cleared} / ${progress.total}`
                   : t("topics.pending", "Pending");
 
+              // A finished Flip Cards level has nothing left to serve — practice
+              // mode drops the words it already knows, so the round would open
+              // straight onto its empty state. One of Three is worth re-taking,
+              // so that one keeps offering another go.
+              const isFinishedFlipCards =
+                cleared && levelData.mode === "flip-cards";
+
               const playLabel = cleared
-                ? t("topics.practiceAgain", "Practice again")
+                ? isFinishedFlipCards
+                  ? t("topics.done", "Done")
+                  : t("topics.practiceAgain", "Practice again")
                 : started
                   ? t("topics.continue", "Continue")
                   : t("topics.play", "Play");
@@ -296,12 +319,21 @@ export default function TopicDetailPage() {
                   </p>
 
                   <div className="mt-4 flex gap-2">
-                    <Link
-                      href={gameHref}
-                      className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
-                    >
-                      {playLabel}
-                    </Link>
+                    {isFinishedFlipCards ? (
+                      <span
+                        aria-disabled
+                        className="cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500"
+                      >
+                        {playLabel}
+                      </span>
+                    ) : (
+                      <Link
+                        href={gameHref}
+                        className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+                      >
+                        {playLabel}
+                      </Link>
+                    )}
                   </div>
                 </article>
               );
