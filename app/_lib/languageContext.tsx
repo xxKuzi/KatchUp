@@ -23,6 +23,40 @@ const LEARNING_LANGUAGE_STORAGE_KEY = "katchup-learning-language";
 const DEFAULT_LANGUAGE: Lang = "en";
 const DEFAULT_LEARNING_LANGUAGE: Lang = "de";
 
+/**
+ * The pair the player has actually chosen, or null if they never have.
+ *
+ * Only the learning side answers that question: the native language is guessed
+ * from the browser and defaulted, but nothing writes the learning key until a
+ * choice is made — so its presence is what separates a returning player from a
+ * first-time visitor sitting on the defaults.
+ */
+export function readChosenLanguagePair(): {
+  speak: Lang;
+  learning: Lang;
+} | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const learning = normalizeLang(
+    window.localStorage.getItem(LEARNING_LANGUAGE_STORAGE_KEY),
+  );
+
+  if (!learning) {
+    return null;
+  }
+
+  const speak =
+    normalizeLang(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)) ??
+    detectBrowserLang() ??
+    DEFAULT_LANGUAGE;
+
+  // A pair with the same language on both sides has nothing to teach; that is
+  // a question the modal still has to ask.
+  return speak === learning ? null : { speak, learning };
+}
+
 export function LanguageProvider({
   children,
 }: {

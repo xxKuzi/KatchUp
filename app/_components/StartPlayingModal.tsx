@@ -16,8 +16,8 @@ import {
   type CefrLevel,
   type Lang,
 } from "../_lib/languages";
-import { getPlayerProfile } from "../games/choose-one-multiplayer/_lib/playerProfile";
 import { hasAnonPlaysRemaining } from "../games/_lib/anonPlayGate";
+import { scoreRushHref } from "../games/_lib/scoreRushStart";
 
 const LANGUAGE_STORAGE_KEY = "katchup-language";
 
@@ -119,17 +119,13 @@ export default function StartPlayingModal({
       return;
     }
 
-    const profile = getPlayerProfile();
-    const params = new URLSearchParams({
-      speak: nativeLanguage,
-      learning: learningLanguage,
-      level,
-      playerId: profile.id,
-      playerName: profile.name,
-      playerAvatar: profile.avatar,
-    });
-
-    router.push(`/games/score-rush/play?${params.toString()}`);
+    router.push(
+      scoreRushHref({
+        speak: nativeLanguage,
+        learning: learningLanguage,
+        level,
+      }),
+    );
   };
 
   if (!open || !mounted) {
