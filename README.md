@@ -1,5 +1,3 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
 ## Getting Started
 
 First, run the development server:
@@ -36,6 +34,10 @@ Required values:
 ### Adding Words
 
 Navigate to the "My Decks" page where you can manage your word decks. You have two options:
+
+⚠️ Copyright Notice
+
+This project is closed-source and provided here for portfolio and viewing purposes only. You are welcome to review the code, but no permission is granted to copy, modify, distribute, or use this software in any capacity. See the LICENSE file for full details.
 
 #### Option 1: Add Individual Words
 
