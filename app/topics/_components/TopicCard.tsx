@@ -103,7 +103,9 @@ function TopicCardContent({
       <div className="absolute inset-x-0 top-0 h-px bg-white/80 dark:bg-white/10" />
       <div
         className={`absolute left-0 top-0 h-full w-2 bg-linear-to-b ${
-          legendary ? "from-violet-400 via-fuchsia-500 to-amber-400" : theme.stripe
+          legendary
+            ? "from-violet-400 via-fuchsia-500 to-amber-400"
+            : theme.stripe
         }`}
       />
 
@@ -113,7 +115,10 @@ function TopicCardContent({
         <>
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(167,139,250,0.35),transparent_55%)]" />
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute inset-y-0 w-1/3 bg-linear-to-r from-transparent via-white/45 to-transparent animate-[legendaryShimmer_4.5s_ease-in-out_infinite] dark:via-white/12" />
+            {/* A reflection passing over glass: narrow, soft-edged, and bright
+                enough to show on the black card the app ships on — at 12% white
+                it was running the whole time and reading as nothing. */}
+            <div className="absolute inset-y-0 w-1/4 bg-linear-to-r from-transparent via-white/70 to-transparent blur-[3px] animate-[legendaryShimmer_7s_linear_infinite] dark:via-white/30" />
           </div>
         </>
       )}
@@ -184,11 +189,7 @@ function TopicCardContent({
               <Lock size={16} className="shrink-0" />
             )}
             <span className="truncate">
-              {legendary
-                ? "Legendary — mastered"
-                : unlocked
-                  ? "Ready to play"
-                  : "Locked"}
+              {legendary ? "Legendary" : unlocked ? "Ready to play" : "Locked"}
             </span>
           </div>
 

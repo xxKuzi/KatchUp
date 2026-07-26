@@ -153,13 +153,19 @@ body {
   }
 }
 
-/* A legendary pack's card keeps a slow shimmer running across it. */
+/* A legendary pack's card keeps a shimmer running across it: one even-speed
+   pass, then a wait before the next. The speed has to stay constant — an eased
+   sweep looked like it stalled halfway and gave up — and both ends of the
+   travel sit fully clear of the card, so the wait happens out of sight rather
+   than the band appearing and vanishing mid-card. The pass takes the first 65%
+   of the cycle; the rest is the pause. */
 @keyframes legendaryShimmer {
   0% {
-    transform: translateX(-120%) skewX(-18deg);
+    transform: translateX(-180%) skewX(-18deg);
   }
+  65%,
   100% {
-    transform: translateX(220%) skewX(-18deg);
+    transform: translateX(440%) skewX(-18deg);
   }
 }
 
