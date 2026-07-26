@@ -100,7 +100,11 @@ export default function TopicDetailPage() {
           return;
         }
         setFetchedProgress(levels);
-        writeTopicProgressCache(topic.id, foreignLang, { deckId, levels });
+        writeTopicProgressCache(topic.id, foreignLang, {
+          deckId,
+          levels,
+          savedAt: Date.now(),
+        });
       })
       .catch(() => {
         // Non-critical: the cards fall back to the cache, or to the stored

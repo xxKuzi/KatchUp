@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import type { Lang } from "@/app/_lib/languages";
 import type { DeckProgressSummary } from "@/app/games/_lib/deckSessionClient";
 
@@ -16,9 +16,18 @@ import type { DeckProgressSummary } from "@/app/games/_lib/deckSessionClient";
 export interface CachedTopicProgress {
   deckId: string;
   levels: DeckProgressSummary[];
+  /** When these counts were fetched, as epoch ms. */
+  savedAt: number;
 }
 
 const CACHE_KEY = "katchup-topic-level-progress-v1";
+
+/**
+ * How long a head start is worth showing. A day-old entry is likely to differ
+ * from the truth by enough to be noticed as a wrong number correcting itself,
+ * which is worse than the loading state it saves — so it is dropped instead.
+ */
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function getKey(topicId: string, foreignLang: Lang): string {
   return `${CACHE_KEY}:${topicId}:${foreignLang}`;
@@ -40,17 +49,27 @@ function parse(raw: string | null): CachedTopicProgress | null {
 
   try {
     const parsed = JSON.parse(raw) as Partial<CachedTopicProgress>;
-    // A cache written before `cleared` existed would render every level as
-    // untouched, so anything not matching the current shape is ignored.
+    // A cache written before `cleared` or `savedAt` existed would render every
+    // level as untouched or never expire, so anything not matching the current
+    // shape is ignored.
     if (
       typeof parsed.deckId !== "string" ||
+      typeof parsed.savedAt !== "number" ||
       !Array.isArray(parsed.levels) ||
       !parsed.levels.every(isSummary)
     ) {
       return null;
     }
 
-    return { deckId: parsed.deckId, levels: parsed.levels };
+    if (Date.now() - parsed.savedAt > MAX_AGE_MS) {
+      return null;
+    }
+
+    return {
+      deckId: parsed.deckId,
+      levels: parsed.levels,
+      savedAt: parsed.savedAt,
+    };
   } catch {
     return null;
   }
@@ -104,6 +123,27 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
+/**
+ * Drops an entry `parse` refuses — expired, or written by an older shape.
+ *
+ * Runs from `subscribe`, i.e. once the render has committed, so nothing is
+ * deleted while React is still reading the snapshot. The entry is not rendered
+ * either way; this is what stops a stale key sitting in storage for a topic
+ * that is never opened again.
+ */
+function pruneIfUnusable(key: string): void {
+  const raw = window.localStorage.getItem(key);
+  if (raw === null || parse(raw) !== null) {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Nothing to do: the entry is already being ignored.
+  }
+}
+
 function getSnapshot(key: string): CachedTopicProgress | null {
   const raw = window.localStorage.getItem(key);
 
@@ -116,15 +156,27 @@ function getSnapshot(key: string): CachedTopicProgress | null {
   return value;
 }
 
-/** What this topic showed last time, or null on a first visit. */
+/**
+ * What this topic showed last time — or null on a first visit, and null once
+ * the entry is a day old, since by then a wrong number correcting itself is
+ * worse than the loading state it saved.
+ */
 export function useCachedTopicProgress(
   topicId: string,
   foreignLang: Lang,
 ): CachedTopicProgress | null {
   const key = getKey(topicId, foreignLang);
 
+  const subscribeToKey = useCallback(
+    (listener: () => void) => {
+      pruneIfUnusable(key);
+      return subscribe(listener);
+    },
+    [key],
+  );
+
   return useSyncExternalStore(
-    subscribe,
+    subscribeToKey,
     () => getSnapshot(key),
     () => null,
   );
