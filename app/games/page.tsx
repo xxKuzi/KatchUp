@@ -33,7 +33,11 @@ export default function Games() {
               Online Games
             </span>
 
-            <h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
+            {/* At 7xl the line needs more room than max-w-3xl gives it, which
+                is what was breaking "by playing." onto its own line on a wide
+                screen. `text-balance` keeps the wrap even where it still has
+                to happen. */}
+            <h1 className="mt-6 max-w-3xl text-balance text-4xl font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-6xl lg:max-w-5xl lg:text-7xl">
               Learn words{" "}
               <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
                 by playing.
