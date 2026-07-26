@@ -75,6 +75,14 @@ export interface AttemptInput {
   steps?: number;
 }
 
+/**
+ * Streak weight of saying "I know this" outright — swiping a flip card right or
+ * tapping the know-it button. A stronger claim than picking one of three
+ * options, so it counts as two practices and the second one earns mastery.
+ * These used to mark the word known on the spot, off a single unverified tap.
+ */
+export const CONFIDENT_ANSWER_STEPS = 2;
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {

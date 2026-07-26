@@ -15,19 +15,13 @@ import {
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
 import { fetchWordPairs } from "../_lib/wordPairs";
+import { CONFIDENT_ANSWER_STEPS } from "../_lib/deckSessionClient";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useAuthState } from "@/app/_lib/auth";
 import { Check, Sparkles, RefreshCw, ArrowLeftRight } from "lucide-react";
 
 const DECK_SIZE = 15;
-/**
- * Streak weight of a right swipe. Saying "I knew it" is a stronger claim than
- * picking one of three options, so it counts as two practices and the second
- * swipe is what earns mastery — it used to mark the word known outright, which
- * filled the level ladder off a single unverified tap.
- */
-const KNOWN_SWIPE_STEPS = 2;
 const SWIPE_THRESHOLD = 110;
 const TAP_TOLERANCE = 8;
 const GATE = {
@@ -195,7 +189,13 @@ const FlipCardsPage = () => {
     if (verdict === "known") {
       setKnown((previous) => [...previous, currentCard]);
       if (deckId) {
-        deckSession.recordResult(currentCard.id, true, KNOWN_SWIPE_STEPS);
+        // A right swipe is a claim, not a tested answer — worth two practices,
+        // so the second swipe is what earns mastery.
+        deckSession.recordResult(
+          currentCard.id,
+          true,
+          CONFIDENT_ANSWER_STEPS,
+        );
       }
     } else {
       setPractice((previous) => [...previous, currentCard]);

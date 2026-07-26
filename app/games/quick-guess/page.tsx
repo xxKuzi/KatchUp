@@ -14,6 +14,7 @@ import {
   saveTopicsState,
 } from "@/app/topics/_lib/topicsProgress";
 import { useFallbackWords } from "../_lib/useFallbackWords";
+import { CONFIDENT_ANSWER_STEPS } from "../_lib/deckSessionClient";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
@@ -184,7 +185,14 @@ const QuickGuessPage = () => {
       language={language}
       isEnergyReview={isEnergyReview}
       onResult={deckId ? deckSession.recordResult : undefined}
-      onKnown={deckId ? deckSession.markKnown : undefined}
+      // "I already know this" is the same claim as swiping a flip card right, so
+      // it earns the same two practices rather than mastery on the spot.
+      onKnown={
+        deckId
+          ? (deckWordId: string) =>
+              deckSession.recordResult(deckWordId, true, CONFIDENT_ANSWER_STEPS)
+          : undefined
+      }
       onReplay={() => {
         if (deckId) {
           deckSession.reload();
@@ -315,8 +323,8 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
     );
   };
 
-  // Deck path only: "I already know this" marks the word known and skips it
-  // without counting as a scored attempt.
+  // Deck path only: "I already know this" credits the word two practices and
+  // skips it without counting as a scored attempt.
   const handleKnowIt = () => {
     if (!currentWord || lockedRef.current) {
       return;
@@ -324,7 +332,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
     lockedRef.current = true;
     setIsLocked(true);
     onKnown?.(currentWord.id);
-    setBanner({ tone: "good", text: "Marked as known" });
+    setBanner({ tone: "good", text: "Counted as practice" });
     window.setTimeout(() => goToNext(correctCount), CORRECT_ADVANCE_DELAY_MS);
   };
 

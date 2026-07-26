@@ -36,6 +36,14 @@ function isLevelCleared(progress: DeckProgressSummary): boolean {
   return progress.total > 0 && progress.cleared >= progress.total;
 }
 
+/**
+ * Every word in the level learned for good — the point where practice mode has
+ * nothing left to serve, so there is no round left to play.
+ */
+function isLevelLearned(progress: DeckProgressSummary): boolean {
+  return progress.total > 0 && progress.known >= progress.total;
+}
+
 export default function TopicDetailPage() {
   const params = useParams<{ topicId: string }>();
   const router = useRouter();
@@ -280,20 +288,20 @@ export default function TopicDetailPage() {
                   ? `${progress.cleared} / ${progress.total}`
                   : t("topics.pending", "Pending");
 
-              // A finished Flip Cards level has nothing left to serve — practice
-              // mode drops the words it already knows, so the round would open
-              // straight onto its empty state. One of Three is worth re-taking,
-              // so that one keeps offering another go.
-              const isFinishedFlipCards =
-                cleared && levelData.mode === "flip-cards";
+              // Finishing a level only means every word was met once, and those
+              // words stay in the practice pool until they are learned — so a
+              // finished level is still worth replaying. Only once all of them
+              // are learned is there no round left to serve, and the button
+              // retires rather than opening onto an empty round.
+              const learned = progress ? isLevelLearned(progress) : false;
 
-              const playLabel = cleared
-                ? isFinishedFlipCards
-                  ? t("topics.done", "Done")
-                  : t("topics.practiceAgain", "Practice again")
-                : started
-                  ? t("topics.continue", "Continue")
-                  : t("topics.play", "Play");
+              const playLabel = learned
+                ? t("topics.done", "Done")
+                : cleared
+                  ? t("topics.practiceAgain", "Practice again")
+                  : started
+                    ? t("topics.continue", "Continue")
+                    : t("topics.play", "Play");
 
               const completedBadgeClass = cleared
                 ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
@@ -323,7 +331,7 @@ export default function TopicDetailPage() {
                   </p>
 
                   <div className="mt-4 flex gap-2">
-                    {isFinishedFlipCards ? (
+                    {learned ? (
                       <span
                         aria-disabled
                         className="cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500"
