@@ -157,12 +157,16 @@ const FlipCardsPage = () => {
   const currentCard = deck[index] ?? null;
   const finished = deck.length > 0 && index >= deck.length;
 
-  // Topic levels: swiping through the whole round completes the level, and an
-  // empty round means its words are already mastered. Either way the level
-  // should stop showing as pending on the topic page.
+  // Topic levels: swiping through a round used to be enough on its own, so a
+  // level read "Done" at 3 of 6 words. On the deck path an empty practice round
+  // means there is nothing left to learn here; the topic page does the finer
+  // check against the server's counts when you land back on it. Rounds without a
+  // deck have nothing to check against, so there finishing still counts.
   const levelDone =
     Boolean(topicId) &&
-    (finished || (deckSession.status === "empty" && sessionMode === "practice"));
+    (deckId
+      ? deckSession.status === "empty" && sessionMode === "practice"
+      : finished);
   useEffect(() => {
     if (levelDone) {
       markComplete();

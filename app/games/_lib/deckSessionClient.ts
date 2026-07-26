@@ -24,6 +24,8 @@ export interface DeckProgressSummary {
   known: number;
   learning: number;
   unseen: number;
+  /** Answered right at least once — the tier a topic level finishes on. */
+  cleared: number;
 }
 
 export interface DeckSession {
@@ -174,6 +176,16 @@ export async function fetchDeckProgress(
     `/api/decks/${deckId}/progress${query}`,
   );
   return data.progress;
+}
+
+/** Mastery counts for every topic level of a deck, in level order (1..5). */
+export async function fetchDeckLevelProgress(
+  deckId: string,
+): Promise<DeckProgressSummary[]> {
+  const data = await apiFetch<{ levels: DeckProgressSummary[] }>(
+    `/api/decks/${deckId}/progress/levels`,
+  );
+  return data.levels;
 }
 
 export async function postAttempts(

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
@@ -12,6 +12,9 @@ import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useAuthState } from "@/app/_lib/auth";
 import DeckRoundProgress from "../_components/DeckRoundProgress";
+
+/** How many times one missed word can come back inside a single round. */
+const MAX_RETRIES_PER_WORD = 2;
 
 interface Question {
   id: string;
@@ -207,7 +210,10 @@ const OneOfThreePage = () => {
       topicId={topicId}
       safeLevel={safeLevel}
       backHref={backHref}
-      onComplete={markComplete}
+      // On the deck path mastery decides when a level is done — see the
+      // `levelAlreadyMastered` effect above — so finishing a round no longer
+      // marks it. Without a deck there is nothing else to go on.
+      onComplete={deckId ? undefined : markComplete}
       onResult={deckId ? deckSession.recordResult : undefined}
       onKnown={deckId ? deckSession.markKnown : undefined}
       onReplay={() => {
@@ -229,7 +235,8 @@ interface OneOfThreeRoundProps {
   topicId: string;
   safeLevel: number;
   backHref: string;
-  onComplete: () => void;
+  /** Marks the topic level done. Omitted on the deck path, where mastery does. */
+  onComplete?: () => void;
   onResult?: (deckWordId: string, correct: boolean) => void;
   onKnown?: (deckWordId: string) => void;
   onReplay: () => void;
@@ -250,42 +257,69 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     onReplay,
   } = props;
 
+  // A missed word comes back at the end of the round rather than being gone for
+  // good: a level is finished by getting every word right once, so a round that
+  // ended on words you never got right would leave it stuck one short.
+  const [queue, setQueue] = useState<Question[]>(questions);
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
+  const [correctIds, setCorrectIds] = useState<Set<string>>(new Set());
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
+  const retriesUsed = useRef(new Map<string, number>());
 
-  const currentQuestion = questions[questionIndex] ?? null;
+  const currentQuestion = queue[questionIndex] ?? null;
+  // Scored over the words of the round, not over how many times they were asked,
+  // so retries can't push the score past 100% or make passing harder.
   const totalQuestions = questions.length;
+  const correctCount = correctIds.size;
   const progressPercent =
-    totalQuestions > 0 ? Math.round((questionIndex / totalQuestions) * 100) : 0;
+    queue.length > 0 ? Math.round((questionIndex / queue.length) * 100) : 0;
 
-  const goToNext = (nextCorrectCount: number) => {
+  const goToNext = (nextCorrectIds: Set<string>, nextQueue: Question[]) => {
     const nextIndex = questionIndex + 1;
 
-    if (nextIndex >= totalQuestions) {
+    if (nextIndex >= nextQueue.length) {
       const scorePercent =
         totalQuestions > 0
-          ? Math.round((nextCorrectCount / totalQuestions) * 100)
+          ? Math.round((nextCorrectIds.size / totalQuestions) * 100)
           : 0;
       const passed = scorePercent >= 70;
 
       spendEnergy();
-      setCorrectCount(nextCorrectCount);
       setLessonPassed(passed);
       setIsFinished(true);
 
-      // Deck-backed rounds count too: a topic level is played through a deck.
       if (passed && topicId && totalQuestions > 0) {
-        onComplete();
+        onComplete?.();
       }
       return;
     }
 
-    setCorrectCount(nextCorrectCount);
     setQuestionIndex(nextIndex);
     setSelectedOption(null);
+  };
+
+  /** Puts a missed question back at the end of the round, up to twice. */
+  const requeue = (question: Question): Question[] => {
+    const used = retriesUsed.current.get(question.wordId) ?? 0;
+    if (used >= MAX_RETRIES_PER_WORD) {
+      return queue;
+    }
+
+    retriesUsed.current.set(question.wordId, used + 1);
+    const nextQueue = [
+      ...queue,
+      { ...question, id: `${question.id}-retry-${used + 1}` },
+    ];
+    setQueue(nextQueue);
+    return nextQueue;
+  };
+
+  const markCorrect = (wordId: string): Set<string> => {
+    const next = new Set(correctIds).add(wordId);
+    setCorrectIds(next);
+    return next;
   };
 
   const handleAnswer = (option: string) => {
@@ -300,8 +334,13 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
       onResult?.(currentQuestion.wordId, isCorrect);
     }
 
+    const nextCorrectIds = isCorrect
+      ? markCorrect(currentQuestion.wordId)
+      : correctIds;
+    const nextQueue = isCorrect ? queue : requeue(currentQuestion);
+
     window.setTimeout(() => {
-      goToNext(correctCount + (isCorrect ? 1 : 0));
+      goToNext(nextCorrectIds, nextQueue);
     }, 380);
   };
 
@@ -311,7 +350,8 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     }
     setSelectedOption(currentQuestion.correctOption);
     onKnown?.(currentQuestion.wordId);
-    window.setTimeout(() => goToNext(correctCount), 380);
+    const nextCorrectIds = markCorrect(currentQuestion.wordId);
+    window.setTimeout(() => goToNext(nextCorrectIds, queue), 380);
   };
 
   const scorePercent =

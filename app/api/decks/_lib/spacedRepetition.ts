@@ -40,6 +40,13 @@ export interface DeckProgressSummary {
   known: number;
   learning: number; // seen at least once, not yet known
   unseen: number;
+  /**
+   * Answered right at least once — "you have met this word", the bar a topic
+   * level clears on. `known` is the stricter tier above it and counts here too:
+   * needing three clean rounds to finish a level meant a correct answer moved
+   * nothing on screen.
+   */
+  cleared: number;
 }
 
 export interface SessionResult {
@@ -141,6 +148,7 @@ function buildSummary(entries: EnrichedWord[]): DeckProgressSummary {
   let known = 0;
   let learning = 0;
   let unseen = 0;
+  let cleared = 0;
   for (const entry of entries) {
     if (entry.stat?.known) {
       known += 1;
@@ -149,8 +157,12 @@ function buildSummary(entries: EnrichedWord[]): DeckProgressSummary {
     } else {
       unseen += 1;
     }
+
+    if (entry.stat?.known || (entry.stat?.timesCorrect ?? 0) > 0) {
+      cleared += 1;
+    }
   }
-  return { total: entries.length, known, learning, unseen };
+  return { total: entries.length, known, learning, unseen, cleared };
 }
 
 async function enrichDeck(
@@ -300,7 +312,9 @@ async function applyAttempt(
     return;
   }
 
-  // Wrong answer: reset streak, drop a box, and un-know the word so it resurfaces.
+  // Wrong answer: step the streak back one, drop a box, and un-know the word so
+  // it resurfaces. The streak used to reset to zero, which threw away two clean
+  // rounds for one slip and left words stuck at 0 however often they came up.
   await db
     .insert(userWordStats)
     .values({
@@ -318,7 +332,7 @@ async function applyAttempt(
     .onConflictDoUpdate({
       target: [...target],
       set: {
-        streak: 0,
+        streak: sql`GREATEST(${userWordStats.streak} - 1, 0)`,
         box: sql`GREATEST(${userWordStats.box} - 1, 0)`,
         timesSeen: sql`${userWordStats.timesSeen} + 1`,
         timesWrong: sql`${userWordStats.timesWrong} + 1`,
@@ -410,6 +424,29 @@ export async function getDeckProgress(
     return null;
   }
   return buildSummary(levelWindow(await enrichDeck(userId, deck), level));
+}
+
+/**
+ * Progress for every topic level of a deck, from a single deck read.
+ *
+ * The topic page needs all five at once to tell a mastered level from a merely
+ * played one; asking `getDeckProgress` five times would re-read the same deck
+ * and stats five times over.
+ */
+export async function getDeckLevelProgress(
+  userId: string,
+  deckId: string,
+): Promise<DeckProgressSummary[] | null> {
+  const deck = await getDeckForUser(deckId, userId);
+  if (!deck) {
+    return null;
+  }
+
+  const enriched = await enrichDeck(userId, deck);
+
+  return Array.from({ length: TOPIC_LEVEL_COUNT }, (_, index) =>
+    buildSummary(levelWindow(enriched, index + 1)),
+  );
 }
 
 /**
