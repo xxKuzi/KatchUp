@@ -304,25 +304,42 @@ export default function TopicDetailPage() {
                     /5
                   </span>
                 </p>
-                {topicTotals && topicTotals.total > 0 && (
-                  <>
-                    <p className="mt-3 flex items-baseline justify-between gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                      <span>
-                        {topicTotals.cleared} / {topicTotals.total}{" "}
-                        {t("topics.met", "met")}
-                      </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {topicTotals.known} {t("topics.learned", "learned")}
-                      </span>
-                    </p>
-                    <DeckProgress
-                      className="mt-2"
-                      known={topicTotals.known}
-                      cleared={topicTotals.cleared}
-                      total={topicTotals.total}
-                      showLabel={false}
-                    />
-                  </>
+                {/* The word counts arrive a round trip after the page draws, and
+                    landing they used to push the levels below them down the
+                    screen. The line and the bar are the same height empty as
+                    full, so the space is held from the start. Only until the
+                    answer comes back: a pack that reports no words keeps
+                    nothing reserved. */}
+                {levelProgress === null ? (
+                  <div aria-busy>
+                    <div className="mt-3 flex h-5 items-center justify-between gap-2">
+                      <span className="h-3 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                      <span className="h-3 w-16 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                    </div>
+                    <div className="mt-2 h-2 w-full animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                  </div>
+                ) : (
+                  topicTotals &&
+                  topicTotals.total > 0 && (
+                    <>
+                      <p className="mt-3 flex h-5 items-baseline justify-between gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                        <span>
+                          {topicTotals.cleared} / {topicTotals.total}{" "}
+                          {t("topics.met", "met")}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {topicTotals.known} {t("topics.learned", "learned")}
+                        </span>
+                      </p>
+                      <DeckProgress
+                        className="mt-2"
+                        known={topicTotals.known}
+                        cleared={topicTotals.cleared}
+                        total={topicTotals.total}
+                        showLabel={false}
+                      />
+                    </>
+                  )
                 )}
               </div>
             </div>
