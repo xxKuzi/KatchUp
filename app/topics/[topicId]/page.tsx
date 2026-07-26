@@ -27,7 +27,7 @@ import {
   topicTitle,
   topicDescription,
   useTopicsSync,
-  useTopicsState,
+  useTopicsSnapshot,
 } from "../_lib/topicsProgress";
 import KeyEarnedPopup from "../_components/KeyEarnedPopup";
 
@@ -59,8 +59,13 @@ export default function TopicDetailPage() {
   const [fetchedProgress, setFetchedProgress] = useState<
     DeckProgressSummary[] | null
   >(null);
-  const state = useTopicsState(language);
-  useTopicsSync(language, learningLanguage, isSignedIn);
+  const { state, isStale } = useTopicsSnapshot(language);
+  const { settled } = useTopicsSync(language, learningLanguage, isSignedIn);
+  // The stored ladder is only worth drawing while it is recent. Opened on a
+  // laptop after months of playing on a phone it would show that laptop's last
+  // word — no levels done, no crown — until the pull lands, so those parts wait
+  // for it. If the pull never answers, the stored copy is drawn anyway.
+  const awaitingFreshState = isStale && !settled;
 
   const topic = useMemo(
     () => TOPICS.find((item) => item.id === topicId) ?? null,
@@ -182,15 +187,21 @@ export default function TopicDetailPage() {
   const name = topicTitle(topic, learningLanguage, language);
   const topicProgress = state.topicProgress[topic.id];
   const levels = getLevelsForTopic(state, topic.id);
-  const completedAll = Boolean(topicProgress?.isCompleted);
-  const legendary = Boolean(topicProgress?.isLegendary);
+  const completedAll = !awaitingFreshState && Boolean(topicProgress?.isCompleted);
+  const legendary = !awaitingFreshState && Boolean(topicProgress?.isLegendary);
   // The key is granted the moment the fifth level clears, wherever that
-  // happened — the popup is only how the player finds out about it.
+  // happened — the popup is only how the player finds out about it. Never off a
+  // ladder too old to trust: a key celebrated months ago on another device would
+  // pop up again here.
   const showKeyPopup = completedAll && !topicProgress?.keyCelebrated;
 
+  // The word counts are their own cache with its own day-long life, so they are
+  // shown whenever they are there; only the fallback to the stored ladder waits.
   const clearedCount = levelProgress
     ? levelProgress.filter(isLevelCleared).length
-    : (topicProgress?.completedLevels.length ?? 0);
+    : awaitingFreshState
+      ? null
+      : (topicProgress?.completedLevels.length ?? 0);
 
   // One bar for the whole pack: the five level windows added back together.
   const topicTotals = levelProgress?.reduce(
@@ -250,8 +261,14 @@ export default function TopicDetailPage() {
             <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
               {topicDescription(topic, language)}
             </p>
-            <p className="mt-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-              {t("topics.progress", "Progress")}: {clearedCount}/5
+            <p className="mt-3 flex items-center gap-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+              {t("topics.progress", "Progress")}:{" "}
+              {clearedCount === null ? (
+                <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+              ) : (
+                clearedCount
+              )}
+              /5
             </p>
 
             {/* Every word of the pack in one bar: solid is learned for good,
@@ -294,11 +311,15 @@ export default function TopicDetailPage() {
 
               // The server's word counts decide what the card says whenever we
               // have them; the stored flag is only the fallback for a signed-out
-              // view or a topic whose deck could not be resolved.
+              // view or a topic whose deck could not be resolved — and it is not
+              // used at all while the ladder behind it is too old to trust, since
+              // a level reading "Done" and then reverting is the flicker this
+              // whole thing exists to avoid.
               const progress = levelProgress?.[levelData.level - 1] ?? null;
+              const unknown = !progress && awaitingFreshState;
               const cleared = progress
                 ? isLevelCleared(progress)
-                : levelData.completed;
+                : !unknown && levelData.completed;
               const started = progress
                 ? progress.cleared > 0 || levelData.completed
                 : false;
@@ -337,11 +358,18 @@ export default function TopicDetailPage() {
                     <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                       {t("topics.level", "Level")} {levelData.level}
                     </h2>
-                    <span
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold ${completedBadgeClass}`}
-                    >
-                      {badgeLabel}
-                    </span>
+                    {unknown ? (
+                      <span
+                        aria-busy
+                        className="h-6 w-16 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800"
+                      />
+                    ) : (
+                      <span
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold ${completedBadgeClass}`}
+                      >
+                        {badgeLabel}
+                      </span>
+                    )}
                   </div>
 
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
@@ -352,7 +380,12 @@ export default function TopicDetailPage() {
                   </p>
 
                   <div className="mt-4 flex gap-2">
-                    {learned ? (
+                    {unknown ? (
+                      <span
+                        aria-busy
+                        className="h-9 w-28 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800"
+                      />
+                    ) : learned ? (
                       <span
                         aria-disabled
                         className="cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500"

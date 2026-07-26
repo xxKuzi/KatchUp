@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Lang } from "@/app/_lib/languages";
 import {
   createDefaultState,
@@ -15,38 +15,83 @@ export * from "./topicsModel";
 
 const STORAGE_KEY = "katchup-topics-state-v1";
 
+/**
+ * How old a stored ladder may be before it stops being worth drawing.
+ *
+ * Two months of playing on a phone and then opening the site on a laptop that
+ * last saw the ladder in spring would paint that spring — no keys, nothing
+ * cleared — for the second it takes the account's copy to arrive. A wrong
+ * number correcting itself reads worse than a spinner, so past this age the
+ * screen waits for the sync instead. The stored copy is still kept and still
+ * pushed up; this only decides what is on screen in the meantime.
+ */
+export const TOPICS_STATE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** What actually sits in localStorage: the ladder plus when it was written. */
+interface StoredTopics {
+  savedAt: number;
+  state: TopicsState;
+}
+
 function getStorageKey(language: Lang): string {
   return `${STORAGE_KEY}-${language}`;
 }
 
+function parseStored(raw: string | null): StoredTopics | null {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<StoredTopics> | null;
+
+    if (parsed && typeof parsed.savedAt === "number" && parsed.state) {
+      return { savedAt: parsed.savedAt, state: normalizeState(parsed.state) };
+    }
+
+    // Written before the envelope existed, so its age is unknown. Anything
+    // still carrying the bare shape has been sitting there since before this
+    // release — old by definition, so it is dated to the epoch.
+    return { savedAt: 0, state: normalizeState(parsed) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The stored ladder, whatever its age.
+ *
+ * Age is a rendering question, never a storage one: this is what every write
+ * builds on and what the sync pushes up, so a browser that has been offline for
+ * a week still gets its progress to the account rather than having it dropped.
+ */
 export function loadTopicsState(language: Lang): TopicsState {
   if (typeof window === "undefined") {
     return createDefaultState();
   }
 
-  const raw = window.localStorage.getItem(getStorageKey(language));
+  const stored = parseStored(window.localStorage.getItem(getStorageKey(language)));
 
-  if (!raw) {
+  if (!stored) {
     const initial = createDefaultState();
     saveTopicsState(language, initial);
     return initial;
   }
 
-  try {
-    return normalizeState(JSON.parse(raw) as unknown);
-  } catch {
-    const initial = createDefaultState();
-    saveTopicsState(language, initial);
-    return initial;
-  }
+  return stored.state;
 }
 
-function writeLocal(language: Lang, state: TopicsState): void {
+function writeLocal(
+  language: Lang,
+  state: TopicsState,
+  savedAt: number = Date.now(),
+): void {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(getStorageKey(language), JSON.stringify(state));
+  const payload: StoredTopics = { savedAt, state };
+  window.localStorage.setItem(getStorageKey(language), JSON.stringify(payload));
   listeners.forEach((listener) => listener());
 }
 
@@ -67,8 +112,12 @@ export function saveTopicsState(language: Lang, state: TopicsState): void {
 
 const PUSH_DELAY_MS = 400;
 const pushTimers = new Map<Lang, number>();
-/** Languages whose sync is in flight, so a reply never triggers its own push. */
-const syncing = new Set<Lang>();
+/**
+ * The sync in flight per language, so a reply never triggers its own push — and
+ * so a second caller awaits the running one instead of starting a second round
+ * trip or, worse, resolving before the first has answered.
+ */
+const inFlight = new Map<Lang, Promise<void>>();
 /**
  * The language being learned, remembered from the last screen that knew it.
  * The server needs it to find the packs' decks and count cleared levels; a push
@@ -110,28 +159,60 @@ async function exchange(
  * and only the account can say whether a pack is finished or crowned — merging
  * would let a stale local crown climb back up after one was taken away.
  */
-export async function syncTopicsState(language: Lang): Promise<void> {
-  if (typeof window === "undefined" || syncing.has(language)) {
-    return;
+export function syncTopicsState(language: Lang): Promise<void> {
+  if (typeof window === "undefined") {
+    return Promise.resolve();
   }
 
-  syncing.add(language);
-  try {
+  const pending = inFlight.get(language);
+  if (pending) {
+    return pending;
+  }
+
+  const run = (async () => {
     const local = loadTopicsState(language);
     const server = await exchange(language, local);
 
-    // Only touch storage when something actually differs, so a sync on a quiet
-    // page doesn't wake every subscriber for nothing.
-    if (server && JSON.stringify(server) !== JSON.stringify(local)) {
-      writeLocal(language, server);
+    if (!server) {
+      // Signed out, offline, or a hiccup: the local copy stands, however old it
+      // is, and the next write tries again.
+      return;
     }
-  } finally {
-    syncing.delete(language);
-  }
+
+    if (JSON.stringify(server) !== JSON.stringify(local)) {
+      writeLocal(language, server);
+      return;
+    }
+
+    // Same ladder, but the account has just vouched for it — restamping is what
+    // stops a copy that happens to be correct from being treated as too old to
+    // draw. The write is skipped when the stamp is already recent, so a sync on
+    // a quiet page doesn't wake every subscriber for nothing.
+    const stored = parseStored(
+      window.localStorage.getItem(getStorageKey(language)),
+    );
+    if (!stored || Date.now() - stored.savedAt > STAMP_REFRESH_MS) {
+      writeLocal(language, local);
+    }
+  })();
+
+  const tracked = run.finally(() => {
+    inFlight.delete(language);
+  });
+  inFlight.set(language, tracked);
+
+  return tracked;
 }
 
+/**
+ * How stale a stamp may get before a confirming sync rewrites it. Well under
+ * `TOPICS_STATE_MAX_AGE_MS`, so a tab left open overnight is restamped long
+ * before it would start reading as too old, without writing on every sync.
+ */
+const STAMP_REFRESH_MS = 60 * 60 * 1000;
+
 function schedulePush(language: Lang): void {
-  if (typeof window === "undefined" || syncing.has(language)) {
+  if (typeof window === "undefined" || inFlight.has(language)) {
     return;
   }
 
@@ -161,14 +242,32 @@ export function useTopicsSync(
   /** The language being learned — resolves the packs' decks server-side. */
   foreignLang: Lang,
   enabled = true,
-): void {
+): {
+  /**
+   * True once the first pull has come back — or failed, or was never going to
+   * run. Screens waiting on a too-old local copy show it again at that point:
+   * offline, month-old numbers still beat a spinner that never stops.
+   */
+  settled: boolean;
+} {
+  // Which pull has come back, rather than a bare flag: switching language starts
+  // a new one, and `settled` then reads false again without an effect having to
+  // reset it.
+  const pullKey = `${language}:${foreignLang}`;
+  const [settledKey, setSettledKey] = useState<string | null>(null);
+
   useEffect(() => {
     if (!enabled) {
       return;
     }
 
+    let cancelled = false;
     lastForeignLang = foreignLang;
-    void syncTopicsState(language);
+    void syncTopicsState(language).finally(() => {
+      if (!cancelled) {
+        setSettledKey(pullKey);
+      }
+    });
 
     const onVisible = () => {
       if (document.visibilityState === "visible") {
@@ -177,8 +276,15 @@ export function useTopicsSync(
     };
 
     document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [enabled, foreignLang, language]);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [enabled, foreignLang, language, pullKey]);
+
+  // Nothing to wait for when the sync is off — signed out, the local copy is
+  // the only copy there will ever be.
+  return { settled: !enabled || settledKey === pullKey };
 }
 
 /**
@@ -224,12 +330,33 @@ export async function submitLegendaryRound(input: {
 
 const listeners = new Set<() => void>();
 
+interface TopicsSnapshot {
+  state: TopicsState;
+  /**
+   * True when the stored copy is older than `TOPICS_STATE_MAX_AGE_MS` — the
+   * screen should wait for the account's copy rather than draw this one.
+   *
+   * Decided when the raw string is parsed, so it does not flip on its own in a
+   * tab left open past the cut-off. The sync restamps such a tab well before
+   * then, and a page that has been open that long is being re-read anyway.
+   */
+  isStale: boolean;
+}
+
 /** The parsed state, memoised per raw string so the snapshot is referentially
  * stable — returning a fresh object each read would loop forever. */
-let snapshotCache: { key: string; raw: string | null; value: TopicsState } | null =
-  null;
+let snapshotCache: {
+  key: string;
+  raw: string | null;
+  value: TopicsSnapshot;
+} | null = null;
 
-const SERVER_SNAPSHOT = createDefaultState();
+const SERVER_SNAPSHOT: TopicsSnapshot = {
+  state: createDefaultState(),
+  // The server has no storage to judge; hydration renders defaults either way,
+  // and the real answer arrives with the first client snapshot.
+  isStale: false,
+};
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
@@ -242,7 +369,7 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-function getSnapshot(language: Lang): TopicsState {
+function getSnapshot(language: Lang): TopicsSnapshot {
   const key = getStorageKey(language);
   const raw = window.localStorage.getItem(key);
 
@@ -250,24 +377,30 @@ function getSnapshot(language: Lang): TopicsState {
     return snapshotCache.value;
   }
 
-  let value: TopicsState;
-  try {
-    value = raw ? normalizeState(JSON.parse(raw) as unknown) : createDefaultState();
-  } catch {
-    value = createDefaultState();
-  }
+  const stored = parseStored(raw);
+  const value: TopicsSnapshot = stored
+    ? {
+        state: stored.state,
+        isStale: Date.now() - stored.savedAt > TOPICS_STATE_MAX_AGE_MS,
+      }
+    : { state: createDefaultState(), isStale: false };
 
   snapshotCache = { key, raw, value };
   return value;
 }
 
 /** Topic progress for `language`, kept in sync with every write to it. */
-export function useTopicsState(language: Lang): TopicsState {
+export function useTopicsSnapshot(language: Lang): TopicsSnapshot {
   return useSyncExternalStore(
     subscribe,
     () => getSnapshot(language),
     () => SERVER_SNAPSHOT,
   );
+}
+
+/** Just the ladder, for the screens that don't care how old it is. */
+export function useTopicsState(language: Lang): TopicsState {
+  return useTopicsSnapshot(language).state;
 }
 
 /**

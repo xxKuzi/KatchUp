@@ -171,37 +171,42 @@ function TopicCardContent({
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/70 pt-5 dark:border-slate-700/70">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+        <div className="mt-6 flex items-center justify-between gap-3 border-t border-white/70 pt-5 dark:border-slate-700/70">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
             {legendary ? (
-              <Crown size={16} className="text-violet-600 dark:text-violet-300" />
+              <Crown
+                size={16}
+                className="shrink-0 text-violet-600 dark:text-violet-300"
+              />
             ) : unlocked ? (
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={16} className="shrink-0" />
             ) : (
-              <Lock size={16} />
+              <Lock size={16} className="shrink-0" />
             )}
-            <span>
+            <span className="truncate">
               {legendary
                 ? "Legendary — mastered"
                 : unlocked
                   ? "Ready to play"
-                  : "Locked until unlocked"}
+                  : "Locked"}
             </span>
           </div>
 
+          {/* The label never wraps: a two-line pill next to a one-line status
+              reads as a broken card rather than a button. */}
           {unlocked ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white dark:bg-white dark:text-slate-950">
+            <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white dark:bg-white dark:text-slate-950">
               Open pack
-              <ArrowRight size={16} />
+              <ArrowRight size={16} className="shrink-0" />
             </span>
           ) : (
             <button
               type="button"
               disabled={!canUnlock}
               onClick={onUnlock}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+              className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
             >
-              <KeyRound size={16} />
+              <KeyRound size={16} className="shrink-0" />
               {canUnlock ? "Unlock with key" : "No keys yet"}
             </button>
           )}
