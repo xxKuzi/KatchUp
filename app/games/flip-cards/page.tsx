@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
 import DeckLoading from "../_components/DeckLoading";
+import NextLevelButton from "../_components/NextLevelButton";
+import { predictLevelCleared } from "../_lib/levelCompletion";
 import {
   LANGS,
   LANG_LABELS,
@@ -100,6 +102,12 @@ const FlipCardsPage = () => {
   const [known, setKnown] = useState<CardWord[]>([]);
   const [practice, setPractice] = useState<CardWord[]>([]);
   const [leaving, setLeaving] = useState<Verdict | null>(null);
+  // Every word swiped "know it" since these cards were loaded. `known` is
+  // emptied by a "review the ones you're learning" pass so the score reads for
+  // that pass, but the level check has to count the whole visit — without this
+  // a level finished across two passes looks unfinished and the Next level
+  // button has to wait for the server to say otherwise.
+  const [metWordIds, setMetWordIds] = useState<Set<string>>(new Set());
 
   // Drag state (kept in refs so pointer handlers stay stable).
   const [dragX, setDragX] = useState(0);
@@ -146,6 +154,7 @@ const FlipCardsPage = () => {
             })),
           ).slice(0, DECK_SIZE),
         );
+        setMetWordIds(new Set());
         resetPiles();
       })
       .catch(() => {
@@ -173,6 +182,7 @@ const FlipCardsPage = () => {
         foreign: word.foreign,
       })),
     );
+    setMetWordIds(new Set());
     resetPiles();
   }, [deckId, deckSession.session]);
 
@@ -218,6 +228,29 @@ const FlipCardsPage = () => {
 
   const legendaryPassed = legendaryVerdict === "passed";
 
+  // Whether the swipes just finished the level, worked out from the session's
+  // level-scoped snapshot rather than by asking the server once the round ends —
+  // that answer arrives a round trip late and may not have the last swipes yet.
+  // A right swipe is the word met; a left swipe is not.
+  const session = deckSession.session;
+  const levelCleared = useMemo(() => {
+    if (!finished || !session || !topicId || isLegendaryRound) {
+      return false;
+    }
+    return predictLevelCleared(session.summary, session.words, metWordIds);
+  }, [finished, session, topicId, isLegendaryRound, metWordIds]);
+
+  // On a topic level, cards swiped "still learning" are the thing to do next,
+  // and the amber button above the row already offers exactly them — replaying
+  // the whole lesson alongside it is only a way to lose that shorter path. It
+  // comes back once nothing is left over. A failed legendary round is the one
+  // case where running it all again is the point.
+  const showRoundAgain = !(
+    topicId &&
+    !isLegendaryRound &&
+    practice.length > 0
+  );
+
   const remaining = Math.max(deck.length - index, 0);
   const progressPercent = deck.length
     ? Math.min((index / deck.length) * 100, 100)
@@ -233,6 +266,7 @@ const FlipCardsPage = () => {
 
     if (verdict === "known") {
       setKnown((previous) => [...previous, currentCard]);
+      setMetWordIds((previous) => new Set(previous).add(currentCard.id));
       if (deckId) {
         // A right swipe is a claim, not a tested answer — worth two practices,
         // so the second swipe is what earns mastery.
@@ -576,33 +610,46 @@ const FlipCardsPage = () => {
                   Review the {practice.length} you&apos;re learning
                 </button>
               )}
-              {deckId ? (
-                <button
-                  onClick={() => deckSession.reload()}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  {legendaryVerdict === "failed"
-                    ? "Try the round again"
-                    : "Next round"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => setReshuffleToken((value) => value + 1)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Shuffle a fresh deck
-                </button>
-              )}
-              {deckId && (
-                <Link
-                  href={backHref}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                >
-                  {topicId ? "Back to topic" : "Back to decks"}
-                </Link>
-              )}
+
+              {/* Same trio, in the same order, as the One of Three results:
+                  back out, on to the next level once this one is finished, or
+                  round again. */}
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {deckId && (
+                  <Link
+                    href={backHref}
+                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  >
+                    {topicId ? "Back to topic" : "Back to decks"}
+                  </Link>
+                )}
+                {deckId && topicId && !isLegendaryRound && (
+                  <NextLevelButton
+                    deckId={deckId}
+                    topicId={topicId}
+                    level={topicLevelNumber}
+                    cleared={levelCleared}
+                  />
+                )}
+                {showRoundAgain && (
+                  <button
+                    onClick={() =>
+                      deckId
+                        ? deckSession.reload()
+                        : setReshuffleToken((value) => value + 1)
+                    }
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    {!deckId
+                      ? "Shuffle a fresh deck"
+                      : legendaryVerdict === "failed"
+                        ? "Try the round again"
+                        : topicId
+                          ? "Replay lesson"
+                          : "Next round"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )

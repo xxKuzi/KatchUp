@@ -131,7 +131,8 @@ export const TOPIC_LEVEL_COUNT = 5;
 
 const GAME_MODES: GameMode[] = ["flip-cards", "one-of-three"];
 
-function getDeterministicMode(topicId: string, level: number): GameMode {
+/** Which game a topic's level is played with. Stable for a (topic, level). */
+export function getDeterministicMode(topicId: string, level: number): GameMode {
   const source = `${topicId}-${level}`;
   let hash = 0;
 

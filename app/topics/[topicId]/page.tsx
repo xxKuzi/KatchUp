@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Crown } from "lucide-react";
+import { ArrowLeft, Crown } from "lucide-react";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useAuthState } from "@/app/_lib/auth";
 import FeatureGate from "@/app/_components/FeatureGate";
@@ -243,56 +243,89 @@ export default function TopicDetailPage() {
         )}
       >
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-          <section className="first-section-static-glow rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-950/70 sm:p-8">
+          <section className="first-section-static-glow rounded-2xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-950/70 sm:p-8 min-[900px]:py-6">
             <Link
               href="/topics"
-              className="inline-flex text-sm font-medium text-blue-600 transition hover:text-blue-700 dark:text-blue-300"
+              className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition hover:text-blue-700 dark:text-blue-300"
             >
-              ← {t("topics.back", "Back to topics")}
+              {/* Bigger and bolder than the label it sits next to — at text size
+                  the arrow was easy to miss under a 3xl heading. */}
+              <ArrowLeft className="h-5 w-5 stroke-[2.5]" />
+              {t("topics.back", "Back to topics")}
             </Link>
-            <h1 className="mt-4 text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">
-              {name.learning}
-            </h1>
-            {name.native && (
-              <p className="mt-1 text-lg font-semibold text-slate-500 dark:text-slate-400">
-                {name.native}
-              </p>
-            )}
-            <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
-              {topicDescription(topic, language)}
-            </p>
-            <p className="mt-3 flex items-center gap-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
-              {t("topics.progress", "Progress")}:{" "}
-              {clearedCount === null ? (
-                <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-              ) : (
-                clearedCount
-              )}
-              /5
-            </p>
+            {/* The title never fills the box on a wide screen, so the bar sits
+                beside it there and takes the empty half. Stacked below on
+                anything narrower. The 900px cut is a tablet held sideways —
+                Tailwind's `lg` would have left an iPad in landscape stacked. */}
+            <div className="mt-4 flex flex-col gap-6 min-[900px]:mt-3 min-[900px]:flex-row min-[900px]:items-center min-[900px]:justify-between min-[900px]:gap-10">
+              <div className="min-w-0">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 sm:text-4xl">
+                  {name.learning}
+                </h1>
+                {name.native && (
+                  <p className="mt-1 text-lg font-semibold text-slate-500 dark:text-slate-400">
+                    {name.native}
+                  </p>
+                )}
+                <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-300">
+                  {topicDescription(topic, language)}
+                </p>
+              </div>
 
-            {/* Every word of the pack in one bar: solid is learned for good,
-                pale is met at least once — which is what finishes a level. */}
-            {topicTotals && topicTotals.total > 0 && (
-              <div className="mt-4 max-w-md">
-                <p className="flex items-baseline justify-between gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                  <span>
-                    {topicTotals.cleared} / {topicTotals.total}{" "}
-                    {t("topics.met", "met")}
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {topicTotals.known} {t("topics.learned", "learned")}
+              {/* Both readings of "how far in am I" live together on the right:
+                  levels done, then every word of the pack in one bar — solid is
+                  learned for good, pale is met at least once, which is what
+                  finishes a level. */}
+              {/* Out to the side the block stands on its own, so there it
+                  becomes a panel with the level count as its headline figure.
+                  Untouched when stacked, where it is just two lines under the
+                  description. */}
+              <div className="w-full max-w-md shrink-0 min-[900px]:w-80 min-[900px]:rounded-2xl min-[900px]:border min-[900px]:border-slate-200 min-[900px]:bg-slate-50/80 min-[900px]:p-4 min-[900px]:dark:border-slate-800 min-[900px]:dark:bg-slate-900/50">
+                <p className="flex items-center gap-1 text-sm font-semibold text-slate-500 dark:text-slate-400 min-[900px]:gap-2 min-[900px]:text-xs min-[900px]:uppercase min-[900px]:tracking-[0.18em]">
+                  {t("topics.progress", "Progress")}:{" "}
+                  <span className="min-[900px]:hidden">
+                    {clearedCount === null ? (
+                      <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                    ) : (
+                      clearedCount
+                    )}
+                    /5
                   </span>
                 </p>
-                <DeckProgress
-                  className="mt-2"
-                  known={topicTotals.known}
-                  cleared={topicTotals.cleared}
-                  total={topicTotals.total}
-                  showLabel={false}
-                />
+                <p className="hidden min-[900px]:mt-1 min-[900px]:flex min-[900px]:items-baseline min-[900px]:gap-1">
+                  {clearedCount === null ? (
+                    <span className="inline-block h-8 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+                  ) : (
+                    <span className="text-3xl font-black leading-none text-slate-900 dark:text-slate-100">
+                      {clearedCount}
+                    </span>
+                  )}
+                  <span className="text-lg font-bold text-slate-400 dark:text-slate-500">
+                    /5
+                  </span>
+                </p>
+                {topicTotals && topicTotals.total > 0 && (
+                  <>
+                    <p className="mt-3 flex items-baseline justify-between gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                      <span>
+                        {topicTotals.cleared} / {topicTotals.total}{" "}
+                        {t("topics.met", "met")}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {topicTotals.known} {t("topics.learned", "learned")}
+                      </span>
+                    </p>
+                    <DeckProgress
+                      className="mt-2"
+                      known={topicTotals.known}
+                      cleared={topicTotals.cleared}
+                      total={topicTotals.total}
+                      showLabel={false}
+                    />
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </section>
 
           <section className="grid gap-4 md:grid-cols-2">

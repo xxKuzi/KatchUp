@@ -1,15 +1,17 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
 import DeckLoading from "../_components/DeckLoading";
-import { useTopicLevel } from "../_hooks/useTopicLevel";
+import NextLevelButton from "../_components/NextLevelButton";
+import { TOPIC_LEVEL_COUNT, useTopicLevel } from "../_hooks/useTopicLevel";
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { predictLevelCleared } from "../_lib/levelCompletion";
 import { useAuthState } from "@/app/_lib/auth";
 
 /** How many times one missed word can come back inside a single round. */
@@ -157,6 +159,18 @@ const OneOfThreePage = () => {
     );
   }, [deckId, deckSession.session, allWords, roundSeed]);
 
+  // Lets the results screen say whether the level is finished without waiting on
+  // the server: the session's summary is scoped to the level and the round knows
+  // which of its words came back right.
+  const session = deckSession.session;
+  const checkLevelCleared = useCallback(
+    (correctWordIds: Set<string>) =>
+      session
+        ? predictLevelCleared(session.summary, session.words, correctWordIds)
+        : false,
+    [session],
+  );
+
   if (deckId) {
     if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
       return (
@@ -213,6 +227,7 @@ const OneOfThreePage = () => {
       // marks it. Without a deck there is nothing else to go on.
       onComplete={deckId ? undefined : markComplete}
       onResult={deckId ? deckSession.recordResult : undefined}
+      checkLevelCleared={deckId ? checkLevelCleared : undefined}
       onReplay={() => {
         if (deckId) {
           deckSession.reload();
@@ -234,6 +249,8 @@ interface OneOfThreeRoundProps {
   /** Marks the topic level done. Omitted on the deck path, where mastery does. */
   onComplete?: () => void;
   onResult?: (deckWordId: string, correct: boolean) => void;
+  /** Whether the round's answers finish the level. Deck path only. */
+  checkLevelCleared?: (correctWordIds: Set<string>) => boolean;
   onReplay: () => void;
 }
 
@@ -247,6 +264,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     backHref,
     onComplete,
     onResult,
+    checkLevelCleared,
     onReplay,
   } = props;
 
@@ -259,6 +277,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
+  const [levelCleared, setLevelCleared] = useState(false);
   const retriesUsed = useRef(new Map<string, number>());
 
   const currentQuestion = queue[questionIndex] ?? null;
@@ -266,8 +285,12 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   // so retries can't push the score past 100% or make passing harder.
   const totalQuestions = questions.length;
   const correctCount = correctIds.size;
+  // The header stays on screen over the results, and the last answer never moves
+  // the index on — it ends the round instead — so without the finished case the
+  // bar sat one question short of full for the whole results screen.
+  const answeredCount = isFinished ? queue.length : questionIndex;
   const progressPercent =
-    queue.length > 0 ? Math.round((questionIndex / queue.length) * 100) : 0;
+    queue.length > 0 ? Math.round((answeredCount / queue.length) * 100) : 0;
 
   const goToNext = (nextCorrectIds: Set<string>, nextQueue: Question[]) => {
     const nextIndex = questionIndex + 1;
@@ -281,6 +304,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
 
       spendEnergy();
       setLessonPassed(passed);
+      setLevelCleared(checkLevelCleared?.(nextCorrectIds) ?? false);
       setIsFinished(true);
 
       if (passed && topicId && totalQuestions > 0) {
@@ -339,6 +363,14 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
 
   const scorePercent =
     totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+
+  // Words are still outstanding whenever the level didn't finish, and going
+  // round again is the way to meet them — so with nothing else to move on to,
+  // that button is the one to reach for rather than the quiet outline next to
+  // "Back to topic". Once the level is done and "Next level" takes the lead, it
+  // steps back to being the secondary option again.
+  const showNextLevel =
+    Boolean(deckId && topicId) && levelCleared && safeLevel < TOPIC_LEVEL_COUNT;
 
   const headerLabel =
     sessionMode === "finish"
@@ -451,24 +483,24 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                 >
                   {topicId ? "Back to topic" : "Back to decks"}
                 </Link>
-                {deckId && sessionMode !== "finish" && (
-                  <Link
-                    href={`/games/one-of-three?deck=${deckId}&mode=finish${
-                      topicId
-                        ? `&topicId=${encodeURIComponent(topicId)}&level=${safeLevel}`
-                        : ""
-                    }`}
-                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
-                  >
-                    🏁 Finish round
-                  </Link>
+                {deckId && topicId && (
+                  <NextLevelButton
+                    deckId={deckId}
+                    topicId={topicId}
+                    level={safeLevel}
+                    cleared={levelCleared}
+                  />
                 )}
                 <button
                   type="button"
                   onClick={onReplay}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className={
+                    showNextLevel
+                      ? "rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      : "rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+                  }
                 >
-                  Replay lesson
+                  {showNextLevel ? "Replay lesson" : "Continue practicing"}
                 </button>
               </div>
             </div>
