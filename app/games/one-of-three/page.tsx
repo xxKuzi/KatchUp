@@ -213,7 +213,6 @@ const OneOfThreePage = () => {
       // marks it. Without a deck there is nothing else to go on.
       onComplete={deckId ? undefined : markComplete}
       onResult={deckId ? deckSession.recordResult : undefined}
-      onKnown={deckId ? deckSession.markKnown : undefined}
       onReplay={() => {
         if (deckId) {
           deckSession.reload();
@@ -235,7 +234,6 @@ interface OneOfThreeRoundProps {
   /** Marks the topic level done. Omitted on the deck path, where mastery does. */
   onComplete?: () => void;
   onResult?: (deckWordId: string, correct: boolean) => void;
-  onKnown?: (deckWordId: string) => void;
   onReplay: () => void;
 }
 
@@ -249,7 +247,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     backHref,
     onComplete,
     onResult,
-    onKnown,
     onReplay,
   } = props;
 
@@ -340,16 +337,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     }, 380);
   };
 
-  const handleKnowIt = () => {
-    if (!currentQuestion || selectedOption) {
-      return;
-    }
-    setSelectedOption(currentQuestion.correctOption);
-    onKnown?.(currentQuestion.wordId);
-    const nextCorrectIds = markCorrect(currentQuestion.wordId);
-    window.setTimeout(() => goToNext(nextCorrectIds, queue), 380);
-  };
-
   const scorePercent =
     totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
@@ -427,16 +414,6 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Correct answers: {correctCount}/{totalQuestions}
                 </p>
-                {deckId && onKnown && (
-                  <button
-                    type="button"
-                    onClick={handleKnowIt}
-                    disabled={Boolean(selectedOption)}
-                    className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                  >
-                    ✓ I already know this
-                  </button>
-                )}
               </div>
             </>
           )}

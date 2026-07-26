@@ -11,12 +11,13 @@ function parseAttempts(body: unknown): AttemptInput[] {
     attempts?: unknown;
     deckWordId?: unknown;
     correct?: unknown;
+    steps?: unknown;
   };
 
   // Accept either a batch { attempts: [...] } or a single { deckWordId, correct }.
   const list = Array.isArray(raw.attempts)
     ? raw.attempts
-    : [{ deckWordId: raw.deckWordId, correct: raw.correct }];
+    : [{ deckWordId: raw.deckWordId, correct: raw.correct, steps: raw.steps }];
 
   return list
     .map((item) => {
@@ -25,6 +26,8 @@ function parseAttempts(body: unknown): AttemptInput[] {
         deckWordId:
           typeof attempt.deckWordId === "string" ? attempt.deckWordId : "",
         correct: attempt.correct === true,
+        // Left undefined when absent so `applyAttempt` applies its own default.
+        steps: typeof attempt.steps === "number" ? attempt.steps : undefined,
       };
     })
     .filter((attempt) => attempt.deckWordId.length > 0);

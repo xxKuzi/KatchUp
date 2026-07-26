@@ -71,6 +71,8 @@ export interface WordInput {
 export interface AttemptInput {
   deckWordId: string;
   correct: boolean;
+  /** Streak weight of one correct answer; defaults to 1 on the server. */
+  steps?: number;
 }
 
 export class ApiError extends Error {

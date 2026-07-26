@@ -272,39 +272,61 @@ export async function selectSessionWords(
 export interface AttemptInput {
   deckWordId: string;
   correct: boolean;
+  /**
+   * How much of the streak toward `known` one correct answer is worth. Defaults
+   * to 1. Swiping a flip card right is a stronger claim than picking one of
+   * three options, so it counts double and two swipes reach mastery — it used to
+   * declare the word known outright, on evidence nothing had tested.
+   */
+  steps?: number;
+}
+
+/** Keeps a caller from handing out mastery in a single answer. */
+function clampSteps(steps: number | undefined): number {
+  if (typeof steps !== "number" || !Number.isFinite(steps)) {
+    return 1;
+  }
+  return Math.min(Math.max(Math.floor(steps), 1), KNOWN_STREAK_THRESHOLD - 1);
 }
 
 async function applyAttempt(
   userId: string,
   deckWordId: string,
   correct: boolean,
+  rawSteps?: number,
 ): Promise<void> {
   const now = new Date();
   const target = [userWordStats.userId, userWordStats.deckWordId] as const;
 
   if (correct) {
+    // Steps measure how confident one answer was, so they move the streak but
+    // not the counts of how many times the word has been seen or answered.
+    const steps = clampSteps(rawSteps);
+
     await db
       .insert(userWordStats)
       .values({
         userId,
         deckWordId,
         box: 1,
-        streak: 1,
+        streak: steps,
         timesSeen: 1,
         timesCorrect: 1,
         timesWrong: 0,
-        known: 1 >= KNOWN_STREAK_THRESHOLD,
+        // Never on a first answer: `clampSteps` keeps one attempt below the
+        // threshold, so mastery always takes at least two.
+        known: false,
         lastSeenAt: now,
         updatedAt: now,
       })
       .onConflictDoUpdate({
         target: [...target],
         set: {
-          streak: sql`${userWordStats.streak} + 1`,
+          streak: sql`${userWordStats.streak} + ${steps}`,
           box: sql`LEAST(${userWordStats.box} + 1, ${MAX_BOX})`,
           timesSeen: sql`${userWordStats.timesSeen} + 1`,
           timesCorrect: sql`${userWordStats.timesCorrect} + 1`,
-          known: sql`((${userWordStats.streak} + 1) >= ${KNOWN_STREAK_THRESHOLD}) OR ${userWordStats.known}`,
+          known: sql`((${userWordStats.streak} + ${steps}) >= ${KNOWN_STREAK_THRESHOLD}) OR ${userWordStats.known}`,
           lastSeenAt: now,
           updatedAt: now,
         },
@@ -362,7 +384,12 @@ export async function recordAttempts(
   const valid = attempts.filter((attempt) => validIds.has(attempt.deckWordId));
 
   for (const attempt of valid) {
-    await applyAttempt(userId, attempt.deckWordId, attempt.correct);
+    await applyAttempt(
+      userId,
+      attempt.deckWordId,
+      attempt.correct,
+      attempt.steps,
+    );
   }
 
   return { recorded: valid.length };
