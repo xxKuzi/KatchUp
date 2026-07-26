@@ -567,6 +567,14 @@ export default function FriendsPage() {
                 </div>
               </div>
 
+              <button
+                type="button"
+                onClick={() => router.push("/learned-words")}
+                className="mx-5 mt-3 flex w-[calc(100%-2.5rem)] items-center justify-center gap-1.5 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm font-bold text-emerald-600 transition hover:bg-emerald-100/70 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+              >
+                📚 {t("navbar.learnedWords", "Learned Words")}
+              </button>
+
               <div className="m-5 mt-4 rounded-[1.5rem] border border-white/70 bg-linear-to-br from-rose-50/80 to-amber-50/50 p-4 dark:border-white/10 dark:from-white/[0.04] dark:to-white/[0.02]">
                 <p className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-200">
                   👋 Add me
@@ -595,6 +603,7 @@ export default function FriendsPage() {
                 </p>
               </div>
             </section>
+
           </aside>
 
           {/* RIGHT: quest + friends */}
