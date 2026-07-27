@@ -11,7 +11,7 @@ import {
   matches,
   users,
 } from "@/db/schema";
-import { eq, and, or, isNull, asc, desc, ne, inArray } from "drizzle-orm";
+import { eq, and, or, isNull, asc, desc, ne, inArray, sql } from "drizzle-orm";
 import { listDecksForUser, getDeckForUser } from "@/app/api/decks/_lib/deckStore";
 import { recordConceptAttempts } from "@/app/api/decks/_lib/spacedRepetition";
 
@@ -34,12 +34,20 @@ interface PlayerSession {
   avatar: string;
 }
 
-/** A queue entry is a player plus the last time they proved they're still there. */
-type QueueEntry = PlayerSession & { joinedAt?: number };
+/**
+ * Personalized opponents can use different language pairs and levels, so the
+ * queue entry has to retain the settings needed to build that player's own
+ * private question set after they are matched.
+ */
+type QueueEntry = PlayerSession &
+  QueueDescriptor & {
+    joinedAt?: number;
+  };
 
 const QUEUE_KEY_PREFIX = "flipcards:queue";
 const USER_CHANNEL_PREFIX = "user-";
 const MATCH_CHANNEL_PREFIX = "match-";
+const SCORE_RUSH_NICKNAME_KEY_PREFIX = "score-rush:nickname";
 export const WINNING_CORRECT_ANSWERS = 10;
 const LIVE_QUESTION_COUNT = 30;
 // Buffer between match creation and the moment both players' clocks are
@@ -69,14 +77,17 @@ function shuffleArray<T>(items: T[]): T[] {
 
 async function getWordsFromRecentDecks(
   userId: string,
-  language: Lang,
+  nativeLang: Lang,
+  learning: Lang,
 ): Promise<{ native: string; foreign: string }[]> {
   try {
     const userDecks = await listDecksForUser(userId);
     // Deck languages may still be stored as legacy names ("german"), so both
     // sides go through normalizeLang before comparing.
     const matchingDecks = userDecks.filter(
-      (d) => normalizeLang(d.foreignLang) === language,
+      (d) =>
+        normalizeLang(d.nativeLang) === nativeLang &&
+        normalizeLang(d.foreignLang) === learning,
     );
 
     const pool: { native: string; foreign: string }[] = [];
@@ -134,7 +145,7 @@ async function createPersonalMatchQuestions(
   userId: string,
   { speak, learning, level }: MatchPair,
 ): Promise<MatchQuestionPayload[]> {
-  const recentWords = await getWordsFromRecentDecks(userId, learning);
+  const recentWords = await getWordsFromRecentDecks(userId, speak, learning);
   const levelPairs = await getWordPairs({
     speak,
     learning,
@@ -162,7 +173,9 @@ async function createPersonalMatchQuestions(
     combined.push(pair);
   }
 
-  const answerPool = levelPairs.map((pair) => pair.answer);
+  // Recent-deck answers are valid distractors too. This also keeps custom-only
+  // pools playable when the corpus has few words for a language/level.
+  const answerPool = combined.map((pair) => pair.answer);
   return toQuestions(shuffleArray(combined), answerPool, "personal");
 }
 
@@ -210,9 +223,15 @@ export function queueKeyFor({
   level,
   mode,
 }: QueueDescriptor) {
+  if (mode === "personal") {
+    // Personalized players never share questions. Their own pair and level are
+    // stored on the queue entry, so everybody can search in the same pool.
+    return `${QUEUE_KEY_PREFIX}:personal`;
+  }
+
   // The pair is part of the queue key: two players learning German only get
   // matched if they also share the language the options are written in.
-  return `${QUEUE_KEY_PREFIX}:${nativeLang}:${language}:${level}:${mode || "fair"}`;
+  return `${QUEUE_KEY_PREFIX}:${nativeLang}:${language}:${level}:fair`;
 }
 
 /**
@@ -256,6 +275,10 @@ export async function touchQueueEntry(
     userId: descriptor.userId,
     name: descriptor.name,
     avatar: descriptor.avatar,
+    language: descriptor.language,
+    nativeLang: descriptor.nativeLang,
+    level: descriptor.level,
+    mode: descriptor.mode,
     joinedAt: Date.now(),
   } satisfies QueueEntry);
   return true;
@@ -281,6 +304,10 @@ export async function tryMatch(
     userId: user.userId,
     name: user.name,
     avatar: user.avatar,
+    language: user.language,
+    nativeLang: user.nativeLang,
+    level: user.level,
+    mode,
     joinedAt: Date.now(),
   };
 
@@ -329,6 +356,11 @@ export async function tryMatch(
     learning: user.language,
     level: user.level,
   };
+  const waitingPair = {
+    speak: waiting.nativeLang,
+    learning: waiting.language,
+    level: waiting.level,
+  };
 
   // Questions are built *before* the match row exists. A language pair with no
   // words at this level would otherwise create a match with nothing to answer
@@ -342,7 +374,10 @@ export async function tryMatch(
           },
           {
             userId: waiting.userId,
-            questions: await createPersonalMatchQuestions(waiting.userId, pair),
+            questions: await createPersonalMatchQuestions(
+              waiting.userId,
+              waitingPair,
+            ),
           },
         ]
       : [{ userId: null, questions: await createMatchQuestions(pair) }];
@@ -390,12 +425,18 @@ export async function tryMatch(
       userId: user.userId,
       side: "player1",
       displayName: user.name,
+      nativeLang: user.nativeLang,
+      language: user.language,
+      level: user.level,
     },
     {
       matchId: match.id,
       userId: waiting.userId,
       side: "player2",
       displayName: waiting.name,
+      nativeLang: waiting.nativeLang,
+      language: waiting.language,
+      level: waiting.level,
     },
   ];
   await db.insert(matchPlayers).values(playerRows);
@@ -650,6 +691,10 @@ export async function submitLiveAnswer(params: {
     where: and(
       eq(matchQuestions.matchId, params.matchId),
       eq(matchQuestions.id, params.questionId),
+      or(
+        isNull(matchQuestions.userId),
+        eq(matchQuestions.userId, params.userId),
+      ),
     ),
   });
 
@@ -677,8 +722,8 @@ export async function submitLiveAnswer(params: {
   // A duel is still practice: the answer counts toward the word like it would
   // in any other game. Recorded here rather than from the client because the
   // duel is graded on the server — there is nothing to trust the browser with.
-  const nativeLang = normalizeLang(match.nativeLang);
-  const foreignLang = normalizeLang(match.language);
+  const nativeLang = normalizeLang(player.nativeLang ?? match.nativeLang);
+  const foreignLang = normalizeLang(player.language ?? match.language);
   if (question.conceptId && nativeLang && foreignLang) {
     await recordConceptAttempts(params.userId, nativeLang, foreignLang, [
       { conceptId: question.conceptId, correct: isCorrect },
@@ -783,6 +828,7 @@ export async function saveAsyncScore(params: {
   score: number;
   correct: number;
   timeMs: number;
+  nickname: string;
 }) {
   await db.insert(asyncScores).values({
     userId: params.userId,
@@ -792,25 +838,123 @@ export async function saveAsyncScore(params: {
     correct: params.correct,
     timeMs: params.timeMs,
   });
+
+  // Nicknames are user-chosen public handles. Keep them separate from
+  // `users.name`, which is the private account name supplied by OAuth.
+  await redis
+    .set(
+      `${SCORE_RUSH_NICKNAME_KEY_PREFIX}:${params.userId}`,
+      params.nickname,
+    )
+    .catch(() => undefined);
 }
 
-export async function getLeaderboard(
+export async function getRecentAsyncScores(
+  userId: string,
   language: Lang,
   level: string,
 ) {
   return db
     .select({
+      id: asyncScores.id,
       score: asyncScores.score,
       correct: asyncScores.correct,
-      timeMs: asyncScores.timeMs,
-      name: users.name,
-      avatar: users.image,
+      createdAt: asyncScores.createdAt,
     })
     .from(asyncScores)
-    .innerJoin(users, eq(asyncScores.userId, users.id))
     .where(
-      and(eq(asyncScores.language, language), eq(asyncScores.level, level)),
+      and(
+        eq(asyncScores.userId, userId),
+        eq(asyncScores.language, language),
+        eq(asyncScores.level, level),
+      ),
     )
-    .orderBy(desc(asyncScores.score), asc(asyncScores.timeMs))
-    .limit(10);
+    .orderBy(desc(asyncScores.createdAt))
+    .limit(4);
+}
+
+export async function getLeaderboard(language: Lang, currentUserId: string) {
+  interface LeaderboardRow extends Record<string, unknown> {
+    userId: string;
+    score: number;
+    correct: number;
+    timeMs: number;
+    rank: number;
+    duelNickname: string | null;
+  }
+
+  // Score Rush points are comparable across CEFR levels, so the public board
+  // spans the language. One person gets one place: their best run.
+  const result = await db.execute<LeaderboardRow>(sql`
+    with ranked_runs as (
+      select
+        scores.user_id as "userId",
+        scores.score,
+        scores.correct,
+        scores.time_ms as "timeMs",
+        row_number() over (
+          partition by scores.user_id
+          order by scores.score desc, scores.time_ms asc, scores.created_at asc
+        ) as player_run
+      from async_scores scores
+      where scores.language = ${language}
+    )
+    , ranked_players as (
+      select
+        ranked_runs.*,
+        row_number() over (
+          order by ranked_runs.score desc, ranked_runs."timeMs" asc
+        )::integer as rank
+      from ranked_runs
+      where ranked_runs.player_run = 1
+    )
+    select
+      ranked_players."userId",
+      ranked_players.score,
+      ranked_players.correct,
+      ranked_players."timeMs",
+      ranked_players.rank,
+      (
+        select players.display_name
+        from match_players players
+        inner join matches on matches.id = players.match_id
+        where players.user_id = ranked_players."userId"
+          and players.display_name is not null
+          and length(trim(players.display_name)) > 0
+        order by matches.created_at desc
+        limit 1
+      ) as "duelNickname"
+    from ranked_players
+    where ranked_players.rank <= 5
+      or ranked_players."userId" = ${currentUserId}
+    order by ranked_players.rank asc
+  `);
+
+  const nicknames = await Promise.all(
+    result.rows.map((row) =>
+      redis
+        .get<string>(
+          `${SCORE_RUSH_NICKNAME_KEY_PREFIX}:${row.userId}`,
+        )
+        .catch(() => null),
+    ),
+  );
+
+  const rows = result.rows.map((row, index) => ({
+    userId: row.userId,
+    name:
+      nicknames[index]?.trim() ||
+      row.duelNickname?.trim() ||
+      `Player ${row.rank}`,
+    score: row.score,
+    correct: row.correct,
+    timeMs: row.timeMs,
+    rank: row.rank,
+  }));
+
+  return {
+    leaderboard: rows.filter((row) => row.rank <= 5),
+    currentPlayer:
+      rows.find((row) => row.userId === currentUserId) ?? null,
+  };
 }

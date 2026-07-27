@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { normalizeLang } from "@/app/_lib/languages";
-import { db } from "@/lib/db";
 import {
   getLeaderboard,
+  getRecentAsyncScores,
   saveAsyncScore,
 } from "@/app/api/flip-cards/_lib/server";
 
@@ -26,8 +26,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const leaderboard = await getLeaderboard(lang, level);
-  return NextResponse.json({ leaderboard });
+  const [leaderboardResult, recentRuns] = await Promise.all([
+    getLeaderboard(lang, userId),
+    getRecentAsyncScores(userId, lang, level),
+  ]);
+  return NextResponse.json({ ...leaderboardResult, recentRuns });
 }
 
 export async function POST(request: NextRequest) {
@@ -43,6 +46,7 @@ export async function POST(request: NextRequest) {
     score?: number;
     correct?: number;
     timeMs?: number;
+    nickname?: string;
   };
 
   const postLang = normalizeLang(body.language);
@@ -52,7 +56,8 @@ export async function POST(request: NextRequest) {
     !body.level ||
     typeof body.score !== "number" ||
     typeof body.correct !== "number" ||
-    typeof body.timeMs !== "number"
+    typeof body.timeMs !== "number" ||
+    typeof body.nickname !== "string"
   ) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
@@ -64,6 +69,7 @@ export async function POST(request: NextRequest) {
     score: body.score,
     correct: body.correct,
     timeMs: body.timeMs,
+    nickname: body.nickname.trim().slice(0, 24) || "Player",
   });
 
   return NextResponse.json({ ok: true });

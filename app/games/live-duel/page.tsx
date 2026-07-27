@@ -549,8 +549,9 @@ const LiveDuelPage = () => {
   return (
     <GamePage
       name="Live Duel"
-      description="Race another player live: you both get the same prompts and pick the correct translation. First to 10 correct answers wins. No one online? Duel the bot instead."
+      description="Race another player live with shared questions in Fair Mode or questions tailored to each player's language and level in Personalized Mode. First to 10 correct answers wins."
       bgImage="flip_cards.png"
+      heroFirst
     >
       <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-800/40">
         <div className="flex items-start justify-between gap-3">
@@ -580,28 +581,28 @@ const LiveDuelPage = () => {
           <div className="flex gap-2">
             <button
               onClick={() => chooseMatchSettings("fair")}
-              className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+              className={`flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                 matchSettings === "fair"
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 ring-2 ring-blue-500/20"
-                  : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
+                  ? "border-blue-800 bg-blue-100 text-blue-950 shadow-sm ring-2 ring-blue-700/40 dark:border-blue-500 dark:bg-blue-400/20 dark:text-white dark:ring-blue-500/50"
+                  : "border-zinc-300 bg-white text-zinc-800 hover:border-zinc-500 dark:border-white/70 dark:bg-zinc-900 dark:text-white dark:hover:border-white"
               }`}
             >
               <span className="text-sm font-bold">Fair Mode</span>
-              <span className="text-xxs text-zinc-500 mt-0.5">
+              <span className="text-xxs mt-0.5 opacity-75">
                 Same words for both players
               </span>
             </button>
             <button
               onClick={() => chooseMatchSettings("personal")}
-              className={`flex-1 flex flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+              className={`flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                 matchSettings === "personal"
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 ring-2 ring-blue-500/20"
-                  : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 hover:border-zinc-300"
+                  ? "border-blue-800 bg-blue-100 text-blue-950 shadow-sm ring-2 ring-blue-700/40 dark:border-blue-500 dark:bg-blue-400/20 dark:text-white dark:ring-blue-500/50"
+                  : "border-zinc-300 bg-white text-zinc-800 hover:border-zinc-500 dark:border-white/70 dark:bg-zinc-900 dark:text-white dark:hover:border-white"
               }`}
             >
               <span className="text-sm font-bold">Personalized Mode</span>
-              <span className="text-xxs text-zinc-500 mt-0.5">
-                Asymmetric custom/recent vocabulary
+              <span className="text-xxs mt-0.5 opacity-75">
+                Your own language, level &amp; vocabulary
               </span>
             </button>
           </div>
@@ -613,7 +614,7 @@ const LiveDuelPage = () => {
           <div className="flex w-full max-w-md mt-6 flex-col items-center gap-3">
             <button
               onClick={() => void startFindingOpponent()}
-              className="w-full rounded-xl bg-blue-500 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-blue-400"
+              className="w-full cursor-pointer rounded-xl border-2 border-solid border-transparent bg-blue-500 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:border-dashed hover:border-white hover:bg-blue-400"
             >
               Start Live Duel
             </button>

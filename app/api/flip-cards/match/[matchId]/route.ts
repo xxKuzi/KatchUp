@@ -36,6 +36,9 @@ export async function GET(
       correct: matchPlayers.correctCount,
       side: matchPlayers.side,
       acceptedAt: matchPlayers.acceptedAt,
+      nativeLang: matchPlayers.nativeLang,
+      language: matchPlayers.language,
+      level: matchPlayers.level,
     })
     .from(matchPlayers)
     .innerJoin(users, eq(matchPlayers.userId, users.id))
@@ -88,8 +91,8 @@ export async function GET(
       winnerId: match.winnerUserId,
       totalQuestions: mapped.length,
       targetCorrect: WINNING_CORRECT_ANSWERS,
-      language: match.language,
-      level: match.level,
+      language: meRow.language ?? match.language,
+      level: meRow.level ?? match.level,
       // Null until both players accept - that is when the shared clock is set.
       startAt: match.startAt?.getTime() ?? null,
     },

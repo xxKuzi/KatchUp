@@ -30,14 +30,15 @@ interface RushQuestion {
 type RunStatus = "playing" | "finished";
 
 const RUN_DURATION_MS = 30_000;
-const RUN_HISTORY_KEY = "katchup-score-rush-history-v1";
 
 interface AsyncLeaderboardRow {
+  userId: string;
   name: string;
   avatar: string;
   score: number;
   correct: number;
   timeMs: number;
+  rank: number;
 }
 
 // Score Rush is a recognition drill: it shows the word in the language you're
@@ -173,7 +174,7 @@ export default function ScoreRushPlayPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             playerId,
-            name: playerName,
+            nickname: playerName,
             avatar: playerAvatar,
             // Leaderboards are per language-being-learned, not per pair.
             language: learning,
@@ -194,37 +195,26 @@ export default function ScoreRushPlayPage() {
 
         const leaderboardData = (await leaderboardResponse.json()) as {
           leaderboard: AsyncLeaderboardRow[];
+          currentPlayer: AsyncLeaderboardRow | null;
         };
 
-        setLeaderboard(leaderboardData.leaderboard ?? []);
+        const currentPlayer = leaderboardData.currentPlayer ?? null;
+        const topPlayers = leaderboardData.leaderboard ?? [];
+        setLeaderboard(
+          currentPlayer
+            ? [
+                ...topPlayers
+                  .filter((entry) => entry.userId !== currentPlayer.userId)
+                  .slice(0, 4),
+                currentPlayer,
+              ]
+            : topPlayers.slice(0, 5),
+        );
       } catch {
         // Non-blocking: the run already completed.
       }
     };
 
-    const appendHistory = () => {
-      try {
-        const stored = window.localStorage.getItem(RUN_HISTORY_KEY);
-        const parsed = stored
-          ? (JSON.parse(stored) as Array<Record<string, unknown>>)
-          : [];
-
-        const updated = [
-          {
-            createdAt: Date.now(),
-            score,
-            correct,
-          },
-          ...parsed,
-        ].slice(0, 15);
-
-        window.localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(updated));
-      } catch {
-        // Ignore local storage errors.
-      }
-    };
-
-    appendHistory();
     void submitScore();
   }, [correct, learning, level, playerAvatar, playerId, playerName, score, status]);
 
@@ -398,7 +388,7 @@ export default function ScoreRushPlayPage() {
                   key={`${entry.name}-${index}`}
                   className="text-sm text-zinc-700 dark:text-zinc-200"
                 >
-                  #{index + 1} {entry.name} - {entry.score} pts
+                  #{entry.rank} {entry.name} - {entry.score} pts
                 </p>
               ))}
             </div>

@@ -35,8 +35,12 @@ export async function GET(request: NextRequest) {
       matchId: matchPlayers.matchId,
       createdAt: matches.createdAt,
       progress: matchPlayers.progress,
-      language: matches.language,
-      level: matches.level,
+      playerLanguage: matchPlayers.language,
+      playerNativeLang: matchPlayers.nativeLang,
+      playerLevel: matchPlayers.level,
+      matchLanguage: matches.language,
+      matchNativeLang: matches.nativeLang,
+      matchLevel: matches.level,
       mode: matches.mode,
     })
     .from(matchPlayers)
@@ -55,9 +59,13 @@ export async function GET(request: NextRequest) {
     (candidate) =>
       candidate.createdAt.getTime() >= cutoff &&
       candidate.progress === 0 &&
-      candidate.language === learning &&
-      candidate.level === level &&
-      candidate.mode === mode,
+      candidate.mode === mode &&
+      // New matches persist each player's settings. Match-level fallbacks keep
+      // fair matches made before those columns were added discoverable.
+      (candidate.playerLanguage ?? candidate.matchLanguage) === learning &&
+      (candidate.playerNativeLang ?? candidate.matchNativeLang ?? "en") ===
+        nativeLang &&
+      (candidate.playerLevel ?? candidate.matchLevel) === level,
   );
 
   // Still searching: this poll doubles as the client's heartbeat. Without it

@@ -66,11 +66,10 @@ export const verificationTokens = pgTable(
 
 export const matches = pgTable("matches", {
   id: uuid("id").defaultRandom().primaryKey(),
-  // The language being learned. Both players must share it, along with
-  // `nativeLang`, or the answer options would be in different languages.
+  // The creator's language settings. Fair-mode players share them;
+  // personalized players keep their own settings on matchPlayers.
   language: text("language").notNull(),
-  // The language both players speak. Null on matches created before pairs
-  // existed, which are read as English.
+  // Null on matches created before language pairs existed (read as English).
   nativeLang: text("native_lang"),
   level: text("level").notNull(),
   mode: text("mode").default("fair").notNull(),
@@ -96,6 +95,12 @@ export const matchPlayers = pgTable("match_players", {
   // The player's friends-profile nickname. Duels show this instead of the
   // account name, which is the real name people signed up with.
   displayName: text("display_name"),
+  // Personalized duels can pair players using entirely different settings.
+  // Keep each player's pair and level here rather than relying on the
+  // match-level fields, which describe only the player who created the match.
+  nativeLang: text("native_lang"),
+  language: text("language"),
+  level: text("level"),
   progress: integer("progress").notNull().default(0),
   correctCount: integer("correct_count").notNull().default(0),
   acceptedAt: timestamp("accepted_at", { mode: "date" }),

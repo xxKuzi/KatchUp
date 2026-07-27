@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { matchAnswers, matchPlayers, matchQuestions } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { matchPlayers, matchQuestions } from "@/db/schema";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { submitLiveAnswer } from "@/app/api/flip-cards/_lib/server";
 
 export async function POST(
@@ -36,6 +36,10 @@ export async function POST(
     where: and(
       eq(matchQuestions.matchId, matchId),
       eq(matchQuestions.id, body.questionId),
+      or(
+        isNull(matchQuestions.userId),
+        eq(matchQuestions.userId, userId),
+      ),
     ),
   });
 
