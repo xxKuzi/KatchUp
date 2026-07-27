@@ -54,6 +54,15 @@ if (!GEMINI_API_KEY) {
 
 const MODEL = "gemini-flash-lite-latest";
 const CONCEPTS_PER_LEVEL = 200;
+/**
+ * How many existing words to show the model as "already used".
+ *
+ * Not the whole corpus: the list is the bulk of the prompt, and past a few
+ * thousand it costs more than the duplicates it prevents. Duplicates that slip
+ * through are dropped on the way in, so this only affects how much of each
+ * request is wasted.
+ */
+const EXCLUDE_SAMPLE = 1200;
 const TRANSLATE_BATCH = 50;
 const REQUEST_SLEEP_MS = 2000;
 const MAX_ATTEMPTS = 3;
@@ -160,12 +169,30 @@ const SPINE_SCHEMA: GeminiSchema = {
   },
 };
 
+/** A random slice of the used keys, so no part of the corpus is always unseen. */
+function sampleKeys(keys: Set<string>, limit: number): string[] {
+  const all = Array.from(keys);
+  if (all.length <= limit) {
+    return all;
+  }
+  for (let i = all.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return all.slice(0, limit);
+}
+
 async function generateSpineForLevel(
   level: CefrLevel,
   exclude: Set<string>,
   need: number,
 ): Promise<Concept[]> {
-  const excerpt = Array.from(exclude).slice(0, 900).join(", ");
+  // A prompt cannot carry the whole corpus once it passes a few thousand words,
+  // and the first 900 keys are the *oldest* ones — so the model was being shown
+  // a slice that no longer reflects what exists and kept proposing words already
+  // in the file. Sampling at random spreads the blind spot instead of parking it
+  // over everything added recently.
+  const excerpt = sampleKeys(exclude, EXCLUDE_SAMPLE).join(", ");
   const prompt = `Generate exactly ${need} distinct English vocabulary words appropriate for CEFR level ${level}.
 
 Rules:
@@ -289,6 +316,12 @@ ${words}`;
     if (!concept) continue;
 
     for (const lang of TARGET_LANGS) {
+      // Never overwrite a translation that is already there. Words added by
+      // `fill-language-level` arrive with their target language pinned to the
+      // band they were generated for, and re-rating it here would undo exactly
+      // the gap that script was run to close.
+      if (concept.translations[lang]?.text) continue;
+
       const value = row[lang];
       if (!value || typeof value === "string") continue;
 
@@ -350,15 +383,24 @@ function save(concepts: Concept[]): void {
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(concepts, null, 2), "utf8");
 }
 
+/**
+ * Skips growing the English spine and only fills in missing translations.
+ * What you want after `fill-language-level` has added words that already have
+ * their English and their target language, and need the other two.
+ */
+const TRANSLATE_ONLY = process.argv.includes("--translate-only");
+
 async function run() {
   const existing = load();
   if (existing.length) {
     console.log(`Resuming from ${existing.length} existing concepts.\n`);
   }
 
-  const concepts = await buildSpine(existing);
-  save(concepts);
-  console.log(`\nSpine complete: ${concepts.length} concepts.`);
+  const concepts = TRANSLATE_ONLY ? existing : await buildSpine(existing);
+  if (!TRANSLATE_ONLY) {
+    save(concepts);
+    console.log(`\nSpine complete: ${concepts.length} concepts.`);
+  }
 
   await translateAll(concepts);
 

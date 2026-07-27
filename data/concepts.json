@@ -22196,5 +22196,7727 @@
         "level": "A1"
       }
     }
+  },
+  {
+    "conceptKey": "perform",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "perform",
+        "level": "B1"
+      },
+      "es": {
+        "text": "desempeñar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "auftreten",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vystupovat",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "exhaust",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "exhaust",
+        "level": "B2"
+      },
+      "es": {
+        "text": "agotar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "erschöpfen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vyčerpat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "dispense",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "dispense",
+        "level": "C1"
+      },
+      "es": {
+        "text": "prescindir",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ausgeben",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vydávat",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "promote",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "promote",
+        "level": "B2"
+      },
+      "es": {
+        "text": "fomentar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "fördern",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "propagovat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "realize",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "realize",
+        "level": "B1"
+      },
+      "es": {
+        "text": "percatarse",
+        "level": "C1"
+      },
+      "de": {
+        "text": "realisieren",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "uvědomit si",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "unleash",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "unleash",
+        "level": "C1"
+      },
+      "es": {
+        "text": "desatar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "entfesseln",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "uvolnit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "utilize",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "utilize",
+        "level": "C1"
+      },
+      "es": {
+        "text": "aprovechar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "nutzen",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "využít",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "recommend",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "recommend",
+        "level": "B1"
+      },
+      "es": {
+        "text": "recomendar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "empfehlen",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "doporučit",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "conceal",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "conceal",
+        "level": "C1"
+      },
+      "es": {
+        "text": "disimular",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verstecken",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "skrýt",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "indispensable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "indispensable",
+        "level": "C1"
+      },
+      "es": {
+        "text": "imprescindible",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unverzichtbar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "nepostradatelný",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "daily",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "daily",
+        "level": "A2"
+      },
+      "es": {
+        "text": "cotidiano",
+        "level": "C1"
+      },
+      "de": {
+        "text": "täglich",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "denní",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "versatile",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "versatile",
+        "level": "C1"
+      },
+      "es": {
+        "text": "versátil",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vielseitig",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "všestranný",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "effective",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "effective",
+        "level": "B1"
+      },
+      "es": {
+        "text": "eficaz",
+        "level": "C1"
+      },
+      "de": {
+        "text": "effektiv",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "efektivní",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "scarce",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "scarce",
+        "level": "C1"
+      },
+      "es": {
+        "text": "escaso",
+        "level": "C1"
+      },
+      "de": {
+        "text": "knapp",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vzácný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "latent",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "latent",
+        "level": "C1"
+      },
+      "es": {
+        "text": "latente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "latent",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "latentní",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "underlying",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "underlying",
+        "level": "C1"
+      },
+      "es": {
+        "text": "subyacente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "zugrundeliegend",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "základní",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "disastrous",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "disastrous",
+        "level": "B2"
+      },
+      "es": {
+        "text": "nefasto",
+        "level": "C1"
+      },
+      "de": {
+        "text": "katastrophal",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "katastrofální",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "ambiguous",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "ambiguous",
+        "level": "C1"
+      },
+      "es": {
+        "text": "ambiguo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "zweideutig",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "nejasný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "guideline",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "guideline",
+        "level": "B2"
+      },
+      "es": {
+        "text": "pauta",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Richtlinie",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "směrnice",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "summary",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "summary",
+        "level": "B1"
+      },
+      "es": {
+        "text": "resumen",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Zusammenfassung",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "shrnutí",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "nature",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "nature",
+        "level": "A2"
+      },
+      "es": {
+        "text": "índole",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Natur",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "příroda",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "index",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "index",
+        "level": "B2"
+      },
+      "es": {
+        "text": "índice",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Index",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "index",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "anxiety",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "anxiety",
+        "level": "B2"
+      },
+      "es": {
+        "text": "ansiedad",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Angst",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "úzkost",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "bewilderment",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "bewilderment",
+        "level": "C1"
+      },
+      "es": {
+        "text": "desconcierto",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verwirrung",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zmatení",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "longing",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "longing",
+        "level": "C1"
+      },
+      "es": {
+        "text": "añoranza",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Sehnsucht",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "touha",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "arrogance",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "arrogance",
+        "level": "C1"
+      },
+      "es": {
+        "text": "soberbia",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Arroganz",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "arrogance",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "remorse",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "remorse",
+        "level": "C1"
+      },
+      "es": {
+        "text": "remordimiento",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Reue",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "výčitky",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "startle",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "startle",
+        "level": "C1"
+      },
+      "es": {
+        "text": "sobresalto",
+        "level": "C1"
+      },
+      "de": {
+        "text": "erschrecken",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vylekat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "scorn",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "scorn",
+        "level": "C1"
+      },
+      "es": {
+        "text": "desprecio",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Hohn",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "pohrdání",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "nostalgia",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "nostalgia",
+        "level": "C1"
+      },
+      "es": {
+        "text": "nostalgia",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Nostalgie",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "nostalgie",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "tenderness",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "tenderness",
+        "level": "B2"
+      },
+      "es": {
+        "text": "ternura",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Zärtlichkeit",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "něha",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "meeting",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "meeting",
+        "level": "A2"
+      },
+      "es": {
+        "text": "reunión",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Treffen",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "schůzka",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "promotion",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "promotion",
+        "level": "B2"
+      },
+      "es": {
+        "text": "ascenso",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Beförderung",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "povýšení",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "workday",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "workday",
+        "level": "B2"
+      },
+      "es": {
+        "text": "jornada",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Werktag",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pracovní den",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "strike",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "strike",
+        "level": "B2"
+      },
+      "es": {
+        "text": "huelga",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Streik",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "stávka",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "substitute",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "substitute",
+        "level": "B2"
+      },
+      "es": {
+        "text": "suplente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Ersatz",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "náhrada",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "resume",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "resume",
+        "level": "B2"
+      },
+      "es": {
+        "text": "currículum",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Lebenslauf",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "životopis",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "position",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "position",
+        "level": "B1"
+      },
+      "es": {
+        "text": "puesto",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Position",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "pozice",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "subsidy",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "subsidy",
+        "level": "C1"
+      },
+      "es": {
+        "text": "subvención",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Subvention",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "dotace",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "dismissal",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "dismissal",
+        "level": "C1"
+      },
+      "es": {
+        "text": "despido",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Entlassung",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "propuštění",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "dawn",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "dawn",
+        "level": "B2"
+      },
+      "es": {
+        "text": "madrugada",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Morgengrauen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "svítání",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "eve",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "eve",
+        "level": "C1"
+      },
+      "es": {
+        "text": "víspera",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Abend",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "předvečer",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "lapse",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "lapse",
+        "level": "C1"
+      },
+      "es": {
+        "text": "lapso",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Ablauf",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "lapsus",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "deadline",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "deadline",
+        "level": "B2"
+      },
+      "es": {
+        "text": "plazo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Frist",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "termín",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "advance",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "advance",
+        "level": "B1"
+      },
+      "es": {
+        "text": "antelación",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Fortschritt",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pokrok",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "temporary",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "temporary",
+        "level": "B1"
+      },
+      "es": {
+        "text": "provisional",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vorübergehend",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "dočasný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "permanent",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "permanent",
+        "level": "B1"
+      },
+      "es": {
+        "text": "permanente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "dauerhaft",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "trvalý",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "simultaneous",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "simultaneous",
+        "level": "C1"
+      },
+      "es": {
+        "text": "simultáneo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "gleichzeitig",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "současný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "eternal",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "eternal",
+        "level": "B2"
+      },
+      "es": {
+        "text": "eterno",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ewig",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "věčný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "immediate",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "immediate",
+        "level": "B1"
+      },
+      "es": {
+        "text": "inmediato",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unmittelbar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "okamžitý",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "suspect",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "suspect",
+        "level": "B2"
+      },
+      "es": {
+        "text": "sospechar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vermuten",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pozdřet",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "endure",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "endure",
+        "level": "B2"
+      },
+      "es": {
+        "text": "aguantar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ertragen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "snášet",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "develop",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "develop",
+        "level": "B1"
+      },
+      "es": {
+        "text": "desarrollar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "entwickeln",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "vyvíjet",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "reject",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "reject",
+        "level": "B2"
+      },
+      "es": {
+        "text": "rechazar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ablehnen",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "odmítnout",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "imply",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "imply",
+        "level": "B2"
+      },
+      "es": {
+        "text": "implicar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "andeuten",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "naznačovat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "reinforce",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "reinforce",
+        "level": "C1"
+      },
+      "es": {
+        "text": "reforzar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verstärken",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vyztužit",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "coincide",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "coincide",
+        "level": "C1"
+      },
+      "es": {
+        "text": "coincidir",
+        "level": "C1"
+      },
+      "de": {
+        "text": "zusammenfallen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "shodovat se",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "disappear",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "disappear",
+        "level": "A2"
+      },
+      "es": {
+        "text": "desaparecer",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verschwinden",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "zmizet",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "guarantee",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "guarantee",
+        "level": "B2"
+      },
+      "es": {
+        "text": "garantizar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "garantieren",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zaručit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "analyze",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "analyze",
+        "level": "B1"
+      },
+      "es": {
+        "text": "analizar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "analysieren",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "analyzovat",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "find-out",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "find out",
+        "level": "A2"
+      },
+      "es": {
+        "text": "averiguar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "herausfinden",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "zjistit",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "evident",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "evident",
+        "level": "B2"
+      },
+      "es": {
+        "text": "evidente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "offensichtlich",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "očividný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "useless",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "useless",
+        "level": "B1"
+      },
+      "es": {
+        "text": "inútil",
+        "level": "C1"
+      },
+      "de": {
+        "text": "nutzlos",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zbytečný",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "valuable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "valuable",
+        "level": "B1"
+      },
+      "es": {
+        "text": "valioso",
+        "level": "C1"
+      },
+      "de": {
+        "text": "wertvoll",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "cenný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "firm",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "firm",
+        "level": "B2"
+      },
+      "es": {
+        "text": "firme",
+        "level": "C1"
+      },
+      "de": {
+        "text": "fest",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pevný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "brief",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "brief",
+        "level": "B2"
+      },
+      "es": {
+        "text": "breve",
+        "level": "C1"
+      },
+      "de": {
+        "text": "kurz",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "stručný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "subtle",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "subtle",
+        "level": "C1"
+      },
+      "es": {
+        "text": "sutil",
+        "level": "C1"
+      },
+      "de": {
+        "text": "subtil",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "jemný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "flexible",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "flexible",
+        "level": "B2"
+      },
+      "es": {
+        "text": "flexible",
+        "level": "C1"
+      },
+      "de": {
+        "text": "flexibel",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "flexibilní",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "cautious",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "cautious",
+        "level": "B2"
+      },
+      "es": {
+        "text": "cauto",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vorsichtig",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "opatrný",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "notable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "notable",
+        "level": "C1"
+      },
+      "es": {
+        "text": "notable",
+        "level": "C1"
+      },
+      "de": {
+        "text": "bemerkenswert",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "významný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "frequent",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "frequent",
+        "level": "B1"
+      },
+      "es": {
+        "text": "frecuente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "häufig",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "častý",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "isolated",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "isolated",
+        "level": "B2"
+      },
+      "es": {
+        "text": "aislado",
+        "level": "C1"
+      },
+      "de": {
+        "text": "isoliert",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "izolovaný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "profound",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "profound",
+        "level": "C1"
+      },
+      "es": {
+        "text": "profundo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "gründlich",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "hluboký",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "authentic",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "authentic",
+        "level": "B2"
+      },
+      "es": {
+        "text": "auténtico",
+        "level": "C1"
+      },
+      "de": {
+        "text": "authentisch",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "autentický",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "uncertainty",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "uncertainty",
+        "level": "B2"
+      },
+      "es": {
+        "text": "incertidumbre",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Ungewissheit",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "nejistota",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "anguish",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "anguish",
+        "level": "C1"
+      },
+      "es": {
+        "text": "angustia",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Qual",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "úzkost",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "indifference",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "indifference",
+        "level": "C1"
+      },
+      "es": {
+        "text": "indiferencia",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Gleichgültigkeit",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "lhostejnost",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "melancholy",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "melancholy",
+        "level": "C1"
+      },
+      "es": {
+        "text": "melancolía",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Schwermut",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "melancholie",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "intend",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "intend",
+        "level": "B1"
+      },
+      "es": {
+        "text": "pretender",
+        "level": "C1"
+      },
+      "de": {
+        "text": "beabsichtigen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zamýšlet",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "reproach",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "reproach",
+        "level": "C1"
+      },
+      "es": {
+        "text": "reprochar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vorwerfen",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "vyčítat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "unclog",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "unclog",
+        "level": "C1"
+      },
+      "es": {
+        "text": "desatancar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "freimachen",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "uvolnit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "defy",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "defy",
+        "level": "C1"
+      },
+      "es": {
+        "text": "desafiar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "trotzen",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "vzdorovat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "encourage",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "encourage",
+        "level": "B1"
+      },
+      "es": {
+        "text": "alentar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ermutigen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "povzbudit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "toast",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "toast",
+        "level": "B1"
+      },
+      "es": {
+        "text": "brindar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Toastbrot",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "toast",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "lack",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "lack",
+        "level": "B2"
+      },
+      "es": {
+        "text": "carecer",
+        "level": "C1"
+      },
+      "de": {
+        "text": "mangelhaft",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "postrádat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "dismiss",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "dismiss",
+        "level": "B2"
+      },
+      "es": {
+        "text": "descartar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "entlassen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "propustit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "harm",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "harm",
+        "level": "B2"
+      },
+      "es": {
+        "text": "perjudicar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "schaden",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "škodit",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "reconcile",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "reconcile",
+        "level": "C1"
+      },
+      "es": {
+        "text": "reconciliar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "versöhnen",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "smířit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "show-off",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "show off",
+        "level": "B2"
+      },
+      "es": {
+        "text": "presumir",
+        "level": "C1"
+      },
+      "de": {
+        "text": "angeben",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vytahovat se",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "fleeting",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "fleeting",
+        "level": "C1"
+      },
+      "es": {
+        "text": "fugaz",
+        "level": "C1"
+      },
+      "de": {
+        "text": "flüchtig",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "přechodný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "blunt",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "blunt",
+        "level": "C1"
+      },
+      "es": {
+        "text": "tajante",
+        "level": "C1"
+      },
+      "de": {
+        "text": "stumpf",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "tupý",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "capable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "capable",
+        "level": "B2"
+      },
+      "es": {
+        "text": "apto",
+        "level": "C1"
+      },
+      "de": {
+        "text": "fähig",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "schopný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "bold",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "bold",
+        "level": "B2"
+      },
+      "es": {
+        "text": "audaz",
+        "level": "C1"
+      },
+      "de": {
+        "text": "mutig",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "odvážný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "sane",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "sane",
+        "level": "C1"
+      },
+      "es": {
+        "text": "cuerdo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vernünftig",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "příčetný",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "tenacious",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "tenacious",
+        "level": "C1"
+      },
+      "es": {
+        "text": "tenaz",
+        "level": "C1"
+      },
+      "de": {
+        "text": "zäh",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "houževnatý",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "restlessness",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "restlessness",
+        "level": "C1"
+      },
+      "es": {
+        "text": "inquietud",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Unruhe",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "nepokoj",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "commotion",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "commotion",
+        "level": "C1"
+      },
+      "es": {
+        "text": "alboroto",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Aufruhr",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "pozdvižení",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "judgment",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "judgment",
+        "level": "B2"
+      },
+      "es": {
+        "text": "juicio",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Urteil",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "úsudek",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "summit",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "summit",
+        "level": "B2"
+      },
+      "es": {
+        "text": "cumbre",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Gipfel",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vrchol",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "path",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "path",
+        "level": "B1"
+      },
+      "es": {
+        "text": "sendero",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Weg",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "cesta",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "waterfall",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "waterfall",
+        "level": "B1"
+      },
+      "es": {
+        "text": "cascada",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Wasserfall",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vodopád",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "ash",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "ash",
+        "level": "B2"
+      },
+      "es": {
+        "text": "ceniza",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Asche",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "popel",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "attic",
+    "category": "home",
+    "translations": {
+      "en": {
+        "text": "attic",
+        "level": "B2"
+      },
+      "es": {
+        "text": "desván",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Dachboden",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "půda",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "workshop",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "workshop",
+        "level": "B1"
+      },
+      "es": {
+        "text": "taller",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Workshop",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "dílna",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "procedure",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "procedure",
+        "level": "B2"
+      },
+      "es": {
+        "text": "trámite",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verfahren",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "postup",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "bow",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "bow",
+        "level": "B1"
+      },
+      "es": {
+        "text": "lazo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Bogen",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "luk",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "verify",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "verify",
+        "level": "B2"
+      },
+      "es": {
+        "text": "constatar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verifizieren",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "ověřit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "matter",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "matter",
+        "level": "A2"
+      },
+      "es": {
+        "text": "cuestión",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Angelegenheit",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "záležitost",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "instill",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "instill",
+        "level": "C1"
+      },
+      "es": {
+        "text": "inculcar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "einpflanzen",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "vštípit",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "surprise",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "surprise",
+        "level": "A2"
+      },
+      "es": {
+        "text": "sorprender",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Überraschung",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "překvapení",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "care",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "care",
+        "level": "A2"
+      },
+      "es": {
+        "text": "cuidado",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Sorge",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "péče",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "stem",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "stem",
+        "level": "B2"
+      },
+      "es": {
+        "text": "provenir",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Stängel",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "stonek",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "cope",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "cope",
+        "level": "B2"
+      },
+      "es": {
+        "text": "sobrellevar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "bewältigen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vyrovnat se",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "delay",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "delay",
+        "level": "B1"
+      },
+      "es": {
+        "text": "retrasar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verzögerung",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zpoždění",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "highlight",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "highlight",
+        "level": "B2"
+      },
+      "es": {
+        "text": "resaltar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Höhepunkt",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zvýraznit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "sponsor",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "sponsor",
+        "level": "B2"
+      },
+      "es": {
+        "text": "patrocinar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Sponsor",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "sponzor",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "disagreement",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "disagreement",
+        "level": "B1"
+      },
+      "es": {
+        "text": "desacuerdo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Meinungsverschiedenheit",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "neshoda",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "deepen",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "deepen",
+        "level": "B2"
+      },
+      "es": {
+        "text": "profundizar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vertiefen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "prohloubit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "coexist",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "coexist",
+        "level": "C1"
+      },
+      "es": {
+        "text": "convivir",
+        "level": "C1"
+      },
+      "de": {
+        "text": "koexistieren",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "koexistovat",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "attribute",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "attribute",
+        "level": "C1"
+      },
+      "es": {
+        "text": "atribuir",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Attribut",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "atribut",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "bypass",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "bypass",
+        "level": "B2"
+      },
+      "es": {
+        "text": "soslayar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Bypass",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "obchvat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "neglect",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "neglect",
+        "level": "B2"
+      },
+      "es": {
+        "text": "desatender",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vernachlässigen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zanedbat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "vulnerability",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "vulnerability",
+        "level": "C1"
+      },
+      "es": {
+        "text": "vulnerabilidad",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verwundbarkeit",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "zranitelnost",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "hinder",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "hinder",
+        "level": "C1"
+      },
+      "es": {
+        "text": "obstaculizar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "hindern",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "bránit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "fade",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "fade",
+        "level": "B1"
+      },
+      "es": {
+        "text": "desvanecer",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verblassen",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vyblednout",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "urge",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "urge",
+        "level": "B2"
+      },
+      "es": {
+        "text": "apremiar",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Drang",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "nutkání",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "relevant",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "relevant",
+        "level": "B1"
+      },
+      "es": {
+        "text": "pertinente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "relevant",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "relevantní",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "ephemeral",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "ephemeral",
+        "level": "C1"
+      },
+      "es": {
+        "text": "efímero",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ephemer",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "pominutelný",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "implacable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "implacable",
+        "level": "C1"
+      },
+      "es": {
+        "text": "implacable",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unerbittlich",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "neúprosný",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "reliable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "reliable",
+        "level": "B1"
+      },
+      "es": {
+        "text": "fidedigno",
+        "level": "C1"
+      },
+      "de": {
+        "text": "zuverlässig",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "spolehlivý",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "effort",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "effort",
+        "level": "B1"
+      },
+      "es": {
+        "text": "el esfuerzo",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Anstrengung",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "úsilí",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "rescue",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "rescue",
+        "level": "B1"
+      },
+      "es": {
+        "text": "el rescate",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Rettung",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "záchrana",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "maturity",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "maturity",
+        "level": "C1"
+      },
+      "es": {
+        "text": "la madurez",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Reife",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zralost",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "disdain",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "disdain",
+        "level": "C1"
+      },
+      "es": {
+        "text": "el desdén",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verachtung",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "pohrdání",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "certainty",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "certainty",
+        "level": "B2"
+      },
+      "es": {
+        "text": "la certidumbre",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Gewissheit",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "jistota",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "surprising",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "surprising",
+        "level": "A2"
+      },
+      "es": {
+        "text": "sorprendente",
+        "level": "C1"
+      },
+      "de": {
+        "text": "überraschend",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "překvapivý",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "about-face",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "about-face",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Kehrtwende",
+        "level": "C1"
+      },
+      "es": {
+        "text": "cambio radical",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "obrat o sto osmdesát stupňů",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "interweaving",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "interweaving",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verflechtung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "entretejido",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "proplétání",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "yearning",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "yearning",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Sehnsucht",
+        "level": "C1"
+      },
+      "es": {
+        "text": "añoranza",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "touha",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "burden",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "burden",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Belastung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "carga",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "břemeno",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "incident",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "incident",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Begebenheit",
+        "level": "C1"
+      },
+      "es": {
+        "text": "incidente",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "incident",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "resistance",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "resistance",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Widerstand",
+        "level": "C1"
+      },
+      "es": {
+        "text": "resistencia",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "odpor",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "prospect",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "prospect",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Ausblick",
+        "level": "C1"
+      },
+      "es": {
+        "text": "perspectiva",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vyhlídka",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "directory",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "directory",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Verzeichnis",
+        "level": "C1"
+      },
+      "es": {
+        "text": "directorio",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "adresář",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "commitment",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "commitment",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Bekenntnis",
+        "level": "C1"
+      },
+      "es": {
+        "text": "compromiso",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "závazek",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "gradient",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "gradient",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Gefälle",
+        "level": "C1"
+      },
+      "es": {
+        "text": "gradiente",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "spád",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "prejudice",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "prejudice",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Vorurteil",
+        "level": "C1"
+      },
+      "es": {
+        "text": "prejuicio",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "předsudek",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "preparation",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "preparation",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Vorbereitung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "preparación",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "příprava",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "emergence",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "emergence",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Entstehung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "surgimiento",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "vznik",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "settlement",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "settlement",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Beilegung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "asentamiento",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "osada",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "deterioration",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "deterioration",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verschlechterung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "deterioro",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zhoršení",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "excerpt",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "excerpt",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Ausschnitt",
+        "level": "C1"
+      },
+      "es": {
+        "text": "extracto",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "výňatek",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "transition",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "transition",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Übergang",
+        "level": "C1"
+      },
+      "es": {
+        "text": "transición",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "přechod",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "decline",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "decline",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Rückgang",
+        "level": "C1"
+      },
+      "es": {
+        "text": "declive",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "pokles",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "structure",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "structure",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Gefüge",
+        "level": "C1"
+      },
+      "es": {
+        "text": "estructura",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "struktura",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "doom",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "doom",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verhängnis",
+        "level": "C1"
+      },
+      "es": {
+        "text": "perdición",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "zkáza",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "classify",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "classify",
+        "level": "B2"
+      },
+      "de": {
+        "text": "einstufen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "clasificar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "klasifikovat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "justify",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "justify",
+        "level": "B2"
+      },
+      "de": {
+        "text": "rechtfertigen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "justificar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "odůvodnit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "impair",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "impair",
+        "level": "C1"
+      },
+      "de": {
+        "text": "beeinträchtigen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "deteriorar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "poškodit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "playdown",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "playdown",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verharmlosen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "minimizar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zlehčovat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "complicate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "complicate",
+        "level": "B2"
+      },
+      "de": {
+        "text": "erschweren",
+        "level": "C1"
+      },
+      "es": {
+        "text": "complicar",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "komplikovat",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "suppress",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "suppress",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unterbinden",
+        "level": "C1"
+      },
+      "es": {
+        "text": "suprimir",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "potlačit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "prompt",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "prompt",
+        "level": "B2"
+      },
+      "de": {
+        "text": "veranlassen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "incitar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vybídnout",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "indisputable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "indisputable",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unumstritten",
+        "level": "C1"
+      },
+      "es": {
+        "text": "indiscutible",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "nesporný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "timeconsuming",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "timeconsuming",
+        "level": "B1"
+      },
+      "de": {
+        "text": "zeitaufwendig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "prolongado",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "časově náročný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "contradictory",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "contradictory",
+        "level": "B2"
+      },
+      "de": {
+        "text": "widersprüchlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "contradictorio",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "protichůdný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "longterm",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "longterm",
+        "level": "B1"
+      },
+      "de": {
+        "text": "langfristig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "a largo plazo",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "dlouhodobý",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "balanced",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "balanced",
+        "level": "B1"
+      },
+      "de": {
+        "text": "ausgeglichen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "equilibrado",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vyvážený",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "sentimental",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "sentimental",
+        "level": "B2"
+      },
+      "de": {
+        "text": "gefühlvoll",
+        "level": "C1"
+      },
+      "es": {
+        "text": "sentimental",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "sentimentální",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "sustainable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "sustainable",
+        "level": "B2"
+      },
+      "de": {
+        "text": "nachhaltig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "sostenible",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "udržitelný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "needy",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "needy",
+        "level": "B2"
+      },
+      "de": {
+        "text": "bedürftig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "necesitado",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "potřebný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "field",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "field",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Bereich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "campo",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "pole",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "employment",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "employment",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Beschäftigung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "empleo",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "zaměstnání",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "relationship",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "relationship",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Beziehung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "relación",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "vztah",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "impression",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "impression",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Eindruck",
+        "level": "C1"
+      },
+      "es": {
+        "text": "impresión",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "dojem",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "success",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "success",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Erfolg",
+        "level": "C1"
+      },
+      "es": {
+        "text": "éxito",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "úspěch",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "ability",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "ability",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Fähigkeit",
+        "level": "C1"
+      },
+      "es": {
+        "text": "capacidad",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "schopnost",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "community",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "community",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Gemeinschaft",
+        "level": "C1"
+      },
+      "es": {
+        "text": "comunidad",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "komunita",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "opportunity",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "opportunity",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Möglichkeit",
+        "level": "C1"
+      },
+      "es": {
+        "text": "oportunidad",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "příležitost",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "understanding",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "understanding",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Verständnis",
+        "level": "C1"
+      },
+      "es": {
+        "text": "entendimiento",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "porozumění",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "prerequisite",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "prerequisite",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Voraussetzung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "requisito previo",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "předpoklad",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "doubt",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "doubt",
+        "level": "B1"
+      },
+      "de": {
+        "text": "bezweifeln",
+        "level": "C1"
+      },
+      "es": {
+        "text": "duda",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "pochybnost",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "assess",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "assess",
+        "level": "B2"
+      },
+      "de": {
+        "text": "beurteilen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "evaluar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "posoudit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "evaluate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "evaluate",
+        "level": "B2"
+      },
+      "de": {
+        "text": "einschätzen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "evaluar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vyhodnotit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "cause",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "cause",
+        "level": "A2"
+      },
+      "de": {
+        "text": "verursachen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "causa",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "příčina",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "demanding",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "demanding",
+        "level": "B2"
+      },
+      "de": {
+        "text": "anspruchsvoll",
+        "level": "C1"
+      },
+      "es": {
+        "text": "exigente",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "náročný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "considerable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "considerable",
+        "level": "B2"
+      },
+      "de": {
+        "text": "beachtlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "considerable",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "značný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "unambiguous",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "unambiguous",
+        "level": "C1"
+      },
+      "de": {
+        "text": "eindeutig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "inequívoco",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "jednoznačný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "advanced",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "advanced",
+        "level": "B1"
+      },
+      "de": {
+        "text": "fortgeschritten",
+        "level": "C1"
+      },
+      "es": {
+        "text": "avanzado",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pokročilý",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "relaxed",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "relaxed",
+        "level": "A2"
+      },
+      "de": {
+        "text": "gelassen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "relajado",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "uvolněný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "occasional",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "occasional",
+        "level": "B2"
+      },
+      "de": {
+        "text": "gelegentlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "ocasional",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "občasný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "fundamentally",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "fundamentally",
+        "level": "B2"
+      },
+      "de": {
+        "text": "grundsätzlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "fundamentalmente",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zásadně",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "obvious",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "obvious",
+        "level": "B1"
+      },
+      "de": {
+        "text": "offensichtlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "obvio",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zřejmý",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "extensive",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "extensive",
+        "level": "B2"
+      },
+      "de": {
+        "text": "umfangreich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "extenso",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "rozsáhlý",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "responsible",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "responsible",
+        "level": "B1"
+      },
+      "de": {
+        "text": "verantwortlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "responsable",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "zodpovědný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "doubtful",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "doubtful",
+        "level": "B2"
+      },
+      "de": {
+        "text": "zweifelhaft",
+        "level": "C1"
+      },
+      "es": {
+        "text": "dudoso",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pochybný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "however",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "however",
+        "level": "A2"
+      },
+      "de": {
+        "text": "allerdings",
+        "level": "C1"
+      },
+      "es": {
+        "text": "sin embargo",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "avšak",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "whereas",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "whereas",
+        "level": "B2"
+      },
+      "de": {
+        "text": "hingegen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "mientras que",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "kdežto",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "anyway",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "anyway",
+        "level": "A2"
+      },
+      "de": {
+        "text": "jedenfalls",
+        "level": "C1"
+      },
+      "es": {
+        "text": "de todas formas",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "každopádně",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "possibly",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "possibly",
+        "level": "B1"
+      },
+      "de": {
+        "text": "möglicherweise",
+        "level": "C1"
+      },
+      "es": {
+        "text": "posiblemente",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "případně",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "presumably",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "presumably",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vermutlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "presumiblemente",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "pravděpodobně",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "appreciate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "appreciate",
+        "level": "B1"
+      },
+      "de": {
+        "text": "schätzen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "apreciar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "ocenit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "prevent",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "prevent",
+        "level": "B1"
+      },
+      "de": {
+        "text": "verhindern",
+        "level": "C1"
+      },
+      "es": {
+        "text": "prevenir",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zabránit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "enable",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "enable",
+        "level": "B2"
+      },
+      "de": {
+        "text": "ermöglichen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "permitir",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "umožnit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "deprive",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "deprive",
+        "level": "C1"
+      },
+      "de": {
+        "text": "berauben",
+        "level": "C1"
+      },
+      "es": {
+        "text": "privar",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "zbavit",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "overcome",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "overcome",
+        "level": "B2"
+      },
+      "de": {
+        "text": "überwinden",
+        "level": "C1"
+      },
+      "es": {
+        "text": "superar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "překonat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "diverse",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "diverse",
+        "level": "B2"
+      },
+      "de": {
+        "text": "vielfältig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "diverso",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "diverzní",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "deliberate",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "deliberate",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vorsätzlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "deliberado",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "záměrný",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "questionable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "questionable",
+        "level": "C1"
+      },
+      "de": {
+        "text": "fragwürdig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "cuestionable",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "pochybný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "credible",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "credible",
+        "level": "C1"
+      },
+      "de": {
+        "text": "glaubwürdig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "creíble",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "věrohodný",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "available",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "available",
+        "level": "B1"
+      },
+      "de": {
+        "text": "verfügbar",
+        "level": "C1"
+      },
+      "es": {
+        "text": "disponible",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "dostupný",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "time-consuming",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "time-consuming",
+        "level": "B2"
+      },
+      "de": {
+        "text": "zeitaufwändig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "prolongado",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "časově náročný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "progress",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "progress",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Fortschritt",
+        "level": "C1"
+      },
+      "es": {
+        "text": "progreso",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pokrok",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "consternation",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "consternation",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Bestürzung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "consternación",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "úděs",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "constitution",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "constitution",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verfassung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "constitución",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "ústava",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "remuneration",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "remuneration",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Vergütung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "remuneración",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "odměna",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "job-vacancy",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "job vacancy",
+        "level": "B1"
+      },
+      "de": {
+        "text": "Stellenausschreibung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "vacante",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "volné pracovní místo",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "workforce",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "workforce",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Belegschaft",
+        "level": "C1"
+      },
+      "es": {
+        "text": "fuerza laboral",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "pracovní síla",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "timeframe",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "timeframe",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Zeitraum",
+        "level": "C1"
+      },
+      "es": {
+        "text": "marco temporal",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "časový rámec",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "epoch",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "epoch",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Epoche",
+        "level": "C1"
+      },
+      "es": {
+        "text": "época",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "epocha",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "duration",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "duration",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Dauer",
+        "level": "C1"
+      },
+      "es": {
+        "text": "duración",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "trvání",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "present",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "present",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Gegenwart",
+        "level": "C1"
+      },
+      "es": {
+        "text": "presente",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "přítomnost",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "past",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "past",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Vergangenheit",
+        "level": "C1"
+      },
+      "es": {
+        "text": "pasado",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "minulost",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "future",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "future",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Zukunft",
+        "level": "C1"
+      },
+      "es": {
+        "text": "futuro",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "budoucnost",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "moment",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "moment",
+        "level": "A1"
+      },
+      "de": {
+        "text": "Augenblick",
+        "level": "C1"
+      },
+      "es": {
+        "text": "momento",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "okamžik",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "cope-with",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "cope with",
+        "level": "B2"
+      },
+      "de": {
+        "text": "bewältigen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "lidiar con",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vyrovnat se",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "urgent",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "urgent",
+        "level": "B2"
+      },
+      "de": {
+        "text": "eindringlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "urgente",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "naléhavý",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "investigate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "investigate",
+        "level": "B2"
+      },
+      "de": {
+        "text": "ermitteln",
+        "level": "C1"
+      },
+      "es": {
+        "text": "investigar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vyšetřit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "exhaustive",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "exhaustive",
+        "level": "C1"
+      },
+      "de": {
+        "text": "erschöpfend",
+        "level": "C1"
+      },
+      "es": {
+        "text": "exhaustivo",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vyčerpávající",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "fail",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "fail",
+        "level": "A2"
+      },
+      "de": {
+        "text": "scheitern",
+        "level": "C1"
+      },
+      "es": {
+        "text": "fracasar",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "selhat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "accuse",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "accuse",
+        "level": "B2"
+      },
+      "de": {
+        "text": "vorwerfen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "acusar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "obvinit",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "reflect",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "reflect",
+        "level": "B2"
+      },
+      "de": {
+        "text": "widerspiegeln",
+        "level": "C1"
+      },
+      "es": {
+        "text": "reflejar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "odrážet",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "requirement",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "requirement",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Anforderung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "requisito",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "požadavek",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "expectation",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "expectation",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Erwartung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "expectativa",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "očekávání",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "counterfeit",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "counterfeit",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Fälschung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "falsificar",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "falešný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "reason",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "reason",
+        "level": "A2"
+      },
+      "de": {
+        "text": "Vernunft",
+        "level": "C1"
+      },
+      "es": {
+        "text": "razón",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "důvod",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "prejudices",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "prejudices",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Vorurteile",
+        "level": "C1"
+      },
+      "es": {
+        "text": "prejuicios",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "předsudky",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "perception",
+    "category": "body",
+    "translations": {
+      "en": {
+        "text": "perception",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Wahrnehmung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "percepción",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vnímání",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "reliability",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "reliability",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Zuverlässigkeit",
+        "level": "C1"
+      },
+      "es": {
+        "text": "fiabilidad",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "spolehlivost",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "compensation",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "compensation",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Ausgleich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "compensación",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "kompenzace",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "overview",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "overview",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Überblick",
+        "level": "C1"
+      },
+      "es": {
+        "text": "resumen",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "přehled",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "suspicion",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "suspicion",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Verdacht",
+        "level": "C1"
+      },
+      "es": {
+        "text": "sospecha",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "podezření",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "assume",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "assume",
+        "level": "B2"
+      },
+      "de": {
+        "text": "annehmen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "asumir",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "předpokládat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "confirm",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "confirm",
+        "level": "B2"
+      },
+      "de": {
+        "text": "bestätigen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "confirmar",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "potvrdit",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "stubborn",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "stubborn",
+        "level": "B2"
+      },
+      "de": {
+        "text": "hartnäckig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "terco",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "tvrdohlavý",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "thorough",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "thorough",
+        "level": "B2"
+      },
+      "de": {
+        "text": "gründlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "minucioso",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "důkladný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "extraordinary",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "extraordinary",
+        "level": "B1"
+      },
+      "de": {
+        "text": "außergewöhnlich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "extraordinario",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "mimořádný",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "diversity",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "diversity",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Vielfalt",
+        "level": "C1"
+      },
+      "es": {
+        "text": "diversidad",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "diverzita",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "obligation",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "obligation",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Verpflichtung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "obligación",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "povinnost",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "impairment",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "impairment",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Beeinträchtigung",
+        "level": "C1"
+      },
+      "es": {
+        "text": "deterioro",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "poškození",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "presume",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "presume",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vermuten",
+        "level": "C1"
+      },
+      "es": {
+        "text": "presumir",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "předpokládat",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "comprehensibility",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "comprehensibility",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Nachvollziehbarkeit",
+        "level": "C1"
+      },
+      "es": {
+        "text": "comprensibilidad",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "srozumitelnost",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "interference",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "interference",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Einflussnahme",
+        "level": "C1"
+      },
+      "es": {
+        "text": "interferencia",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "interference",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "realization",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "realization",
+        "level": "B2"
+      },
+      "de": {
+        "text": "Erkenntnis",
+        "level": "C1"
+      },
+      "es": {
+        "text": "realización",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "uskutečnění",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "refuse",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "refuse",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "odmítat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ablehnen",
+        "level": "A2"
+      },
+      "es": {
+        "text": "rechazar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "compare",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "compare",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "porovnat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vergleichen",
+        "level": "A2"
+      },
+      "es": {
+        "text": "comparar",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "adapt",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "adapt",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "přizpůsobit se",
+        "level": "C1"
+      },
+      "de": {
+        "text": "anpassen",
+        "level": "B1"
+      },
+      "es": {
+        "text": "adaptar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "react",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "react",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "reagovat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "reagieren",
+        "level": "A2"
+      },
+      "es": {
+        "text": "reaccionar",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "criticize",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "criticize",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vytknout",
+        "level": "C1"
+      },
+      "de": {
+        "text": "kritisieren",
+        "level": "B1"
+      },
+      "es": {
+        "text": "criticar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "understandable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "understandable",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pochopitelný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verständlich",
+        "level": "A2"
+      },
+      "es": {
+        "text": "comprensible",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "current",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "current",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "současný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "aktuell",
+        "level": "A2"
+      },
+      "es": {
+        "text": "actual",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "adequate",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "adequate",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "přiměřený",
+        "level": "C1"
+      },
+      "de": {
+        "text": "angemessen",
+        "level": "B2"
+      },
+      "es": {
+        "text": "adecuado",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "appropriate",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "appropriate",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vhodný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "geeignet",
+        "level": "B2"
+      },
+      "es": {
+        "text": "apropiado",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "unusual",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "unusual",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "neobvyklý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ungewöhnlich",
+        "level": "A2"
+      },
+      "es": {
+        "text": "inusual",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "complicated",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "complicated",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "složitý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "kompliziert",
+        "level": "A2"
+      },
+      "es": {
+        "text": "complicado",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "serious",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "serious",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "závažný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ernst",
+        "level": "A2"
+      },
+      "es": {
+        "text": "serio",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "failure",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "failure",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "selhání",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Misserfolg",
+        "level": "B1"
+      },
+      "es": {
+        "text": "fracaso",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "recently",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "recently",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "nedávno",
+        "level": "C1"
+      },
+      "de": {
+        "text": "kürzlich",
+        "level": "B1"
+      },
+      "es": {
+        "text": "recientemente",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "eventually",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "eventually",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "nakonec",
+        "level": "C1"
+      },
+      "de": {
+        "text": "schließlich",
+        "level": "B1"
+      },
+      "es": {
+        "text": "eventualmente",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "initially",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "initially",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zpočátku",
+        "level": "C1"
+      },
+      "de": {
+        "text": "anfangs",
+        "level": "B1"
+      },
+      "es": {
+        "text": "inicialmente",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "hitherto",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "hitherto",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "dosud",
+        "level": "C1"
+      },
+      "de": {
+        "text": "bisher",
+        "level": "B2"
+      },
+      "es": {
+        "text": "hasta ahora",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "admit",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "admit",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "připustit",
+        "level": "C1"
+      },
+      "de": {
+        "text": "zugeben",
+        "level": "B1"
+      },
+      "es": {
+        "text": "admitir",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "ignore",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "ignore",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "ignorovat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ignorieren",
+        "level": "A2"
+      },
+      "es": {
+        "text": "ignorar",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "avoid",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "avoid",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vyhnout se",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vermeiden",
+        "level": "B1"
+      },
+      "es": {
+        "text": "evitar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "imagine",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "imagine",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "představit si",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vorstellen",
+        "level": "B1"
+      },
+      "es": {
+        "text": "imaginar",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "question",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "question",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zpochybnit",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Frage",
+        "level": "A1"
+      },
+      "es": {
+        "text": "pregunta",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "apply",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "apply",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "uplatnit",
+        "level": "C1"
+      },
+      "de": {
+        "text": "bewerben",
+        "level": "B1"
+      },
+      "es": {
+        "text": "aplicar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "go-bankrupt",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "go bankrupt",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zkrachovat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "pleitegehen",
+        "level": "B2"
+      },
+      "es": {
+        "text": "quebrar",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "dubious",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "dubious",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "pochybný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "dubios",
+        "level": "C1"
+      },
+      "es": {
+        "text": "dudoso",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "favorable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "favorable",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "příznivý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "günstig",
+        "level": "B2"
+      },
+      "es": {
+        "text": "favorable",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "distinct",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "distinct",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "výrazný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "deutlich",
+        "level": "B2"
+      },
+      "es": {
+        "text": "distinto",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "fear",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "fear",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "strach",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Angst",
+        "level": "A2"
+      },
+      "es": {
+        "text": "miedo",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "relate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "relate",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vztahovat se",
+        "level": "C1"
+      },
+      "de": {
+        "text": "in Verbindung bringen",
+        "level": "B2"
+      },
+      "es": {
+        "text": "relacionar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "determination",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "determination",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "odhodlání",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Entschlossenheit",
+        "level": "C1"
+      },
+      "es": {
+        "text": "determinación",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "banish",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "banish",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "vyhnat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "verbannen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "desterrar",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "estimate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "estimate",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "odhadnout",
+        "level": "C1"
+      },
+      "de": {
+        "text": "schätzen",
+        "level": "B1"
+      },
+      "es": {
+        "text": "estimar",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "original",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "original",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "původní",
+        "level": "C1"
+      },
+      "de": {
+        "text": "ursprünglich",
+        "level": "B1"
+      },
+      "es": {
+        "text": "original",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "apparent",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "apparent",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zřejmý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "offensichtlich",
+        "level": "B2"
+      },
+      "es": {
+        "text": "aparente",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "confidential",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "confidential",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "důvěrný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vertraulich",
+        "level": "C1"
+      },
+      "es": {
+        "text": "confidencial",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "willing",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "willing",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "ochotný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "bereit",
+        "level": "B1"
+      },
+      "es": {
+        "text": "dispuesto",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "disappointed",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "disappointed",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zklamaný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "enttäuscht",
+        "level": "B1"
+      },
+      "es": {
+        "text": "decepcionado",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "gratitude",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "gratitude",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "vděčnost",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Dankbarkeit",
+        "level": "B2"
+      },
+      "es": {
+        "text": "gratitud",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "resentment",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "resentment",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "zášť",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Groll",
+        "level": "C1"
+      },
+      "es": {
+        "text": "resentimiento",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "despair",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "despair",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "zoufalství",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Verzweiflung",
+        "level": "B2"
+      },
+      "es": {
+        "text": "desesperación",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "intention",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "intention",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "záměr",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Absicht",
+        "level": "B1"
+      },
+      "es": {
+        "text": "intención",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "regard",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "regard",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "ohled",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Hinsicht",
+        "level": "B2"
+      },
+      "es": {
+        "text": "consideración",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "exception",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "exception",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "výjimka",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Ausnahme",
+        "level": "B1"
+      },
+      "es": {
+        "text": "excepción",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "disaster",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "disaster",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "pohroma",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Katastrophe",
+        "level": "B1"
+      },
+      "es": {
+        "text": "desastre",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "climate",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "climate",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "podnebí",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Klima",
+        "level": "A2"
+      },
+      "es": {
+        "text": "clima",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "landscape",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "landscape",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "krajina",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Landschaft",
+        "level": "A2"
+      },
+      "es": {
+        "text": "paisaje",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "survival",
+    "category": "nature",
+    "translations": {
+      "en": {
+        "text": "survival",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "přežití",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Überleben",
+        "level": "B1"
+      },
+      "es": {
+        "text": "supervivencia",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "succumb",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "succumb",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "podlehnout",
+        "level": "C1"
+      },
+      "de": {
+        "text": "erliegen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "sucumbir",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "overlook",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "overlook",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "přehlížet",
+        "level": "C1"
+      },
+      "de": {
+        "text": "übersehen",
+        "level": "B2"
+      },
+      "es": {
+        "text": "pasar por alto",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "refute",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "refute",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "vyvrátit",
+        "level": "C1"
+      },
+      "de": {
+        "text": "widerlegen",
+        "level": "C1"
+      },
+      "es": {
+        "text": "refutar",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "assumption",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "assumption",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "domněnka",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Annahme",
+        "level": "B2"
+      },
+      "es": {
+        "text": "asunción",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "sudden",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "sudden",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "náhlý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "plötzlich",
+        "level": "A2"
+      },
+      "es": {
+        "text": "repentino",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "independent",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "independent",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "samostatný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unabhängig",
+        "level": "B1"
+      },
+      "es": {
+        "text": "independiente",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "period",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "period",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "období",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Zeitraum",
+        "level": "A2"
+      },
+      "es": {
+        "text": "periodo",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "abroad",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "abroad",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zahraničí",
+        "level": "C1"
+      },
+      "de": {
+        "text": "im Ausland",
+        "level": "A2"
+      },
+      "es": {
+        "text": "al extranjero",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "accommodation",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "accommodation",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "ubytování",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Unterkunft",
+        "level": "A2"
+      },
+      "es": {
+        "text": "alojamiento",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "tour",
+    "category": "travel",
+    "translations": {
+      "en": {
+        "text": "tour",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "prohlídka",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Tour",
+        "level": "A1"
+      },
+      "es": {
+        "text": "recorrido",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "office",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "office",
+        "level": "A1"
+      },
+      "cs": {
+        "text": "kancelář",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Büro",
+        "level": "A1"
+      },
+      "es": {
+        "text": "oficina",
+        "level": "A1"
+      }
+    }
+  },
+  {
+    "conceptKey": "task",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "task",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "úkol",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Aufgabe",
+        "level": "A2"
+      },
+      "es": {
+        "text": "tarea",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "notice",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "notice",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "výpověď",
+        "level": "C1"
+      },
+      "de": {
+        "text": "bemerken",
+        "level": "B1"
+      },
+      "es": {
+        "text": "notar",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "incorporate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "incorporate",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "zahrnout",
+        "level": "C1"
+      },
+      "de": {
+        "text": "einbeziehen",
+        "level": "B2"
+      },
+      "es": {
+        "text": "incorporar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "spare",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "spare",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "ušetřit",
+        "level": "C1"
+      },
+      "de": {
+        "text": "übrig",
+        "level": "B1"
+      },
+      "es": {
+        "text": "de repuesto",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "distinguish",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "distinguish",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "rozlišovat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unterscheiden",
+        "level": "B2"
+      },
+      "es": {
+        "text": "distinguir",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "submit",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "submit",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "předložit",
+        "level": "C1"
+      },
+      "de": {
+        "text": "einreichen",
+        "level": "B2"
+      },
+      "es": {
+        "text": "presentar",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "demonstrate",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "demonstrate",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "prokázat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "demonstrieren",
+        "level": "B1"
+      },
+      "es": {
+        "text": "demostrar",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "convincing",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "convincing",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "přesvědčivý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "überzeugend",
+        "level": "B2"
+      },
+      "es": {
+        "text": "convincente",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "detailed",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "detailed",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "podrobný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "detailliert",
+        "level": "B1"
+      },
+      "es": {
+        "text": "detallado",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "experienced",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "experienced",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zkusený",
+        "level": "C1"
+      },
+      "de": {
+        "text": "erfahren",
+        "level": "B1"
+      },
+      "es": {
+        "text": "experimentado",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "journalism",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "journalism",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zpravodajství",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Journalismus",
+        "level": "B1"
+      },
+      "es": {
+        "text": "periodismo",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "internship",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "internship",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "stáž",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Praktikum",
+        "level": "A2"
+      },
+      "es": {
+        "text": "pasantía",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "interview",
+    "category": "work",
+    "translations": {
+      "en": {
+        "text": "interview",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "pohovor",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Vorstellungsgespräch",
+        "level": "B1"
+      },
+      "es": {
+        "text": "entrevista",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "prove",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "prove",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "dokázat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "beweisen",
+        "level": "B1"
+      },
+      "es": {
+        "text": "probar",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "research",
+    "category": "verbs",
+    "translations": {
+      "en": {
+        "text": "research",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zkoumat",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Forschung",
+        "level": "B1"
+      },
+      "es": {
+        "text": "investigación",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "needless",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "needless",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "zbytečný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "unnötig",
+        "level": "B1"
+      },
+      "es": {
+        "text": "innecesario",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "hidden",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "hidden",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "skrytý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "versteckt",
+        "level": "A2"
+      },
+      "es": {
+        "text": "oculto",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "reasonable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "reasonable",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "rozumný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vernünftig",
+        "level": "B2"
+      },
+      "es": {
+        "text": "razonable",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "sense",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "sense",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "smysl",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Sinn",
+        "level": "A2"
+      },
+      "es": {
+        "text": "sentido",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "area",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "area",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "oblast",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Bereich",
+        "level": "A2"
+      },
+      "es": {
+        "text": "área",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "easily",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "easily",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "snadno",
+        "level": "C1"
+      },
+      "de": {
+        "text": "leicht",
+        "level": "A1"
+      },
+      "es": {
+        "text": "fácilmente",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "frequently",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "frequently",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "často",
+        "level": "C1"
+      },
+      "de": {
+        "text": "häufig",
+        "level": "A2"
+      },
+      "es": {
+        "text": "frecuentemente",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "after-all",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "after all",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "přece",
+        "level": "C1"
+      },
+      "de": {
+        "text": "schließlich",
+        "level": "B1"
+      },
+      "es": {
+        "text": "al fin y al cabo",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "namely",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "namely",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "totiž",
+        "level": "C1"
+      },
+      "de": {
+        "text": "nämlich",
+        "level": "B2"
+      },
+      "es": {
+        "text": "a saber",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "although",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "although",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "přestože",
+        "level": "C1"
+      },
+      "de": {
+        "text": "obwohl",
+        "level": "A2"
+      },
+      "es": {
+        "text": "aunque",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "despite",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "despite",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "navzdory",
+        "level": "C1"
+      },
+      "de": {
+        "text": "trotz",
+        "level": "B1"
+      },
+      "es": {
+        "text": "a pesar de",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "except",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "except",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vyjma",
+        "level": "C1"
+      },
+      "de": {
+        "text": "außer",
+        "level": "A2"
+      },
+      "es": {
+        "text": "excepto",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "regarding",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "regarding",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "ohledně",
+        "level": "C1"
+      },
+      "de": {
+        "text": "bezüglich",
+        "level": "B2"
+      },
+      "es": {
+        "text": "respecto a",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "towards",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "towards",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "vůči",
+        "level": "C1"
+      },
+      "de": {
+        "text": "in Richtung",
+        "level": "A2"
+      },
+      "es": {
+        "text": "hacia",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "across",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "across",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "napříč",
+        "level": "C1"
+      },
+      "de": {
+        "text": "über",
+        "level": "A2"
+      },
+      "es": {
+        "text": "a través de",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "via",
+    "category": "general",
+    "translations": {
+      "en": {
+        "text": "via",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "prostřednictvím",
+        "level": "C1"
+      },
+      "de": {
+        "text": "über",
+        "level": "B1"
+      },
+      "es": {
+        "text": "vía",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "joy",
+    "category": "emotions",
+    "translations": {
+      "en": {
+        "text": "joy",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "radost",
+        "level": "C1"
+      },
+      "de": {
+        "text": "Freude",
+        "level": "A2"
+      },
+      "es": {
+        "text": "alegría",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "acceptable",
+    "category": "adjectives",
+    "translations": {
+      "en": {
+        "text": "acceptable",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "přijatelný",
+        "level": "C1"
+      },
+      "de": {
+        "text": "akzeptabel",
+        "level": "B1"
+      },
+      "es": {
+        "text": "aceptable",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "contemporary",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "contemporary",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "soudobý",
+        "level": "C1"
+      },
+      "de": {
+        "text": "zeitgenössisch",
+        "level": "C1"
+      },
+      "es": {
+        "text": "contemporáneo",
+        "level": "B2"
+      }
+    }
+  },
+  {
+    "conceptKey": "prematurely",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "prematurely",
+        "level": "C1"
+      },
+      "cs": {
+        "text": "předčasně",
+        "level": "C1"
+      },
+      "de": {
+        "text": "vorzeitig",
+        "level": "C1"
+      },
+      "es": {
+        "text": "prematuramente",
+        "level": "C1"
+      }
+    }
+  },
+  {
+    "conceptKey": "occasionally",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "occasionally",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "občas",
+        "level": "C1"
+      },
+      "de": {
+        "text": "gelegentlich",
+        "level": "B1"
+      },
+      "es": {
+        "text": "ocasionalmente",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "finally",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "finally",
+        "level": "A2"
+      },
+      "cs": {
+        "text": "konečně",
+        "level": "C1"
+      },
+      "de": {
+        "text": "endlich",
+        "level": "A2"
+      },
+      "es": {
+        "text": "finalmente",
+        "level": "A2"
+      }
+    }
+  },
+  {
+    "conceptKey": "typically",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "typically",
+        "level": "B1"
+      },
+      "cs": {
+        "text": "zpravidla",
+        "level": "C1"
+      },
+      "de": {
+        "text": "typischerweise",
+        "level": "B1"
+      },
+      "es": {
+        "text": "típicamente",
+        "level": "B1"
+      }
+    }
+  },
+  {
+    "conceptKey": "continually",
+    "category": "time",
+    "translations": {
+      "en": {
+        "text": "continually",
+        "level": "B2"
+      },
+      "cs": {
+        "text": "stále",
+        "level": "C1"
+      },
+      "de": {
+        "text": "kontinuierlich",
+        "level": "B2"
+      },
+      "es": {
+        "text": "continuamente",
+        "level": "B1"
+      }
+    }
   }
 ]
