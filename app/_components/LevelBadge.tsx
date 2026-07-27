@@ -3,14 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
-import { LEVEL_TEST_PASS_RATIO, MAX_LEVEL } from "../_lib/level";
+import {
+  LEVELS_PER_BAND,
+  LEVEL_TEST_PASS_RATIO,
+  MAX_LEVEL,
+} from "../_lib/level";
 import { LANG_LABELS, type Lang } from "../_lib/languages";
 import { useLearningLevelState } from "../_lib/useLearningLevel";
 
 /**
- * The navbar's level chip. Collapsed it's just the number; open it explains
- * how many words this level costs, how far in you are, and offers the test
- * that skips you to the next one.
+ * The navbar's level chip. Collapsed it's just the number — that's the thing
+ * being climbed, and the only thing worth glancing at. Open it names the CEFR
+ * band the number sits in and how far through that band's ten levels you are,
+ * says what this level costs in words, and offers the test for the next level
+ * up. The band is read-only: the test only ever moves you one level.
  */
 export default function LevelBadge({
   learningLanguage,
@@ -107,13 +113,40 @@ export default function LevelBadge({
             </span>
           </div>
 
-          <p className="mt-2 text-2xl font-black text-blue-600 dark:text-blue-400">
-            Level {level.level}
-          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <p className="text-2xl font-black text-blue-600 dark:text-blue-400">
+              Level {level.level}
+            </p>
+            {/* The band, for reference only. It reads out where the number has
+                got you in English-teaching terms; there is nothing to press,
+                because a band is not somewhere you can go — see below. */}
+            <span
+              title={`Levels ${level.band.startLevel}-${level.band.endLevel} are ${level.band.band}`}
+              className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs font-bold tracking-wide text-slate-600 dark:border-slate-700 dark:text-slate-300"
+            >
+              {level.band.band}
+            </span>
+          </div>
 
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
             {level.masteredCount} words mastered
-            {level.nextLevelAt !== null && ` · next level at ${level.nextLevelAt}`}
+            {level.nextLevelAt !== null &&
+              ` · next level at ${level.nextLevelAt}`}
+          </p>
+
+          <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            Level {level.band.levelsIntoBand} of {LEVELS_PER_BAND} in{" "}
+            <span className="font-bold text-slate-700 dark:text-slate-200">
+              {level.band.band}
+            </span>
+            {level.band.nextBand !== null && (
+              <>
+                {" "}
+                — {level.band.levelsToNextBand} more{" "}
+                {level.band.levelsToNextBand === 1 ? "level" : "levels"} to
+                reach {level.band.nextBand}.
+              </>
+            )}
           </p>
 
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
@@ -137,11 +170,15 @@ export default function LevelBadge({
               </p>
             ) : (
               <>
+                {/* One level, never a band. The test grades the level directly
+                    above this one and promotes by exactly that — the way into a
+                    band is to climb every level below it. */}
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   {level.wordsToNextLevel} more mastered{" "}
                   {level.wordsToNextLevel === 1 ? "word" : "words"} gets you to
-                  level {level.level + 1} — or skip ahead by passing the test
-                  with {Math.round(LEVEL_TEST_PASS_RATIO * 100)}%.
+                  level {level.level + 1} — or earn it now by passing the level{" "}
+                  {level.level + 1} test with{" "}
+                  {Math.round(LEVEL_TEST_PASS_RATIO * 100)}%.
                 </p>
                 <button
                   type="button"

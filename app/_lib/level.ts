@@ -1,18 +1,33 @@
-import type { CefrLevel } from "./languages";
+import { CEFR_LEVELS, type CefrLevel } from "./languages";
 
 /**
  * Learner levels.
  *
- * A flat "10 words per band" ladder made no sense — 20 mastered words is not
- * B1 by any measure. Levels are plain numbers instead, 1 to 40, and each one
- * costs 1.2x more words than the one before it: quick wins early, a real climb
- * later. CEFR codes are gone from the product; they survive only as difficulty
- * tags on the vocabulary itself (see `wordDifficultyForLevel`).
+ * The level is the number: it's what the navbar shows and what the ladder is
+ * climbed in, and each level costs 1.2x more mastered words than the one before
+ * it — quick wins early, a real climb later.
+ *
+ * A CEFR band sits behind every ten of those levels, and is shown when asked
+ * for. It is a read-out, not a rung: nothing lets you enter a band directly, so
+ * reaching B1 means climbing all ten A2 levels one at a time, each one earned by
+ * mastering its words or passing its test.
  */
-export const MAX_LEVEL = 40;
+export const LEVELS_PER_BAND = 10;
 
-/** Each level costs this much more than the previous one. */
-export const LEVEL_GROWTH = 1.2;
+/** Ten levels for each of the five bands the vocabulary is tagged with. */
+export const MAX_LEVEL = CEFR_LEVELS.length * LEVELS_PER_BAND;
+
+/**
+ * Each level costs this much more than the previous one.
+ *
+ * Tuned to the length of the ladder, not picked for its own sake: at 1.2 the
+ * fifty levels compounded to 36,716 mastered words just to enter C1 and 189,565
+ * at the ceiling, which put the top two bands beyond anyone who was studying
+ * rather than testing. 1.12 lands C1 at a few thousand words and the ceiling
+ * near ten — the range a C1 vocabulary is actually measured in — while keeping
+ * the early levels cheap enough to feel quick.
+ */
+export const LEVEL_GROWTH = 1.12;
 
 /** Words needed to get from level 1 to level 2; everything scales off this. */
 export const WORDS_FOR_FIRST_LEVEL = 5;
@@ -53,12 +68,12 @@ export interface LevelProgress {
   /** How much of this level is done, 0-1. */
   fraction: number;
   isMaxLevel: boolean;
-  /**
-   * Difficulty of the vocabulary a learner at this level should be drilled on.
-   * Internal only — never shown, since the whole point is that players see a
-   * number rather than a CEFR code.
-   */
+  /** Difficulty of the vocabulary a learner at this level is drilled on. Same
+   *  value as `band.band` — kept under its own name for the callers that only
+   *  ever wanted a difficulty to fetch words at. */
   wordDifficulty: CefrLevel;
+  /** The CEFR band behind this level, for the badge to read out on request. */
+  band: LevelBand;
 }
 
 export function clampLevel(level: number): number {
@@ -86,18 +101,55 @@ export function levelFromMasteredCount(masteredCount: number): number {
 }
 
 /**
- * The vocabulary is still tagged A1-C1, so a level has to map onto one to know
- * which words to serve. The bands are front-loaded rather than spread evenly
- * over all 40 levels, because the corpus runs out long before level 40 does.
+ * The band a level belongs to: ten levels each, in the order the vocabulary is
+ * tagged in. Doubles as the difficulty to draw that level's words from, which is
+ * what keeps the badge honest — the band it reads out is the band being played.
  */
 export function wordDifficultyForLevel(level: number): CefrLevel {
-  const safeLevel = clampLevel(level);
+  const bandIndex = Math.floor((clampLevel(level) - 1) / LEVELS_PER_BAND);
+  return CEFR_LEVELS[Math.min(CEFR_LEVELS.length - 1, bandIndex)];
+}
 
-  if (safeLevel <= 4) return "A1";
-  if (safeLevel <= 8) return "A2";
-  if (safeLevel <= 12) return "B1";
-  if (safeLevel <= 16) return "B2";
-  return "C1";
+/** Where a band's ten levels start. */
+export function bandStartLevel(band: CefrLevel): number {
+  return CEFR_LEVELS.indexOf(band) * LEVELS_PER_BAND + 1;
+}
+
+export interface LevelBand {
+  band: CefrLevel;
+  /** First and last level of the band, inclusive. */
+  startLevel: number;
+  endLevel: number;
+  /** Which of the band's ten levels this is, 1 to LEVELS_PER_BAND. */
+  levelsIntoBand: number;
+  /** The band above, and the level that enters it; null in the top band. */
+  nextBand: CefrLevel | null;
+  nextBandAtLevel: number | null;
+  /** Levels still to climb before the next band; null in the top band. */
+  levelsToNextBand: number | null;
+}
+
+/** Everything the badge needs to say which band a level sits in, and how far
+ *  through it the learner is. */
+export function levelBand(level: number): LevelBand {
+  const safeLevel = clampLevel(level);
+  const band = wordDifficultyForLevel(safeLevel);
+  const bandIndex = CEFR_LEVELS.indexOf(band);
+  const startLevel = bandIndex * LEVELS_PER_BAND + 1;
+  const nextBand = CEFR_LEVELS[bandIndex + 1] ?? null;
+  const nextBandAtLevel =
+    nextBand === null ? null : startLevel + LEVELS_PER_BAND;
+
+  return {
+    band,
+    startLevel,
+    endLevel: startLevel + LEVELS_PER_BAND - 1,
+    levelsIntoBand: safeLevel - startLevel + 1,
+    nextBand,
+    nextBandAtLevel,
+    levelsToNextBand:
+      nextBandAtLevel === null ? null : nextBandAtLevel - safeLevel,
+  };
 }
 
 export function levelProgressFromMasteredCount(
@@ -122,5 +174,6 @@ export function levelProgressFromMasteredCount(
     fraction: span === 0 ? 1 : Math.min(1, wordsIntoLevel / span),
     isMaxLevel,
     wordDifficulty: wordDifficultyForLevel(level),
+    band: levelBand(level),
   };
 }

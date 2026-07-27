@@ -32,7 +32,7 @@ export interface LearningLevelState {
 
 /**
  * Fetches the signed-in user's mastered-word count for the language they're
- * learning and turns it into a numeric level (1-40), alongside a status
+ * learning and turns it into a numeric level (1 to MAX_LEVEL), alongside a status
  * that says why there's no level when there isn't one.
  */
 export function useLearningLevelState(
