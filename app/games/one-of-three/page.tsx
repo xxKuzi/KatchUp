@@ -146,7 +146,7 @@ const OneOfThreePage = () => {
     levelAlreadyMastered,
   );
 
-  const allWords = useFallbackWords();
+  const { words: allWords, isLoading: wordsLoading } = useFallbackWords();
   const roundSeed = deckId
     ? `deck:${deckId}:${sessionMode}:${
         deckSession.session?.words.map((w) => w.id).join(",") ?? ""
@@ -237,11 +237,28 @@ const OneOfThreePage = () => {
         </>
       );
     }
+  } else if (wordsLoading) {
+    // Without a deck the words come from the corpus, and a round built before
+    // they land has nothing to ask.
+    return <DeckLoading {...GATE} variant="quiz" />;
+  } else if (questions.length === 0) {
+    return (
+      <DeckMessage
+        {...GATE}
+        title="No words to practice right now"
+        body="We couldn't load words for this language pair. Try again in a moment."
+        backHref="/games"
+        backLabel="Back to games"
+      />
+    );
   }
 
   return (
     <OneOfThreeRound
-      key={roundSeed}
+      // The round copies its questions into state, so its key has to move when
+      // the questions do: a round mounted before the words arrived would sit on
+      // the empty queue it started with, which is what left the board blank.
+      key={`${roundSeed}:${questions.map((question) => question.id).join(",")}`}
       questions={questions}
       deckId={deckId}
       sessionMode={sessionMode}

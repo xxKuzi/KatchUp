@@ -13,7 +13,7 @@ import PackKeyCelebration, {
 import { predictLevelCleared } from "../_lib/levelCompletion";
 import { LANG_LABELS, type CefrLevel } from "@/app/_lib/languages";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
-import { useLearningLevel } from "@/app/_lib/useLearningLevel";
+import { useLearningLevelState } from "@/app/_lib/useLearningLevel";
 import { fetchWordPairs } from "../_lib/wordPairs";
 import {
   CONFIDENT_ANSWER_STEPS,
@@ -90,9 +90,15 @@ const FlipCardsPage = () => {
   // Bumped to pull a fresh set of cards for the same pair.
   const [reshuffleToken, setReshuffleToken] = useState(0);
   const vocabProgress = useVocabProgress();
-  const learningLevel = useLearningLevel(learning);
+  const { level: learningLevel, status: levelStatus } =
+    useLearningLevelState(learning);
   // The player sees a level number; the word pool still needs a difficulty.
   const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
+  // Fetching before the level resolves would deal everyone an A1 round and then
+  // swap the cards out from under them once their real level arrived.
+  const levelPending = levelStatus === "loading";
+  // Only meaningful off the deck path, where the cards come from the corpus.
+  const [cardsLoading, setCardsLoading] = useState(true);
 
   // Whether the review round took the crown is the server's call, not this
   // screen's: the verdicts go up and come back graded. The percentage below is
@@ -136,11 +142,12 @@ const FlipCardsPage = () => {
   // Non-deck path: pull cards for the chosen pair. Flip-cards is a recall
   // drill — the front shows your language, the back the one you're learning.
   useEffect(() => {
-    if (deckId) {
+    if (deckId || levelPending) {
       return;
     }
 
     const controller = new AbortController();
+    setCardsLoading(true);
 
     fetchWordPairs({
       speak,
@@ -162,13 +169,20 @@ const FlipCardsPage = () => {
         );
         setMetWordIds(new Set());
         resetPiles();
+        setCardsLoading(false);
       })
       .catch(() => {
-        // Leave the deck empty; the existing empty state covers it.
+        // An aborted fetch is a superseded one: the run that replaced it is
+        // still loading, and saying otherwise would show its empty table.
+        if (controller.signal.aborted) {
+          return;
+        }
+        // Otherwise leave the deck empty; the existing empty state covers it.
+        setCardsLoading(false);
       });
 
     return () => controller.abort();
-  }, [deckId, speak, learning, level, reshuffleToken]);
+  }, [deckId, speak, learning, level, levelPending, reshuffleToken]);
 
   /** Re-run the round using only the cards swiped into "still learning". */
   const replayPractice = () => {
@@ -405,6 +419,8 @@ const FlipCardsPage = () => {
         </>
       );
     }
+  } else if (cardsLoading) {
+    return <DeckLoading {...GATE} variant="cards" />;
   }
 
   const rotation = dragX / 18;

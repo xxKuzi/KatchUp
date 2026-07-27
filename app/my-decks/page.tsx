@@ -10,6 +10,11 @@ import {
   createDeck,
   listDecks,
 } from "../games/_lib/deckSessionClient";
+import {
+  clearCachedDecks,
+  readCachedDecks,
+  writeCachedDecks,
+} from "../games/_lib/deckCache";
 import DeckProgress from "@/app/_components/DeckProgress";
 import WordCountSelect from "./_components/WordCountSelect";
 
@@ -34,6 +39,7 @@ export default function MyDecksOverview() {
       foreignLang: learningLanguage,
     });
     setDecks(data.decks);
+    writeCachedDecks(language, learningLanguage, data.decks);
     return data.decks;
   }, [language, learningLanguage]);
 
@@ -48,18 +54,32 @@ export default function MyDecksOverview() {
     }
 
     let cancelled = false;
-    setLoading(true);
+
+    // Paint last visit's list right away and let the request correct it. The
+    // counts move as you practise, so this is a head start, not the answer.
+    const cached = readCachedDecks(language, learningLanguage);
+    if (cached) {
+      setDecks(cached);
+      setUnauthorized(false);
+    }
+    setLoading(!cached);
+
     listDecks({ nativeLang: language, foreignLang: learningLanguage })
       .then((data) => {
         if (!cancelled) {
           setDecks(data.decks);
           setUnauthorized(false);
         }
+        writeCachedDecks(language, learningLanguage, data.decks);
       })
       .catch((err: unknown) => {
-        if (cancelled) return;
         if (err instanceof ApiError && err.status === 401) {
-          setUnauthorized(true);
+          // Someone else's decks must not sit on screen for the next account.
+          clearCachedDecks();
+          if (!cancelled) {
+            setDecks([]);
+            setUnauthorized(true);
+          }
         }
       })
       .finally(() => {
@@ -274,8 +294,29 @@ export default function MyDecksOverview() {
               </button>
             </div>
           ) : loading ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              {t("common.loading", "Loading…")}
+            // Shaped like the grid it becomes, so the first visit settles into
+            // place rather than jumping when the decks land.
+            <div
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              role="status"
+              aria-live="polite"
+            >
+              <span className="sr-only">{t("common.loading", "Loading…")}</span>
+              {aiCard}
+              {[0, 1, 2].map((key) => (
+                <article
+                  key={key}
+                  className="animate-pulse rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <div className="h-7 w-40 rounded bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-2 h-5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-3 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-4 flex gap-2">
+                    <div className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                  </div>
+                </article>
+              ))}
             </div>
           ) : groupEntries.length === 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

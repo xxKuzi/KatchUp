@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
+import DeckLoading from "../_components/DeckLoading";
 import { useLanguage } from "@/app/_lib/languageContext";
 import type { Lang } from "@/app/_lib/languages";
 import {
@@ -94,7 +95,7 @@ const GuessMatchPage = () => {
   const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
   const vocabProgress = useVocabProgress();
 
-  const allWords = useFallbackWords();
+  const { words: allWords, isLoading: wordsLoading } = useFallbackWords();
   const roundSeed = deckId
     ? `deck:${deckId}:${sessionMode}:guess-match:${
         deckSession.session?.words.map((w) => w.id).join(",") ?? ""
@@ -134,7 +135,7 @@ const GuessMatchPage = () => {
       );
     }
     if (deckSession.status === "loading" || deckSession.status === "idle") {
-      return <DeckMessage {...GATE} title="Loading deck…" />;
+      return <DeckLoading {...GATE} variant="match" />;
     }
     if (deckSession.status === "notfound") {
       return (
@@ -154,11 +155,17 @@ const GuessMatchPage = () => {
         />
       );
     }
+  } else if (wordsLoading) {
+    // Without a deck the words come from the corpus, and a board built before
+    // they land has no tiles on it.
+    return <DeckLoading {...GATE} variant="match" />;
   }
 
   return (
     <GuessMatchRound
-      key={roundSeed}
+      // Keyed on the pairs so a set arriving late starts a fresh board rather
+      // than swapping tiles under a clock that is already counting.
+      key={`${roundSeed}:${pairs.map((pair) => pair.id).join(",")}`}
       pairs={pairs}
       leftTiles={leftTiles}
       rightTiles={rightTiles}

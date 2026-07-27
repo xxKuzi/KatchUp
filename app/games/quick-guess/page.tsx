@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
+import DeckLoading from "../_components/DeckLoading";
 import { useLanguage } from "@/app/_lib/languageContext";
 import type { Lang } from "@/app/_lib/languages";
 import {
@@ -117,7 +118,7 @@ const QuickGuessPage = () => {
     return () => { cancelled = true; };
   }, [isEnergyReview, deckId, attempt]);
 
-  const allWords = useFallbackWords();
+  const { words: allWords, isLoading: wordsLoading } = useFallbackWords();
   const roundSeed = `${topicId || "default"}:${safeLevel}:quick-guess:${attempt}`;
 
   const words = useMemo<PracticeWord[]>(() => {
@@ -149,7 +150,7 @@ const QuickGuessPage = () => {
       );
     }
     if (deckSession.status === "loading" || deckSession.status === "idle") {
-      return <DeckMessage {...gate} title="Loading deck…" />;
+      return <DeckLoading {...gate} variant="type" />;
     }
     if (deckSession.status === "notfound") {
       return (
@@ -174,14 +175,21 @@ const QuickGuessPage = () => {
         />
       );
     }
+  } else if (wordsLoading) {
+    // Without a deck the words come from the corpus, and a round built before
+    // they land has nothing to ask.
+    return <DeckLoading {...GATE} variant="type" />;
   }
 
   return (
     <QuickGuessRound
+      // Keyed on the words themselves so a set that arrives late — a language
+      // switch, an energy round's own fetch — starts the round over rather than
+      // dropping new words into a timer that is already running.
       key={
         deckId
           ? `deck:${deckId}:${sessionMode}:${words.map((w) => w.id).join(",")}`
-          : roundSeed
+          : `${roundSeed}:${words.map((w) => w.id).join(",")}`
       }
       words={words}
       deckId={deckId}

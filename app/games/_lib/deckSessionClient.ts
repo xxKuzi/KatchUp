@@ -1,6 +1,8 @@
 // Client-side wrappers around the deck + spaced-repetition API. Every call is
 // auth-gated server-side; callers should handle the `unauthorized` status.
 
+import { clearCachedDecks } from "./deckCache";
+
 export interface WordStatSummary {
   box: number;
   streak: number;
@@ -148,16 +150,22 @@ export async function getDeck(deckId: string): Promise<{ deck: DeckWithWords }> 
   return apiFetch(`/api/decks/${deckId}`);
 }
 
+// The three calls below change the list itself, so the local copy of it goes.
+// Anything finer-grained would have to guess at what the server made of the
+// change — a starter deck created alongside it, a rename, a word count.
+
 export async function createDeck(input: {
   name: string;
   nativeLang: string;
   foreignLang: string;
   words?: WordInput[];
 }): Promise<{ deck: DeckWithWords }> {
-  return apiFetch(`/api/decks`, {
+  const result = await apiFetch<{ deck: DeckWithWords }>(`/api/decks`, {
     method: "POST",
     body: JSON.stringify(input),
   });
+  clearCachedDecks();
+  return result;
 }
 
 export async function updateDeck(
@@ -169,14 +177,23 @@ export async function updateDeck(
     words?: WordInput[];
   },
 ): Promise<{ deck: DeckWithWords }> {
-  return apiFetch(`/api/decks/${deckId}`, {
-    method: "PATCH",
-    body: JSON.stringify(input),
-  });
+  const result = await apiFetch<{ deck: DeckWithWords }>(
+    `/api/decks/${deckId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+  );
+  clearCachedDecks();
+  return result;
 }
 
 export async function deleteDeck(deckId: string): Promise<{ ok: boolean }> {
-  return apiFetch(`/api/decks/${deckId}`, { method: "DELETE" });
+  const result = await apiFetch<{ ok: boolean }>(`/api/decks/${deckId}`, {
+    method: "DELETE",
+  });
+  clearCachedDecks();
+  return result;
 }
 
 export async function fetchSession(
