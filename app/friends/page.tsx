@@ -556,7 +556,9 @@ export default function FriendsPage() {
                     🎓 Level
                   </p>
                   <p className="mt-1 text-xl font-black text-slate-800 dark:text-slate-100">
-                    {learningLevel ? learningLevel.level : "—"}
+                    {learningLevel
+                      ? `${learningLevel.level} (${learningLevel.band.band})`
+                      : "—"}
                   </p>
                   <p className="truncate text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400">
                     {learningLevel
