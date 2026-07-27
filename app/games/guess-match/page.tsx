@@ -16,6 +16,7 @@ import {
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useAuthState } from "@/app/_lib/auth";
 import DeckRoundProgress from "../_components/DeckRoundProgress";
@@ -87,7 +88,10 @@ const GuessMatchPage = () => {
 
   const [attempt, setAttempt] = useState(0);
 
-  const deckSession = useDeckSession(deckId || null, sessionMode);
+  // Scopes a topic round to its level's slice of the deck; undefined for a
+  // custom deck, which has no level ladder and draws from the whole thing.
+  const { deckLevel } = useTopicLevel(deckId);
+  const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
   const vocabProgress = useVocabProgress();
 
   const allWords = useFallbackWords();

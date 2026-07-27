@@ -26,9 +26,9 @@ interface BufferedAttempt {
  * HTTP driver the round trip is the whole cost.
  *
  * Pass the pair the round was actually drawn with when the game does not use the
- * player's stored one — Score Rush takes its languages from the URL, and Flip
- * Cards has a switcher. Recording those under the stored pair would file the
- * words against a language the player never played.
+ * player's stored one — Score Rush takes its languages from the URL. Recording
+ * those under the stored pair would file the words against a language the player
+ * never played.
  */
 export function useVocabProgress(pair?: { speak: Lang; learning: Lang }) {
   const { data: session } = useSession();

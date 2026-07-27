@@ -11,12 +11,7 @@ import PackKeyCelebration, {
   PACK_COMPLETE_BUTTON_CLASS,
 } from "../_components/PackKeyCelebration";
 import { predictLevelCleared } from "../_lib/levelCompletion";
-import {
-  LANGS,
-  LANG_LABELS,
-  type CefrLevel,
-  type Lang,
-} from "@/app/_lib/languages";
+import { LANG_LABELS, type CefrLevel } from "@/app/_lib/languages";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
 import { fetchWordPairs } from "../_lib/wordPairs";
@@ -91,13 +86,10 @@ const FlipCardsPage = () => {
     isLegendaryRound ? LEGENDARY_REVIEW_SIZE : undefined,
   );
 
-  const { speak, learning: defaultLearning } = useLanguagePair();
-  const [learning, setLearning] = useState<Lang>(defaultLearning);
+  const { speak, learning } = useLanguagePair();
   // Bumped to pull a fresh set of cards for the same pair.
   const [reshuffleToken, setReshuffleToken] = useState(0);
-  // This screen can switch the language being learned, so the round records
-  // under the pair on screen rather than the stored one.
-  const vocabProgress = useVocabProgress({ speak, learning });
+  const vocabProgress = useVocabProgress();
   const learningLevel = useLearningLevel(learning);
   // The player sees a level number; the word pool still needs a difficulty.
   const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
@@ -359,10 +351,6 @@ const FlipCardsPage = () => {
     }
   };
 
-  const switchLanguage = (lang: Lang) => {
-    setLearning(lang);
-  };
-
   // Deck-path gating.
   if (deckId) {
     if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
@@ -425,25 +413,8 @@ const FlipCardsPage = () => {
 
   return (
     <GamePage {...GATE}>
-      {/* Language + progress bar */}
+      {/* Deck name + progress bar */}
       <div className="w-full max-w-xl">
-        {!deckId && (
-          <div className="flex items-center justify-center gap-2">
-            {LANGS.filter((lang) => lang !== speak).map((lang) => (
-              <button
-                key={lang}
-                onClick={() => switchLanguage(lang)}
-                className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                  learning === lang
-                    ? "border-blue-600 bg-blue-600 text-white"
-                    : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-                }`}
-              >
-                {LANG_LABELS[lang]}
-              </button>
-            ))}
-          </div>
-        )}
         {deckId && deckSession.session && (
           <p className="text-center text-sm font-semibold text-zinc-600 dark:text-zinc-300">
             {deckSession.session.deckName}
@@ -456,7 +427,11 @@ const FlipCardsPage = () => {
           </p>
         )}
 
-        <div className="mt-5 flex items-center justify-between text-xs font-medium text-zinc-500 dark:text-zinc-400">
+        <div
+          className={`flex items-center justify-between text-xs font-medium text-zinc-500 dark:text-zinc-400 ${
+            deckId ? "mt-5" : ""
+          }`}
+        >
           <span className="inline-flex items-center gap-1.5">
             <Check className="h-3.5 w-3.5 text-emerald-500" />
             Known {known.length}
