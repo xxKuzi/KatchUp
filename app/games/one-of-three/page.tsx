@@ -26,6 +26,8 @@ import {
   type SelfReportCorrection,
 } from "@/app/_lib/selfReportedLevel";
 import { spendEnergy } from "@/app/_lib/energy";
+import { useEnergyBlocked } from "../_lib/energyGate";
+import OutOfEnergy from "../_components/OutOfEnergy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useVocabProgress } from "../_lib/useVocabProgress";
 import { predictLevelCleared } from "../_lib/levelCompletion";
@@ -150,6 +152,10 @@ const OneOfThreePage = () => {
 
   const [attempt, setAttempt] = useState(0);
 
+  // The free round is what a visitor is being taught with, so the meter never
+  // stands in its way — and a signed-out visitor is not metered anyway.
+  const energyBlocked = useEnergyBlocked(onboarding);
+
   const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
   const vocabProgress = useVocabProgress();
 
@@ -213,6 +219,10 @@ const OneOfThreePage = () => {
         : false,
     [session],
   );
+
+  if (energyBlocked) {
+    return <OutOfEnergy {...GATE} />;
+  }
 
   // Coming back to the free round after it has been played — usually the back
   // button off the sign-up page — meets the same ask rather than a second round.

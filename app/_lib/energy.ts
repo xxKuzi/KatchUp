@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export const MAX_ENERGY = 20;
 /** Energy granted for completing an energy-practice review round. */
@@ -15,34 +15,78 @@ type EnergyState = {
   value: number;
 };
 
+const PRAGUE_CLOCK = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
+type Wall = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
+
+/** The wall clock a person in Prague is reading at this instant. */
+function pragueWallClock(instant: Date): Wall {
+  const parts = PRAGUE_CLOCK.formatToParts(instant);
+  const get = (type: string) =>
+    Number(parts.find((part) => part.type === type)?.value ?? "0");
+
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: get("hour") % 24, // some engines say "24" at exactly midnight
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+/** How far Prague's clock runs ahead of UTC at this instant (+1h or +2h). */
+function pragueOffsetMs(instant: Date): number {
+  const wall = pragueWallClock(instant);
+  const asIfUtc = Date.UTC(
+    wall.year,
+    wall.month - 1,
+    wall.day,
+    wall.hour,
+    wall.minute,
+    wall.second,
+  );
+  // Drop the milliseconds the formatter never reported, so the difference is
+  // the zone offset alone.
+  return asIfUtc - Math.floor(instant.getTime() / 1000) * 1000;
+}
+
 /** Current calendar day in Prague, as YYYY-MM-DD (day boundary = Prague midnight). */
 function todayKey(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+  const wall = pragueWallClock(new Date());
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${wall.year}-${pad(wall.month)}-${pad(wall.day)}`;
 }
 
 /** Milliseconds remaining until the next Prague midnight (when energy refills). */
 export function msUntilReset(): number {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: TIME_ZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
+  const now = new Date();
+  const wall = pragueWallClock(now);
+  const nextMidnightWall = Date.UTC(wall.year, wall.month - 1, wall.day + 1);
 
-  const get = (type: string) =>
-    Number(parts.find((part) => part.type === type)?.value ?? "0");
+  // Twice a year the day is 23 or 25 hours long, so counting down "24h minus
+  // the time on the clock" is an hour out. Convert the next local midnight to a
+  // real instant instead, using the offset that will be in force when it lands.
+  const firstGuess = nextMidnightWall - pragueOffsetMs(now);
+  const instant = nextMidnightWall - pragueOffsetMs(new Date(firstGuess));
 
-  // "24" can appear at exactly midnight in some environments — normalise to 0.
-  const hour = get("hour") % 24;
-  const secondsElapsed = hour * 3600 + get("minute") * 60 + get("second");
-  const secondsLeft = 24 * 3600 - secondsElapsed;
-  return secondsLeft * 1000;
+  return Math.max(0, instant - now.getTime());
 }
 
 function readState(): EnergyState {
@@ -116,31 +160,43 @@ export function gainEnergy(amount = 1): number {
   return value;
 }
 
+/** Every way the stored energy can change under a mounted component. */
+function subscribeToEnergy(onChange: () => void): () => void {
+  // The refill happens on read, so a tab left open over midnight would sit on
+  // yesterday's empty bar until something touched it. Wake it at the boundary.
+  let resetTimer = 0;
+  const scheduleReset = () => {
+    resetTimer = window.setTimeout(() => {
+      onChange();
+      scheduleReset();
+    }, msUntilReset() + 1000);
+  };
+  scheduleReset();
+
+  window.addEventListener(ENERGY_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  window.addEventListener("focus", onChange);
+  // Phones background the tab rather than blur it, and throttled timers can
+  // fire late, so re-read whenever the page comes back into view.
+  document.addEventListener("visibilitychange", onChange);
+
+  return () => {
+    window.clearTimeout(resetTimer);
+    window.removeEventListener(ENERGY_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("focus", onChange);
+    document.removeEventListener("visibilitychange", onChange);
+  };
+}
+
+/** The server has no storage to read, so it renders a full bar. */
+function serverEnergy(): number {
+  return MAX_ENERGY;
+}
+
 /** Reactive hook that reflects the current daily energy across the app. */
 export function useEnergy(): number {
-  const [energy, setEnergy] = useState<number>(MAX_ENERGY);
-
-  useEffect(() => {
-    setEnergy(getEnergy());
-
-    const handleChange = () => setEnergy(getEnergy());
-    const handleCustom = (event: Event) => {
-      const detail = (event as CustomEvent<number>).detail;
-      setEnergy(typeof detail === "number" ? detail : getEnergy());
-    };
-
-    window.addEventListener(ENERGY_EVENT, handleCustom);
-    window.addEventListener("storage", handleChange);
-    window.addEventListener("focus", handleChange);
-
-    return () => {
-      window.removeEventListener(ENERGY_EVENT, handleCustom);
-      window.removeEventListener("storage", handleChange);
-      window.removeEventListener("focus", handleChange);
-    };
-  }, []);
-
-  return energy;
+  return useSyncExternalStore(subscribeToEnergy, getEnergy, serverEnergy);
 }
 
 /**

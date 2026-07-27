@@ -38,6 +38,11 @@ export const translations: Record<Language, Translations> = {
       donate: "Donate",
       openingDonation: "Opening Stripe…",
     },
+    energyGate: {
+      title: "Out of energy",
+      body: "Practice the words you already know to earn some back, or wait for the daily refill.",
+      backToGames: "Back to games",
+    },
     auth: {
       signIn: "Sign in",
       signOut: "Sign out",
@@ -246,6 +251,11 @@ export const translations: Record<Language, Translations> = {
       donate: "Přispět",
       openingDonation: "Otevírám Stripe…",
     },
+    energyGate: {
+      title: "Došla ti energie",
+      body: "Procvič slova, která už znáš, a něco si vyděláš zpět. Nebo počkej na denní doplnění.",
+      backToGames: "Zpět na hry",
+    },
     auth: {
       signIn: "Prihlasit se",
       signOut: "Odhlasit se",
@@ -453,6 +463,11 @@ export const translations: Record<Language, Translations> = {
       energyFull: "Energie voll — komm zurück, wenn du welche verbraucht hast.",
       donate: "Spenden",
       openingDonation: "Stripe wird geöffnet…",
+    },
+    energyGate: {
+      title: "Keine Energie mehr",
+      body: "Übe Wörter, die du schon kannst, und verdiene welche zurück — oder warte auf die tägliche Auffüllung.",
+      backToGames: "Zurück zu den Spielen",
     },
     auth: {
       signIn: "Anmelden",

@@ -95,6 +95,9 @@ export const matchPlayers = pgTable("match_players", {
   // The player's friends-profile nickname. Duels show this instead of the
   // account name, which is the real name people signed up with.
   displayName: text("display_name"),
+  // Snapshot of the avatar selected in the KatchUp friends profile. Keeping it
+  // on the match avoids replacing it with the account photo during live sync.
+  displayAvatar: text("display_avatar"),
   // Personalized duels can pair players using entirely different settings.
   // Keep each player's pair and level here rather than relying on the
   // match-level fields, which describe only the player who created the match.

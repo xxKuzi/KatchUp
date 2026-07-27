@@ -92,7 +92,8 @@ export async function GET(request: NextRequest) {
       // matches created before nicknames were recorded.
       name: matchPlayers.displayName,
       accountName: users.name,
-      avatar: users.image,
+      avatar: matchPlayers.displayAvatar,
+      accountAvatar: users.image,
     })
     .from(matchPlayers)
     .innerJoin(users, eq(matchPlayers.userId, users.id))
@@ -113,7 +114,10 @@ export async function GET(request: NextRequest) {
     opponent: {
       id: opponent.id,
       name: opponent.name ?? opponent.accountName ?? "Opponent",
-      avatar: opponent.avatar,
+      avatar:
+        opponent.avatar ??
+        opponent.accountAvatar ??
+        "https://i.pravatar.cc/100?img=12",
     },
   });
 }

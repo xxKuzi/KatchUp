@@ -273,8 +273,10 @@ export async function touchQueueEntry(
   await removeFromQueue(queueKey, descriptor.userId);
   await redis.rpush(queueKey, {
     userId: descriptor.userId,
-    name: descriptor.name,
-    avatar: descriptor.avatar,
+    // Preserve the appearance supplied by the original join. Status polls do
+    // not carry the local friends-profile avatar.
+    name: mine.name,
+    avatar: mine.avatar,
     language: descriptor.language,
     nativeLang: descriptor.nativeLang,
     level: descriptor.level,
@@ -425,6 +427,7 @@ export async function tryMatch(
       userId: user.userId,
       side: "player1",
       displayName: user.name,
+      displayAvatar: user.avatar,
       nativeLang: user.nativeLang,
       language: user.language,
       level: user.level,
@@ -434,6 +437,7 @@ export async function tryMatch(
       userId: waiting.userId,
       side: "player2",
       displayName: waiting.name,
+      displayAvatar: waiting.avatar,
       nativeLang: waiting.nativeLang,
       language: waiting.language,
       level: waiting.level,
@@ -786,19 +790,21 @@ export async function submitLiveAnswer(params: {
     finished = true;
   }
 
+  // The winning answer is still a turn. Publish it before match-finished so
+  // the opponent reaches 10/10 on every client before the result is rendered.
+  await pusher.trigger(
+    `${MATCH_CHANNEL_PREFIX}${params.matchId}`,
+    "turn-played",
+    {
+      userId: params.userId,
+      progress: nextProgress,
+      correctCount: nextCorrectCount,
+      isCorrect,
+    },
+  );
+
   if (finished) {
     await closeMatch(params.matchId, winnerUserId);
-  } else {
-    await pusher.trigger(
-      `${MATCH_CHANNEL_PREFIX}${params.matchId}`,
-      "turn-played",
-      {
-        userId: params.userId,
-        progress: nextProgress,
-        correctCount: nextCorrectCount,
-        isCorrect,
-      },
-    );
   }
 
   const nextQuestion = nextQuestionRow

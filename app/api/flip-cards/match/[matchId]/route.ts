@@ -31,7 +31,8 @@ export async function GET(
       // fallback for matches created before nicknames were recorded.
       name: matchPlayers.displayName,
       accountName: users.name,
-      avatar: users.image,
+      avatar: matchPlayers.displayAvatar,
+      accountAvatar: users.image,
       progress: matchPlayers.progress,
       correct: matchPlayers.correctCount,
       side: matchPlayers.side,
@@ -47,7 +48,10 @@ export async function GET(
   const toPlayer = (row: (typeof players)[number]) => ({
     id: row.id,
     name: row.name ?? row.accountName ?? "Player",
-    avatar: row.avatar,
+    avatar:
+      row.avatar ??
+      row.accountAvatar ??
+      "https://i.pravatar.cc/100?img=12",
     progress: row.progress,
     correct: row.correct,
     side: row.side,

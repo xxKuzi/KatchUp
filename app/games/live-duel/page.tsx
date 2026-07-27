@@ -11,7 +11,9 @@ import { getPlayerProfile, PlayerProfile } from "./_lib/playerProfile";
 import { useAuthState } from "@/app/_lib/auth";
 import { useSession } from "@/lib/auth-client";
 import { pusherClient } from "@/lib/realtime/pusher-client";
-import { useDuelNickname } from "./_lib/useDuelNickname";
+import { useDuelAvatar, useDuelNickname } from "./_lib/useDuelNickname";
+import { useEnergyBlocked } from "../_lib/energyGate";
+import OutOfEnergy from "../_components/OutOfEnergy";
 
 const DEFAULT_OPPONENTS = [
   { name: "Luna87", avatar: "https://i.pravatar.cc/100?img=34" },
@@ -56,7 +58,7 @@ const LiveDuelPage = () => {
   const { speak, learning } = useLanguagePair();
 
   const [matchState, setMatchState] = useState<MatchState>("idle");
-  const [matchSettings, setMatchSettings] = useState<MatchSettings>("fair");
+  const [matchSettings, setMatchSettings] = useState<MatchSettings>("personal");
   // The stored choice only arrives after mount, so anything that joins a queue
   // has to wait for it or it would queue as "fair" on a personalized replay.
   const [settingsHydrated, setSettingsHydrated] = useState(false);
@@ -66,6 +68,9 @@ const LiveDuelPage = () => {
   );
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const getNickname = useDuelNickname(profile?.name ?? "You");
+  const getAvatar = useDuelAvatar(
+    profile?.avatar ?? "https://i.pravatar.cc/100?img=12",
+  );
   const [matchId, setMatchId] = useState<string | null>(null);
   const startedMatchId = useRef<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -297,7 +302,7 @@ const LiveDuelPage = () => {
           playerId: profile.id,
           name: getNickname(),
           nickname: getNickname(),
-          avatar: profile.avatar,
+          avatar: getAvatar(),
           language: learning,
           nativeLang: speak,
           level,
@@ -352,7 +357,7 @@ const LiveDuelPage = () => {
       matchId: id,
       playerId: profile?.id ?? "player-local",
       playerName: getNickname(),
-      playerAvatar: profile?.avatar ?? "https://i.pravatar.cc/100?img=12",
+      playerAvatar: getAvatar(),
       opponent: opponent.name,
       opponentAvatar: opponent.avatar,
     });
@@ -498,6 +503,8 @@ const LiveDuelPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acceptSecondsLeft, matchState]);
 
+  const energyBlocked = useEnergyBlocked();
+
   // Locking the button before auth resolves would flash "sign in" at players
   // who are in fact signed in.
   const isBotDuelLocked =
@@ -535,7 +542,10 @@ const LiveDuelPage = () => {
       searchParams.get("autostart") !== "1" ||
       !profile ||
       !isAuthReady ||
-      !settingsHydrated
+      !settingsHydrated ||
+      // A rematch with nothing left to spend must not put a real opponent into
+      // a queue for a duel this player cannot enter.
+      energyBlocked
     ) {
       return;
     }
@@ -544,7 +554,19 @@ const LiveDuelPage = () => {
     router.replace("/games/live-duel");
     void startFindingOpponent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthReady, profile, searchParams, settingsHydrated]);
+  }, [isAuthReady, profile, searchParams, settingsHydrated, energyBlocked]);
+
+  // Held before matchmaking rather than on the play screen, so no one is left
+  // waiting on an opponent who was never going to arrive.
+  if (energyBlocked) {
+    return (
+      <OutOfEnergy
+        name="Live Duel"
+        description="Race another player live. First to 10 correct answers wins."
+        bgImage="flip_cards.png"
+      />
+    );
+  }
 
   return (
     <GamePage
@@ -580,6 +602,19 @@ const LiveDuelPage = () => {
           </p>
           <div className="flex gap-2">
             <button
+              onClick={() => chooseMatchSettings("personal")}
+              className={`flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+                matchSettings === "personal"
+                  ? "border-blue-800 bg-blue-100 text-blue-950 shadow-sm ring-2 ring-blue-700/40 dark:border-blue-500 dark:bg-blue-400/20 dark:text-white dark:ring-blue-500/50"
+                  : "border-zinc-300 bg-white text-zinc-800 hover:border-zinc-500 dark:border-white/70 dark:bg-zinc-900 dark:text-white dark:hover:border-white"
+              }`}
+            >
+              <span className="text-sm font-bold">Personalized Mode</span>
+              <span className="text-xxs mt-0.5 opacity-75">
+                Your level of language &amp; vocabulary
+              </span>
+            </button>
+            <button
               onClick={() => chooseMatchSettings("fair")}
               className={`flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
                 matchSettings === "fair"
@@ -590,19 +625,6 @@ const LiveDuelPage = () => {
               <span className="text-sm font-bold">Fair Mode</span>
               <span className="text-xxs mt-0.5 opacity-75">
                 Same words for both players
-              </span>
-            </button>
-            <button
-              onClick={() => chooseMatchSettings("personal")}
-              className={`flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
-                matchSettings === "personal"
-                  ? "border-blue-800 bg-blue-100 text-blue-950 shadow-sm ring-2 ring-blue-700/40 dark:border-blue-500 dark:bg-blue-400/20 dark:text-white dark:ring-blue-500/50"
-                  : "border-zinc-300 bg-white text-zinc-800 hover:border-zinc-500 dark:border-white/70 dark:bg-zinc-900 dark:text-white dark:hover:border-white"
-              }`}
-            >
-              <span className="text-sm font-bold">Personalized Mode</span>
-              <span className="text-xxs mt-0.5 opacity-75">
-                Your own language, level &amp; vocabulary
               </span>
             </button>
           </div>

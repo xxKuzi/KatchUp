@@ -200,6 +200,7 @@ export default function LiveDuelPlayPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isMatchGone, setIsMatchGone] = useState(false);
   const botResultRecorded = useRef(false);
+  const energySpent = useRef(false);
   // The answer response can arrive before a sync has populated `livePayload`,
   // so the winner check needs an id that's available as soon as we know it.
   const myUserId = useRef<string | null>(null);
@@ -587,6 +588,18 @@ export default function LiveDuelPlayPage() {
     }
   }, [mode, status, countdownValue, rivalProgress, botTarget]);
 
+  // A duel costs one energy, charged once the match is over. It used to cost one
+  // per answer, so a thirty-question duel could eat more than a whole day's
+  // worth. Both endings land on "finished" — the bot race and the server's
+  // verdict in a live match — so the charge sits here rather than in either one.
+  useEffect(() => {
+    if (status !== "finished" || energySpent.current) {
+      return;
+    }
+    energySpent.current = true;
+    spendEnergy();
+  }, [status]);
+
   const showFeedback = (text: string, tone: "good" | "bad") => {
     setFeedback({ text, tone });
     window.setTimeout(() => {
@@ -598,8 +611,6 @@ export default function LiveDuelPlayPage() {
     if (!currentQuestion || status !== "playing" || isSubmitting) {
       return;
     }
-
-    spendEnergy();
 
     const responseTime = Date.now() - questionStartedAt;
     const speedBonus = Math.max(0, 50 - Math.floor(responseTime / 45));
@@ -649,14 +660,9 @@ export default function LiveDuelPlayPage() {
           };
 
           if (answerData.status === "finished") {
-            const meId = myUserId.current ?? livePayload?.me.id ?? null;
-            finishMatch(
-              !answerData.winnerId
-                ? "draw"
-                : answerData.winnerId === meId
-                  ? "player"
-                  : "opponent",
-            );
+            // Pull both final player rows before switching to the result view.
+            // Changing status tears down polling and the Pusher subscription.
+            await syncLiveMatch();
           }
         })
         .catch(() => {

@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useAuthState } from "@/app/_lib/auth";
 import {
+  friendProfileAvatarDataUrl,
   parseStoredFriendProfileIdentity,
   profileStorageKey,
 } from "@/app/friends/_lib/profile";
@@ -31,5 +32,24 @@ export function useDuelNickname(fallback: string): () => string {
     );
 
     return identity?.nickname.trim() || fallback;
+  }, [userKey, fallback]);
+}
+
+/** Reads the icon and colour saved in the player's friends profile. */
+export function useDuelAvatar(fallback: string): () => string {
+  const { session } = useAuthState();
+  const userKey = session?.user?.email ?? session?.user?.name ?? "player";
+
+  return useCallback(() => {
+    if (typeof window === "undefined") {
+      return fallback;
+    }
+
+    const identity = parseStoredFriendProfileIdentity(
+      window.localStorage.getItem(profileStorageKey(userKey)),
+      "Player",
+    );
+
+    return identity ? friendProfileAvatarDataUrl(identity) : fallback;
   }, [userKey, fallback]);
 }

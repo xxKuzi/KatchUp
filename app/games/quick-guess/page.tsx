@@ -17,6 +17,8 @@ import {
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { CONFIDENT_ANSWER_STEPS } from "../_lib/deckSessionClient";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
+import { useEnergyBlocked } from "../_lib/energyGate";
+import OutOfEnergy from "../_components/OutOfEnergy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useVocabProgress } from "../_lib/useVocabProgress";
@@ -118,6 +120,9 @@ const QuickGuessPage = () => {
     return () => { cancelled = true; };
   }, [isEnergyReview, deckId, attempt]);
 
+  // The energy round is the way back from empty, so it is never blocked by it.
+  const energyBlocked = useEnergyBlocked(isEnergyReview);
+
   const { words: allWords, isLoading: wordsLoading } = useFallbackWords();
   const roundSeed = `${topicId || "default"}:${safeLevel}:quick-guess:${attempt}`;
 
@@ -135,6 +140,10 @@ const QuickGuessPage = () => {
     }
     return buildRoundWords(allWords, roundSeed);
   }, [deckId, deckSession.session, isEnergyReview, knownWords, allWords, roundSeed]);
+
+  if (energyBlocked) {
+    return <OutOfEnergy {...GATE} />;
+  }
 
   // Deck path: gate on auth/session status before rendering the round.
   if (deckId) {

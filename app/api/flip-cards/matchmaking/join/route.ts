@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     level?: string;
     mode?: string;
     nickname?: string;
+    avatar?: string;
   };
 
   const learning = normalizeLang(body.language);
@@ -33,11 +34,19 @@ export async function POST(request: NextRequest) {
   // name people signed up with. The client is the only place that nickname
   // lives, so it travels with the join request.
   const nickname = body.nickname?.trim().slice(0, 24);
+  const requestedAvatar = body.avatar?.trim();
+  const avatar =
+    requestedAvatar &&
+    requestedAvatar.length <= 5000 &&
+    (requestedAvatar.startsWith("https://") ||
+      requestedAvatar.startsWith("data:image/svg+xml;charset=UTF-8,"))
+      ? requestedAvatar
+      : (session.user.image ?? "https://i.pravatar.cc/100?img=12");
 
   const user = {
     userId,
     name: nickname || "Player",
-    avatar: session.user.image ?? "https://i.pravatar.cc/100?img=12",
+    avatar,
     language: learning,
     nativeLang,
     level,

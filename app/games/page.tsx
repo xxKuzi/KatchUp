@@ -1,11 +1,30 @@
 "use client";
+import { useEffect, useState } from "react";
 import Carousel from "./../_components/GameCarousel";
 import GameBanner from "./../_components/GameBanner";
-import { TrendingUpDown, Star } from "lucide-react";
+import { ArrowDown, TrendingUpDown, Star } from "lucide-react";
 import { useLanguage } from "@/app/_lib/languageContext";
 
 export default function Games() {
   const { t } = useLanguage();
+  const [showBrowseButton, setShowBrowseButton] = useState(true);
+
+  useEffect(() => {
+    const updateBrowseButton = () => {
+      setShowBrowseButton(window.scrollY < 40);
+    };
+
+    updateBrowseButton();
+    window.addEventListener("scroll", updateBrowseButton, { passive: true });
+
+    return () => window.removeEventListener("scroll", updateBrowseButton);
+  }, []);
+
+  const scrollToGames = () => {
+    document
+      .getElementById("games-list")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background font-sans text-foreground">
@@ -50,6 +69,15 @@ export default function Games() {
               play, not homework.
             </p>
 
+            <button
+              type="button"
+              onClick={scrollToGames}
+              className="z-40 mt-8 inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:ring-offset-slate-950 md:hidden"
+            >
+              {t("games.browse", "Browse games")}
+              <ArrowDown className="h-4 w-4" aria-hidden="true" />
+            </button>
+
             {/* Mascot with speech bubble */}
             <div className="animate-mascot-appear relative mt-10 flex flex-col items-center">
               <div className="relative mb-2 rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-md ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
@@ -65,7 +93,25 @@ export default function Games() {
           </div>
         </section>
 
-        <section className="mt-12 w-full max-w-6xl">
+        <button
+          type="button"
+          onClick={scrollToGames}
+          aria-hidden={!showBrowseButton}
+          tabIndex={showBrowseButton ? 0 : -1}
+          className={`fixed right-6 top-1/2 z-40 hidden -translate-y-1/2 items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-opacity duration-300 hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:ring-offset-slate-950 md:inline-flex ${
+            showBrowseButton
+              ? "opacity-100"
+              : "pointer-events-none opacity-0"
+          }`}
+        >
+          {t("games.browse", "Browse games")}
+          <ArrowDown className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        <section
+          id="games-list"
+          className="mt-12 w-full max-w-6xl scroll-mt-8"
+        >
           <h2 className="mb-8 flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
             <span>Top picks - online</span>
             <Star className="h-7 w-7" />

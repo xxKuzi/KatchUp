@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import GamePage from "../../_components/GamePage";
 import { spendEnergy } from "@/app/_lib/energy";
+import { useEnergyBlocked } from "../../_lib/energyGate";
+import OutOfEnergy from "../../_components/OutOfEnergy";
 import {
   isCefrLevel,
   LANG_LABELS,
@@ -30,6 +32,7 @@ interface RushQuestion {
 type RunStatus = "playing" | "finished";
 
 const RUN_DURATION_MS = 30_000;
+const WRONG_ANSWER_DELAY_MS = 2_000;
 
 interface AsyncLeaderboardRow {
   userId: string;
@@ -78,6 +81,8 @@ export default function ScoreRushPlayPage() {
   // Score Rush takes its pair from the URL, not the stored one.
   const vocabProgress = useVocabProgress({ speak, learning });
 
+  const energyBlocked = useEnergyBlocked();
+
   const [wordPool, setWordPool] = useState<WordPair[]>([]);
   const [queue, setQueue] = useState<RushQuestion[]>([]);
   const [queueIndex, setQueueIndex] = useState(0);
@@ -91,11 +96,22 @@ export default function ScoreRushPlayPage() {
     text: string;
     tone: "good" | "bad";
   } | null>(null);
+  const [answerLocked, setAnswerLocked] = useState(false);
   const [leaderboard, setLeaderboard] = useState<AsyncLeaderboardRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const scoreSubmitted = useRef(false);
+  const answerLockedRef = useRef(false);
+  const answerTimeout = useRef<number | null>(null);
   const questionStartedAt = useRef<number>(Date.now());
   const runEndsAt = useRef<number>(0);
+
+  useEffect(() => {
+    return () => {
+      if (answerTimeout.current !== null) {
+        window.clearTimeout(answerTimeout.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -123,7 +139,9 @@ export default function ScoreRushPlayPage() {
   }, [speak, learning, level]);
 
   useEffect(() => {
-    if (countdown === null) {
+    // Held at the door with no energy: the countdown never starts, so the clock
+    // never runs out and the run is never charged or scored.
+    if (countdown === null || energyBlocked) {
       return;
     }
 
@@ -140,7 +158,7 @@ export default function ScoreRushPlayPage() {
     }, 1000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [countdown]);
+  }, [countdown, energyBlocked]);
 
   useEffect(() => {
     if (countdown !== null || status !== "playing") {
@@ -166,6 +184,10 @@ export default function ScoreRushPlayPage() {
     }
 
     scoreSubmitted.current = true;
+
+    // A run costs one energy, like every other round. It used to cost one per
+    // answer, which meant a single thirty-second run could swallow the day.
+    spendEnergy();
 
     const submitScore = async () => {
       try {
@@ -227,12 +249,19 @@ export default function ScoreRushPlayPage() {
     }, 400);
   };
 
+  const advanceQuestion = () => {
+    const nextIndex = queueIndex + 1;
+    if (nextIndex >= queue.length) {
+      setQueue((previous) => [...previous, ...buildQuestionQueue(wordPool, 40)]);
+    }
+    setQueueIndex(nextIndex);
+    questionStartedAt.current = Date.now();
+  };
+
   const handleAnswer = (selectedOption: string) => {
-    if (!currentQuestion || status !== "playing") {
+    if (!currentQuestion || status !== "playing" || answerLockedRef.current) {
       return;
     }
-
-    spendEnergy();
 
     const responseTime = Date.now() - questionStartedAt.current;
     const speedBonus = Math.max(0, 50 - Math.floor(responseTime / 45));
@@ -249,17 +278,19 @@ export default function ScoreRushPlayPage() {
       setCorrect((previous) => previous + 1);
       setScore((previous) => previous + 100 + speedBonus);
       showFeedback(`Correct +${100 + speedBonus} pts`, "good");
+      advanceQuestion();
     } else {
-      showFeedback("Wrong answer", "bad");
+      answerLockedRef.current = true;
+      setAnswerLocked(true);
+      setFeedback({ text: "Wrong answer", tone: "bad" });
+      answerTimeout.current = window.setTimeout(() => {
+        setFeedback(null);
+        advanceQuestion();
+        answerLockedRef.current = false;
+        setAnswerLocked(false);
+        answerTimeout.current = null;
+      }, WRONG_ANSWER_DELAY_MS);
     }
-
-    questionStartedAt.current = Date.now();
-
-    const nextIndex = queueIndex + 1;
-    if (nextIndex >= queue.length) {
-      setQueue((previous) => [...previous, ...buildQuestionQueue(wordPool, 40)]);
-    }
-    setQueueIndex(nextIndex);
   };
 
   const restartRun = () => {
@@ -272,6 +303,16 @@ export default function ScoreRushPlayPage() {
 
   const secondsRemaining = Math.max(0, Math.ceil(msRemaining / 1000));
   const timerPercent = Math.max(0, Math.min(100, (msRemaining / RUN_DURATION_MS) * 100));
+
+  if (energyBlocked) {
+    return (
+      <OutOfEnergy
+        name="Score Rush"
+        description="Answer as many translations as you can before the clock runs out."
+        bgImage="one_of_three.png"
+      />
+    );
+  }
 
   if (countdown !== null) {
     return (
@@ -342,7 +383,8 @@ export default function ScoreRushPlayPage() {
             {currentQuestion.options.map((option) => (
               <button
                 key={option}
-                className="rounded-xl border border-zinc-300 px-4 py-3 text-left font-medium text-zinc-800 transition hover:border-blue-500 hover:bg-blue-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                className="rounded-xl border border-zinc-300 px-4 py-3 text-left font-medium text-zinc-800 transition hover:border-blue-500 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                disabled={answerLocked}
                 onClick={() => handleAnswer(option)}
               >
                 {option}

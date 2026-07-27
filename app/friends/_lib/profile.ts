@@ -90,6 +90,36 @@ export function getAvatarBackground(backgroundId: string): AvatarBackground {
   );
 }
 
+const AVATAR_GRADIENT_COLORS: Record<string, [string, string]> = {
+  sky: ["#38bdf8", "#06b6d4"],
+  sunset: ["#fb923c", "#f43f5e"],
+  forest: ["#34d399", "#14b8a6"],
+  berry: ["#e879f9", "#8b5cf6"],
+  steel: ["#cbd5e1", "#64748b"],
+  gold: ["#facc15", "#f59e0b"],
+};
+
+function escapeSvgText(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+/** Render the saved friends-profile icon as an image usable by duel tracks. */
+export function friendProfileAvatarDataUrl(
+  identity: Pick<FriendProfileIdentity, "avatarBackgroundId" | "avatarIcon">,
+): string {
+  const [from, to] =
+    AVATAR_GRADIENT_COLORS[getAvatarBackground(identity.avatarBackgroundId).id] ??
+    AVATAR_GRADIENT_COLORS.sky;
+  const icon = escapeSvgText(identity.avatarIcon.trim() || CUTE_ICONS[0]);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs><rect width="100" height="100" rx="28" fill="url(#g)"/><text x="50" y="54" text-anchor="middle" dominant-baseline="middle" fill="white" font-family="Arial,sans-serif" font-size="22" font-weight="700">${icon}</text></svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 function normalizeProfileCode(value: string): string {
   return value
     .replace(/[^a-z0-9]/gi, "")

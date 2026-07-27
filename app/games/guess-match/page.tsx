@@ -16,6 +16,8 @@ import {
 } from "@/app/topics/_lib/topicsProgress";
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
+import { useEnergyBlocked } from "../_lib/energyGate";
+import OutOfEnergy from "../_components/OutOfEnergy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useVocabProgress } from "../_lib/useVocabProgress";
@@ -95,6 +97,9 @@ const GuessMatchPage = () => {
   const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
   const vocabProgress = useVocabProgress();
 
+  // The energy round is the way back from empty, so it is never blocked by it.
+  const energyBlocked = useEnergyBlocked(isEnergyReview);
+
   const { words: allWords, isLoading: wordsLoading } = useFallbackWords();
   const roundSeed = deckId
     ? `deck:${deckId}:${sessionMode}:guess-match:${
@@ -122,6 +127,10 @@ const GuessMatchPage = () => {
     () => shuffleWithSeed(pairs, `${roundSeed}:right`),
     [pairs, roundSeed],
   );
+
+  if (energyBlocked) {
+    return <OutOfEnergy {...GATE} />;
+  }
 
   if (deckId) {
     if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {

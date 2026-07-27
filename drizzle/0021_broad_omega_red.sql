@@ -1,0 +1,1 @@
+ALTER TABLE "match_players" ADD COLUMN "display_avatar" text;
