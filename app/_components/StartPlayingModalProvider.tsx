@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import StartPlayingModal from "./StartPlayingModal";
@@ -47,8 +53,35 @@ export function StartPlayingModalProvider({
 }) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [open, setOpen] = useState(false);
+  const [openedByPlayer, setOpenedByPlayer] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const starting = useRef(false);
+  const signedIn = Boolean(session?.user?.id);
+
+  // Both triggers for these questions are on the signed-out path, so anyone who
+  // signed up straight from /login was never asked them — and languageContext
+  // quietly defaults an unanswered pair to English into German, so they have
+  // been studying a language nobody chose. Being signed in is not evidence the
+  // setup happened; a stored learning language is the only evidence there is.
+  //
+  // Derived rather than opened from an effect, which also closes it: the moment
+  // the modal writes the pair, this goes false on the next render.
+  const setupMissing =
+    signedIn &&
+    typeof window !== "undefined" &&
+    readChosenLanguagePair() === null;
+
+  const open = openedByPlayer || (setupMissing && !dismissed);
+
+  const handleOpenChange = useCallback((next: boolean) => {
+    setOpenedByPlayer(next);
+    // Closing an unanswered prompt puts it away for this page rather than for
+    // good: the pair is still unset, so it is due to be asked again on the next
+    // load rather than silently defaulted forever.
+    if (!next) {
+      setDismissed(true);
+    }
+  }, []);
 
   // The modal exists to ask three questions: the two languages and how much of
   // the learned one you already have. A signed-in player who has picked a pair
@@ -59,15 +92,15 @@ export function StartPlayingModalProvider({
     // Once the free round is spent there is nothing behind these questions to
     // let anyone into, so asking them again would only be a form to fill in on
     // the way to the same sign-up ask.
-    if (!session?.user?.id && !hasAnonPlaysRemaining()) {
+    if (!signedIn && !hasAnonPlaysRemaining()) {
       router.push(ONBOARDING_SIGN_UP_HREF);
       return;
     }
 
-    const pair = session?.user?.id ? readChosenLanguagePair() : null;
+    const pair = signedIn ? readChosenLanguagePair() : null;
 
     if (!pair) {
-      setOpen(true);
+      setOpenedByPlayer(true);
       return;
     }
 
@@ -82,12 +115,12 @@ export function StartPlayingModalProvider({
       starting.current = false;
       router.push(scoreRushHref({ ...pair, level }));
     });
-  }, [router, session?.user?.id]);
+  }, [router, signedIn]);
 
   return (
     <StartPlayingModalContext.Provider value={{ openModal }}>
       {children}
-      <StartPlayingModal open={open} onOpenChange={setOpen} />
+      <StartPlayingModal open={open} onOpenChange={handleOpenChange} />
     </StartPlayingModalContext.Provider>
   );
 }

@@ -63,6 +63,15 @@ export default function StartPlayingModal({
   // with. Each option also says which level a new account starts on.
   const [level, setLevel] = useState<CefrLevel>("A1");
 
+  const signedIn = Boolean(session?.user?.id);
+  // Asked of a visitor, never of a player. A level is earned — by mastering its
+  // words or passing its test, one at a time — so a signed-in account cannot be
+  // handed a band for saying so. The free round can ask because nothing rides on
+  // the answer there: it only picks that round's words, and it grades the claim
+  // on the way out. Asking someone with an account would be collecting an answer
+  // there is no honest way to use.
+  const askLevel = !signedIn;
+
   // Every language is learnable now, including English — the only one excluded
   // is whichever you just said you already speak.
   const learningOptions = LANGS.filter((option) => option !== nativeLanguage);
@@ -119,12 +128,21 @@ export default function StartPlayingModal({
 
     setLanguage(nativeLanguage);
     setLearningLanguage(learningLanguage);
+    onOpenChange(false);
+
+    // A player who was only missing a language pair has one now, and their level
+    // is already whatever their account has earned. Nothing to grade and no free
+    // round to spend, so they go to the games rather than through onboarding.
+    if (signedIn) {
+      router.push("/games");
+      return;
+    }
+
     // The round is built from this, and grades it — so it has to be on record
     // before the round starts, not just carried in the link.
     saveSelfReportedLevel(level);
-    onOpenChange(false);
 
-    if (!session?.user?.id && !hasAnonPlaysRemaining()) {
+    if (!hasAnonPlaysRemaining()) {
       router.push(`/login?callbackUrl=${encodeURIComponent("/")}`);
       return;
     }
@@ -152,10 +170,12 @@ export default function StartPlayingModal({
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              Ready to play?
+              {askLevel ? "Ready to play?" : "Which languages?"}
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Pick your languages and level, then jump into your first round.
+              {askLevel
+                ? "Pick your languages and level, then jump into your first round."
+                : "We never asked you this. Set it now and your level carries on from where it is."}
             </p>
           </div>
           <button
@@ -203,33 +223,35 @@ export default function StartPlayingModal({
             </div>
           </div>
 
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
-              How much do you know?
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {STARTING_POINTS.map((option) => {
-                const active = option.difficulty === level;
-                return (
-                  <button
-                    key={option.difficulty}
-                    type="button"
-                    onClick={() => setLevel(option.difficulty)}
-                    className={`flex flex-col items-start gap-0.5 rounded-2xl border px-3 py-3 text-left text-xs font-semibold transition ${
-                      active
-                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-300"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    <span>{option.label}</span>
-                    <span className="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">
-                      {option.hint}
-                    </span>
-                  </button>
-                );
-              })}
+          {askLevel && (
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
+                How much do you know?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {STARTING_POINTS.map((option) => {
+                  const active = option.difficulty === level;
+                  return (
+                    <button
+                      key={option.difficulty}
+                      type="button"
+                      onClick={() => setLevel(option.difficulty)}
+                      className={`flex flex-col items-start gap-0.5 rounded-2xl border px-3 py-3 text-left text-xs font-semibold transition ${
+                        active
+                          ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-300"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span>{option.label}</span>
+                      <span className="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">
+                        {option.hint}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <button
@@ -238,7 +260,11 @@ export default function StartPlayingModal({
           disabled={!learningLanguage}
           className="mt-7 w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:bg-blue-500 dark:hover:bg-blue-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
         >
-          {learningLanguage ? "Play" : "Pick a language to learn"}
+          {!learningLanguage
+            ? "Pick a language to learn"
+            : askLevel
+              ? "Play"
+              : "Save and continue"}
         </button>
       </div>
     </div>,
