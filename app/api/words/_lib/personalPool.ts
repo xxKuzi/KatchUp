@@ -22,6 +22,10 @@ import {
  *
  * A bucket that cannot fill its share passes the slack to the next, so a round
  * is always the length that was asked for.
+ *
+ * The level applies to the new bucket only. Climbing a band changes what you are
+ * taught next, not what you are held to: an A1 word you learned months ago is
+ * still yours to keep, and still comes back when its box falls due.
  */
 
 /** Words carried over from the last session, at most. */
@@ -37,7 +41,9 @@ const CARRY_OVER_WINDOW = "24 hours";
  * A word only becomes `known` at streak 3, which puts it at box 3 or higher —
  * so mastering something buries it for a week, and mastering it thoroughly for
  * a month. That is the "stop showing me what I already learned" half. It never
- * disappears for good, which is the other half.
+ * disappears for good, which is the other half — and that half only holds
+ * because the review bucket ignores the level, so moving up a band cannot bury
+ * a word past the point of ever being asked again.
  */
 const BOX_INTERVALS = [
   "0 days", // 0 — never answered right, or just got it wrong
@@ -78,7 +84,11 @@ export async function getPersonalWordPairs({
     return [];
   }
 
-  const { promptLang, answerLang } = resolveDirection(speak, learning, direction);
+  const { promptLang, answerLang } = resolveDirection(
+    speak,
+    learning,
+    direction,
+  );
   const reviewQuota = Math.max(1, Math.round(count * REVIEW_SHARE));
   // Over-fetch: the same-answer filter and the bucket overlap both drop rows,
   // and it is the same round trip either way.
@@ -112,8 +122,12 @@ export async function getPersonalWordPairs({
       join concept_translations answer_side
         on answer_side.concept_id = learn_side.concept_id
        and answer_side.lang = ${answerLang}
+      -- Every level of the language, deliberately. The requested level scopes
+      -- the new bucket further down and nothing else: filtering here instead
+      -- put the band in front of the review bucket, which meant that crossing
+      -- into A2 stranded every A1 word behind you. Their review dates kept
+      -- coming due and no round could ever serve them.
       where learn_side.lang = ${learning}
-        ${level ? sql`and learn_side.level = ${level}` : sql``}
     ),
     stats as (
       select concept_id, box, known, last_seen_at, streak, times_wrong
@@ -150,10 +164,14 @@ export async function getPersonalWordPairs({
     )
     union all
     (
+      -- New material is the one thing the level should govern: it is what the
+      -- ladder is for. Words already met come back on their own schedule
+      -- whatever band they came from.
       select p.*, 'new' as bucket
       from pairs p
       where not exists (select 1 from stats s where s.concept_id = p.concept_id)
         and lower(p.answer) not in (select answer from known_answers)
+        ${level ? sql`and p.level = ${level}` : sql``}
       order by random()
       limit ${newQuota}
     )
@@ -168,14 +186,12 @@ export async function getPersonalWordPairs({
   const byBucket = (name: string) =>
     rows
       .filter((row) => row.bucket === name)
-      .map(
-        (row): WordPair => ({
-          conceptId: row.concept_id,
-          prompt: row.prompt,
-          answer: row.answer,
-          level: row.level,
-        }),
-      );
+      .map((row): WordPair => ({
+        conceptId: row.concept_id,
+        prompt: row.prompt,
+        answer: row.answer,
+        level: row.level,
+      }));
 
   // Carry-over first so it is never squeezed out — it is the continuity the
   // round is built around — then review, then new fills whatever is left.
