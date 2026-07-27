@@ -784,6 +784,35 @@ export async function countKnownWordsForLanguage(
 }
 
 /**
+ * Whether this user has ever answered anything in a language.
+ *
+ * Not the same question as "has mastered any words in it": one attempt leaves a
+ * row behind whether it was right or wrong. That is what makes it the right
+ * guard for the placement test, which is offered once and must not be
+ * re-sittable — a ten-question multiple choice retried until it passes is not a
+ * test of anything.
+ */
+export async function hasAnyWordStatsForLanguage(
+  userId: string,
+  language: string,
+): Promise<boolean> {
+  const canonical = normalizeLang(language) ?? language.toLowerCase();
+
+  const [row] = await db
+    .select({ exists: sql<number>`1` })
+    .from(userWordStats)
+    .where(
+      and(
+        eq(userWordStats.userId, userId),
+        eq(userWordStats.foreignLang, canonical),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(row);
+}
+
+/**
  * Returns a randomised set of the user's **known** words.
  * Used for the Navbar "practice for energy" feature so the user reviews words
  * they've already mastered (and each round is different).

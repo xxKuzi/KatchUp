@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import {
+  bandStartLevel,
   levelProgressFromMasteredCount,
   levelStartWords,
   LEVEL_TEST_PASS_RATIO,
   LEVEL_TEST_QUESTION_COUNT,
   wordDifficultyForLevel,
 } from "@/app/_lib/level";
-import { normalizeLang, type Lang } from "@/app/_lib/languages";
+import { isCefrLevel, normalizeLang, type Lang } from "@/app/_lib/languages";
 import {
   getDistractors,
   getTranslationsForConcepts,
@@ -17,7 +18,10 @@ import {
   getEffectiveMasteredCount,
   raiseWordFloor,
 } from "../../_lib/levelProgress";
-import { recordConceptAttempts } from "../../_lib/spacedRepetition";
+import {
+  hasAnyWordStatsForLanguage,
+  recordConceptAttempts,
+} from "../../_lib/spacedRepetition";
 
 /**
  * The level-up exam.
@@ -30,7 +34,36 @@ import { recordConceptAttempts } from "../../_lib/spacedRepetition";
  * progress, never from the request, so nobody can test straight to level 40.
  * Answers are re-derived from the database at grading time for the same
  * reason — the client only ever says which option it picked.
+ *
+ * The one exception is placement. A learner setting up a language can say they
+ * already have some of it, and `claim` puts that band on the line instead of the
+ * next level up — but only ever on a language they have never answered a single
+ * question in, which is a state that exists once and cannot be returned to,
+ * since sitting the test leaves stats behind whether it was passed or failed.
+ * So a claim can still only be cashed by getting it right, once, and everything
+ * above the claimed band remains a level-at-a-time climb.
  */
+
+/** The claimed band, if it is one this account is still allowed to sit for. */
+async function resolvePlacement(
+  userId: string,
+  learning: Lang,
+  claim: string | null | undefined,
+  wordFloor: number,
+): Promise<{ targetLevel: number; band: string } | null> {
+  const band = claim?.toUpperCase();
+
+  if (!band || !isCefrLevel(band) || band === "A1") {
+    // A1 is where everyone starts, so claiming it puts nothing on the line.
+    return null;
+  }
+
+  if (wordFloor > 0 || (await hasAnyWordStatsForLanguage(userId, learning))) {
+    return null;
+  }
+
+  return { targetLevel: bandStartLevel(band), band };
+}
 
 interface TestQuestion {
   conceptId: string;
@@ -76,7 +109,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { masteredCount } = await getEffectiveMasteredCount(
+  const { masteredCount, wordFloor } = await getEffectiveMasteredCount(
     session.user.id,
     pair.learning,
   );
@@ -89,7 +122,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const targetLevel = progress.level + 1;
+  const placement = await resolvePlacement(
+    session.user.id,
+    pair.learning,
+    request.nextUrl.searchParams.get("claim"),
+    wordFloor,
+  );
+
+  const targetLevel = placement?.targetLevel ?? progress.level + 1;
 
   // The exam quizzes the level you're trying to enter, not the one you're in.
   const pairs = await getWordPairs({
@@ -144,6 +184,9 @@ export async function GET(request: NextRequest) {
       targetLevel,
       wordsAtTargetLevel: levelStartWords(targetLevel),
       passRatio: LEVEL_TEST_PASS_RATIO,
+      // Null unless the claim was honoured, so the page can say what is being
+      // sat for rather than assuming it is the next level up.
+      placementBand: placement?.band ?? null,
       questions,
     },
     { headers: { "Cache-Control": "no-store" } },
@@ -159,6 +202,7 @@ export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as {
     speak?: string;
     learning?: string;
+    claim?: string;
     answers?: { conceptId?: string; answer?: string }[];
   } | null;
 
@@ -184,7 +228,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { masteredCount } = await getEffectiveMasteredCount(
+  const { masteredCount, wordFloor } = await getEffectiveMasteredCount(
     session.user.id,
     learning,
   );
@@ -196,6 +240,18 @@ export async function POST(request: NextRequest) {
       { status: 409 },
     );
   }
+
+  // Re-derived here rather than carried over from the GET: the claim arrives in
+  // the request body, so whether it is allowed has to be decided against stored
+  // state at the moment it would be cashed. This is also read *before* the
+  // attempts below are recorded, because recording them is what closes the
+  // window on ever sitting it again.
+  const placement = await resolvePlacement(
+    session.user.id,
+    learning,
+    body?.claim,
+    wordFloor,
+  );
 
   // Grade against the database, not against anything the client sent.
   const truth = await getTranslationsForConcepts(
@@ -226,8 +282,11 @@ export async function POST(request: NextRequest) {
 
   let newMasteredCount = masteredCount;
   if (passed) {
-    // Promotion lands on the first word count of the new band.
-    const floor = levelStartWords(progress.level + 1);
+    // A passed placement lands on the first level of the band that was claimed;
+    // an ordinary promotion on the first word count of the next level. A failed
+    // placement grants nothing at all — the claim was the whole of its case, and
+    // it did not hold — so the learner starts where everyone else does.
+    const floor = levelStartWords(placement?.targetLevel ?? progress.level + 1);
     await raiseWordFloor(session.user.id, learning, floor);
     newMasteredCount = Math.max(masteredCount, floor);
   }
@@ -240,5 +299,6 @@ export async function POST(request: NextRequest) {
     previousLevel: progress.level,
     level: levelProgressFromMasteredCount(newMasteredCount).level,
     masteredCount: newMasteredCount,
+    placementBand: placement?.band ?? null,
   });
 }

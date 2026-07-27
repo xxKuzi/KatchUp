@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, GraduationCap } from "lucide-react";
 import FeatureGate from "@/app/_components/FeatureGate";
 import { useAuthState } from "@/app/_lib/auth";
@@ -21,6 +21,8 @@ interface TestPayload {
   targetLevel: number;
   /** Mastered-word count that passing lands you on. */
   wordsAtTargetLevel: number;
+  /** The band being sat for, when this is a placement rather than a promotion. */
+  placementBand: string | null;
   questions: TestQuestion[];
 }
 
@@ -31,14 +33,20 @@ interface TestResult {
   previousLevel: number;
   level: number;
   masteredCount: number;
+  placementBand: string | null;
 }
 
 const PASS_PERCENT = Math.round(LEVEL_TEST_PASS_RATIO * 100);
 
 export default function LevelTestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isSignedIn, isReady } = useAuthState();
   const { language, learningLanguage } = useLanguage();
+  // Set when a learner has just told the setup modal they already have some of
+  // this language. It puts that band on the line instead of the next level up,
+  // and the server refuses it on any language they have already answered in.
+  const claim = searchParams.get("claim");
 
   const [test, setTest] = useState<TestPayload | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -56,8 +64,11 @@ export default function LevelTestPage() {
     setIndex(0);
 
     try {
+      // The claim is a request, not a grant: the server decides whether this
+      // account is still entitled to sit for a band, and ignores it otherwise.
       const response = await fetch(
-        `/api/decks/level/test?speak=${language}&learning=${learningLanguage}`,
+        `/api/decks/level/test?speak=${language}&learning=${learningLanguage}` +
+          (claim ? `&claim=${encodeURIComponent(claim)}` : ""),
       );
       const body = await response.json();
 
@@ -68,11 +79,13 @@ export default function LevelTestPage() {
       setTest(body as TestPayload);
     } catch (cause) {
       setTest(null);
-      setError(cause instanceof Error ? cause.message : "Could not start the test");
+      setError(
+        cause instanceof Error ? cause.message : "Could not start the test",
+      );
     } finally {
       setLoading(false);
     }
-  }, [language, learningLanguage]);
+  }, [language, learningLanguage, claim]);
 
   useEffect(() => {
     // Wait for the session to resolve — acting on the not-yet-known signed-out
@@ -106,6 +119,7 @@ export default function LevelTestPage() {
         body: JSON.stringify({
           speak: language,
           learning: learningLanguage,
+          claim,
           answers: test.questions.map((question) => ({
             conceptId: question.conceptId,
             answer: answers[question.conceptId] ?? "",
@@ -124,7 +138,9 @@ export default function LevelTestPage() {
         notifyLevelChanged();
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not grade the test");
+      setError(
+        cause instanceof Error ? cause.message : "Could not grade the test",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -158,7 +174,7 @@ export default function LevelTestPage() {
             </span>
             <div>
               <h1 className="text-2xl font-black text-slate-900 dark:text-white">
-                Level test
+                {test?.placementBand ? "Prove your level" : "Level test"}
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 {LANG_LABELS[learningLanguage]} · answer in{" "}
@@ -191,9 +207,7 @@ export default function LevelTestPage() {
             <div className="mt-8">
               <p
                 className={`text-4xl font-black ${
-                  result.passed
-                    ? "text-emerald-500"
-                    : "text-rose-500"
+                  result.passed ? "text-emerald-500" : "text-rose-500"
                 }`}
               >
                 {result.correct}/{result.total}
@@ -201,7 +215,9 @@ export default function LevelTestPage() {
               {result.passed ? (
                 <>
                   <p className="mt-3 text-lg font-bold text-slate-900 dark:text-white">
-                    Passed — welcome to level {result.level}!
+                    {result.placementBand
+                      ? `${result.placementBand} it is — you start at level ${result.level}.`
+                      : `Passed — welcome to level ${result.level}!`}
                   </p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     You jumped from level {result.previousLevel} to level{" "}
@@ -210,12 +226,27 @@ export default function LevelTestPage() {
                 </>
               ) : (
                 <>
+                  {/* A failed placement is not a failed promotion: nothing was
+                      lost, because nothing had been earned yet. It is also the
+                      only attempt, so the copy must not invite a retry. */}
                   <p className="mt-3 text-lg font-bold text-slate-900 dark:text-white">
-                    Not quite — {PASS_PERCENT}% is needed to move up.
+                    {result.placementBand
+                      ? `That didn't hold up — ${PASS_PERCENT}% was needed to start at ${result.placementBand}.`
+                      : `Not quite — ${PASS_PERCENT}% is needed to move up.`}
                   </p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    You&apos;re still level {result.level}. Practise a little
-                    and try again.
+                    {result.placementBand ? (
+                      <>
+                        You start at level {result.level} like everyone else —
+                        the words you know will come quickly, and the test for
+                        each level is there whenever you want it.
+                      </>
+                    ) : (
+                      <>
+                        You&apos;re still level {result.level}. Practise a
+                        little and try again.
+                      </>
+                    )}
                   </p>
                 </>
               )}
