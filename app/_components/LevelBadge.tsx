@@ -9,7 +9,7 @@ import {
   MAX_LEVEL,
 } from "../_lib/level";
 import { LANG_LABELS, type Lang } from "../_lib/languages";
-import { useLearningLevelState } from "../_lib/useLearningLevel";
+import { headStartWords, useLearningLevelState } from "../_lib/useLearningLevel";
 
 /**
  * The navbar's level chip. Collapsed it's just the number — that's the thing
@@ -26,7 +26,12 @@ export default function LevelBadge({
   isHomePage?: boolean;
 }) {
   const router = useRouter();
-  const { level, status } = useLearningLevelState(learningLanguage);
+  const levelState = useLearningLevelState(learningLanguage);
+  const { level, status } = levelState;
+  // Ground the placement handed over rather than ground that was covered. The
+  // level is honestly theirs — it is what the test said — but the words behind
+  // it were never studied, so they are counted apart from the ones that were.
+  const headStart = headStartWords(levelState);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -129,7 +134,7 @@ export default function LevelBadge({
           </div>
 
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-            {level.masteredCount} words mastered
+            {levelState.knownWords ?? level.masteredCount} words mastered
             {level.nextLevelAt !== null &&
               ` · next level at ${level.nextLevelAt}`}
           </p>
@@ -156,9 +161,17 @@ export default function LevelBadge({
             />
           </div>
 
-          {levelCost !== null && (
+          {/* The bar only ever measures the level you are standing in, so the
+              skipped words cannot be drawn into it — they are the levels
+              underneath it, already behind you. Named here instead, so the
+              number is accounted for rather than quietly folded into progress
+              nobody made. */}
+          {(levelCost !== null || headStart > 0) && (
             <p className="mt-1.5 text-[0.7rem] font-semibold text-slate-400 dark:text-slate-500">
-              {level.wordsIntoLevel} / {levelCost} words into this level
+              {levelCost !== null &&
+                `${level.wordsIntoLevel} / ${levelCost} words into this level`}
+              {levelCost !== null && headStart > 0 && " · "}
+              {headStart > 0 && `${headStart} skipped with the initial test`}
             </p>
           )}
 

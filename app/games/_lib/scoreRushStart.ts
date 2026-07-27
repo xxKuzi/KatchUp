@@ -1,7 +1,7 @@
 "use client";
 
 import type { CefrLevel, Lang } from "@/app/_lib/languages";
-import { getPlayerProfile } from "../choose-one-multiplayer/_lib/playerProfile";
+import { getPlayerProfile } from "../live-duel/_lib/playerProfile";
 
 /**
  * The link into a Score Rush run.

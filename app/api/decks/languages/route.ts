@@ -27,9 +27,10 @@ export async function GET() {
 
   const languages = await Promise.all(
     LANGS.map(async (learning: Lang) => {
-      const { masteredCount, knownWords, wordFloor } =
+      const { masteredCount, knownWords, wordFloor, placed } =
         await getEffectiveMasteredCount(userId, learning);
       const progress = levelProgressFromMasteredCount(masteredCount);
+      const started = masteredCount > 0 || knownWords > 0;
 
       return {
         learning,
@@ -42,7 +43,13 @@ export async function GET() {
         // actually learned. Worth distinguishing: it is why a brand-new C1
         // account shows thousands of words and no learned ones.
         wordFloor,
-        started: masteredCount > 0 || knownWords > 0,
+        started,
+        // The same question the placement route asks itself, answered here so
+        // the client can find out whether a language still owes a test without
+        // starting one to be told no. A placement onto A1 leaves `started`
+        // false — it is worth no words — so the floor row has to be read too,
+        // or that learner is sent back to the same test forever.
+        canBePlaced: !placed && !started,
       };
     }),
   );

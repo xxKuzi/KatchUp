@@ -12,8 +12,11 @@ export interface LanguageStanding {
   masteredCount: number;
   knownWords: number;
   wordFloor: number;
-  /** False when nothing has been earned here yet, so it can still be placed. */
+  /** False when nothing has been earned here yet. */
   started: boolean;
+  /** Whether the placement test is still owed here — nothing earned, and no
+   *  placement on record. The one to read before sending anyone to sit it. */
+  canBePlaced: boolean;
 }
 
 /**

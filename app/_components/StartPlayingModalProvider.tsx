@@ -1,20 +1,14 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-} from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { createContext, useCallback, useContext, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import StartPlayingModal from "./StartPlayingModal";
-import { readChosenLanguagePair } from "../_lib/languageContext";
-import { levelProgressFromMasteredCount } from "../_lib/level";
-import { scoreRushHref } from "../games/_lib/scoreRushStart";
-import { hasAnonPlaysRemaining } from "../games/_lib/anonPlayGate";
-import { ONBOARDING_SIGN_UP_HREF } from "../games/_lib/onboardingRound";
+import {
+  isSetupExemptPath,
+  isVisitorPublicPath,
+} from "../_lib/onboardingGate";
+import { useOnboardingStatus } from "../_lib/useOnboardingStatus";
+import { usePlacementClaim } from "../_lib/usePlacementClaim";
 
 interface StartPlayingModalContextValue {
   openModal: () => void;
@@ -24,103 +18,74 @@ const StartPlayingModalContext = createContext<
   StartPlayingModalContextValue | undefined
 >(undefined);
 
-/**
- * The difficulty the player's account has earned, as the vocabulary's own tag.
- * Falls back to the easiest words if the level cannot be read — a returning
- * player briefly getting words below their level beats being asked to set
- * themselves up again.
- */
-async function fetchWordDifficulty(learning: string) {
-  try {
-    const res = await fetch(
-      `/api/decks/level?language=${encodeURIComponent(learning)}`,
-    );
-    if (!res.ok) {
-      throw new Error(`Level request failed (${res.status})`);
-    }
-    const data = (await res.json()) as { masteredCount?: number };
-    return levelProgressFromMasteredCount(data.masteredCount ?? 0)
-      .wordDifficulty;
-  } catch {
-    return "A1" as const;
-  }
-}
-
 export function StartPlayingModalProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { data: session } = useSession();
-  const [openedByPlayer, setOpenedByPlayer] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  const starting = useRef(false);
-  const signedIn = Boolean(session?.user?.id);
+  const pathname = usePathname();
+  const status = useOnboardingStatus();
+  const [requested, setRequested] = useState(false);
 
-  // Both triggers for these questions are on the signed-out path, so anyone who
-  // signed up straight from /login was never asked them — and languageContext
-  // quietly defaults an unanswered pair to English into German, so they have
-  // been studying a language nobody chose. Being signed in is not evidence the
-  // setup happened; a stored learning language is the only evidence there is.
+  // A test sat before signing up is spent here, wherever in the app the sign-in
+  // happens to land — it is the only thing a visitor's test left behind.
+  usePlacementClaim();
+
+  const owed = status.state === "needsSetup" || status.state === "needsPlacement";
+
+  // Where the prompt puts itself up unasked. For a player it is everywhere the
+  // app actually is: they signed in to study, and there is no level to study at
+  // yet. For a visitor it is everywhere except the pages they are allowed to
+  // read first — until they press Start playing, which is what `requested` is.
   //
-  // Derived rather than opened from an effect, which also closes it: the moment
-  // the modal writes the pair, this goes false on the next render.
-  const setupMissing =
-    signedIn &&
-    typeof window !== "undefined" &&
-    readChosenLanguagePair() === null;
+  // There is no dismissal either way. Once it is up the only route past it is
+  // through it, and leaving the page only means being asked again on the way
+  // back, since nothing was answered.
+  const forced = status.signedIn
+    ? !isSetupExemptPath(pathname)
+    : !isVisitorPublicPath(pathname);
 
-  const open = openedByPlayer || (setupMissing && !dismissed);
+  const open = owed && (forced || (requested && !isSetupExemptPath(pathname)));
 
-  const handleOpenChange = useCallback((next: boolean) => {
-    setOpenedByPlayer(next);
-    // Closing an unanswered prompt puts it away for this page rather than for
-    // good: the pair is still unset, so it is due to be asked again on the next
-    // load rather than silently defaulted forever.
-    if (!next) {
-      setDismissed(true);
-    }
-  }, []);
-
-  // The modal exists to ask three questions: the two languages and how much of
-  // the learned one you already have. A signed-in player who has picked a pair
-  // before has answered all three — the pair is stored, and the difficulty is
-  // whatever their account level says — so being asked again is just a form
-  // standing between them and the round. They go straight into it instead.
   const openModal = useCallback(() => {
-    // Once the free round is spent there is nothing behind these questions to
-    // let anyone into, so asking them again would only be a form to fill in on
-    // the way to the same sign-up ask.
-    if (!signedIn && !hasAnonPlaysRemaining()) {
-      router.push(ONBOARDING_SIGN_UP_HREF);
+    if (status.state === "loading") {
       return;
     }
 
-    const pair = signedIn ? readChosenLanguagePair() : null;
+    if (owed) {
+      // On the two pages the prompt is not allowed to cover, the button's job is
+      // to take them somewhere it is — pressing it there and having nothing
+      // happen would read as a broken button.
+      if (isSetupExemptPath(pathname)) {
+        router.push("/");
+        return;
+      }
 
-    if (!pair) {
-      setOpenedByPlayer(true);
+      setRequested(true);
       return;
     }
 
-    // The level lookup is a round trip, so the button would otherwise sit there
-    // looking unpressed and collect a second click.
-    if (starting.current) {
+    // Nothing owed and no account: the test has been sat and the result is
+    // sitting in a browser with nowhere to go. Every game is behind sign-in, so
+    // that is where this leads rather than into a round that would bounce them
+    // straight back here.
+    if (!status.signedIn) {
+      router.push(`/login?callbackUrl=${encodeURIComponent("/games")}`);
       return;
     }
-    starting.current = true;
 
-    void fetchWordDifficulty(pair.learning).then((level) => {
-      starting.current = false;
-      router.push(scoreRushHref({ ...pair, level }));
-    });
-  }, [router, signedIn]);
+    // Set up and placed: this has nothing left to ask, so it gets out of the
+    // way and hands over to the games index. Picking a game out of that list is
+    // the player's to make — dropping them into one because they pressed a
+    // button that said "play" is answering a question nobody put to them.
+    router.push("/games");
+  }, [owed, pathname, router, status.signedIn, status.state]);
 
   return (
     <StartPlayingModalContext.Provider value={{ openModal }}>
       {children}
-      <StartPlayingModal open={open} onOpenChange={handleOpenChange} />
+      <StartPlayingModal open={open} />
     </StartPlayingModalContext.Provider>
   );
 }

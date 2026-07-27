@@ -20,14 +20,10 @@ import {
   getTranslationsForConcepts,
   getWordPairs,
 } from "@/app/api/words/_lib/wordPool";
-import {
-  getEffectiveMasteredCount,
-  raiseWordFloor,
-} from "../../_lib/levelProgress";
-import {
-  hasAnyWordStatsForLanguage,
-  recordConceptAttempts,
-} from "../../_lib/spacedRepetition";
+import { raiseWordFloor } from "../../_lib/levelProgress";
+import { recordConceptAttempts } from "../../_lib/spacedRepetition";
+import { placementOpen } from "./_lib/placementOpen";
+import { signPlacementTicket } from "./_lib/ticket";
 
 /**
  * The placement test: sat once, when a language is set up, by everyone.
@@ -35,16 +31,25 @@ import {
  * Sitting it is the only way onto a band without climbing to it. The level test
  * next door promotes one level at a time off stored progress and never takes a
  * target from the request, which is what stops anyone testing straight to the
- * top; this is the deliberate exception, and it is bounded by being available
- * only on a language the account has never answered a single question in. Sitting
- * it records those answers, so the state that allows it ends the moment it is
- * used — one attempt, whatever the outcome.
+ * top; this is the deliberate exception, and it is bounded three ways — it is
+ * available only on a language the account has never answered a single question
+ * in, sitting it records those answers so the state that allows it ends the
+ * moment it is used, and it will not carry anyone past `PLACEMENT_MAX_BAND`
+ * however well they do. One attempt, capped, whatever the outcome.
  *
  * Every band is on the paper rather than a claimed one, because a test drawn from
  * a single band can only confirm that band. Someone who says they are a beginner
  * and then answers B1 words correctly is a B1 learner who undersold themselves,
  * and the point of placing them is to find that out. Nobody is asked what they
  * think their level is: the test is the claim.
+ *
+ * Visitors sit it too, and on the same paper. Asking someone to pick their own
+ * level was only ever a stand-in for testing them, and it was the one place the
+ * app took a learner's word for where they belonged — so it is gone, and the
+ * test took its place on both sides of the sign-in line. Without an account
+ * there is nothing to record the answers against: the grade goes back as a
+ * signed ticket instead (see `_lib/ticket`), and the account it is redeemed
+ * against later is the first thing that stores anything.
  */
 
 interface PlacementQuestion {
@@ -76,25 +81,12 @@ function readLangPair(
   return { speak, learning };
 }
 
-/**
- * Whether this account may still be placed in this language. Read before the
- * answers are recorded on the POST, since recording them is what closes it.
- */
-async function placementOpen(userId: string, learning: Lang): Promise<boolean> {
-  const { wordFloor } = await getEffectiveMasteredCount(userId, learning);
-
-  if (wordFloor > 0) {
-    return false;
-  }
-
-  return !(await hasAnyWordStatsForLanguage(userId, learning));
-}
-
 export async function GET(request: NextRequest) {
+  // No sign-in required: the paper is fifteen questions off a public corpus, and
+  // nothing about who is sitting it changes which fifteen. What an account buys
+  // is somewhere to put the result.
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const userId = session?.user?.id ?? null;
 
   const { searchParams } = request.nextUrl;
   const pair = readLangPair(
@@ -111,7 +103,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!(await placementOpen(session.user.id, pair.learning))) {
+  if (userId && !(await placementOpen(userId, pair.learning))) {
     return NextResponse.json(
       {
         error:
@@ -189,9 +181,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const userId = session?.user?.id ?? null;
 
   const body = (await request.json().catch(() => null)) as {
     speak?: string;
@@ -221,7 +211,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!(await placementOpen(session.user.id, pair.learning))) {
+  if (userId && !(await placementOpen(userId, pair.learning))) {
     return NextResponse.json(
       {
         error:
@@ -266,16 +256,12 @@ export async function POST(request: NextRequest) {
   const startLevel = bandStartLevel(band);
   const floor = levelStartWords(startLevel);
 
-  // The test is practice too, and this is also what shuts the door behind it.
-  await recordConceptAttempts(
-    session.user.id,
-    pair.speak,
-    pair.learning,
-    graded,
-  );
-
-  if (floor > 0) {
-    await raiseWordFloor(session.user.id, pair.learning, floor);
+  if (userId) {
+    // The test is practice too, and the floor row is what shuts the door behind
+    // it. Written even when the band is worth nothing: a placement onto A1 is a
+    // placement, and the row is the only record that it happened.
+    await recordConceptAttempts(userId, pair.speak, pair.learning, graded);
+    await raiseWordFloor(userId, pair.learning, floor);
   }
 
   const progress = levelProgressFromMasteredCount(floor);
@@ -289,5 +275,11 @@ export async function POST(request: NextRequest) {
     correctByBand,
     bandPass: PLACEMENT_BAND_PASS,
     questionsPerBand: PLACEMENT_QUESTIONS_PER_BAND,
+    // Nothing was stored for a visitor, so the verdict has to travel with them
+    // until there is an account to put it on. Signed, so it is still the
+    // server's verdict when it comes back.
+    ticket: userId
+      ? undefined
+      : signPlacementTicket({ learning: pair.learning, band, floor }),
   });
 }

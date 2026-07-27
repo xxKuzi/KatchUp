@@ -35,6 +35,8 @@ export const translations: Record<Language, Translations> = {
       reviewMistakes: "Review your mistakes",
       buildReviewList: "Practice more to build your review list.",
       energyFull: "Energy full — come back after you spend some.",
+      donate: "Donate",
+      openingDonation: "Opening Stripe…",
     },
     auth: {
       signIn: "Sign in",
@@ -241,6 +243,8 @@ export const translations: Record<Language, Translations> = {
       reviewMistakes: "Zopakuj si chyby",
       buildReviewList: "Procvičuj víc a vytvoř si seznam k opakování.",
       energyFull: "Energie je plná — vrať se, až nějakou spotřebuješ.",
+      donate: "Přispět",
+      openingDonation: "Otevírám Stripe…",
     },
     auth: {
       signIn: "Prihlasit se",
@@ -447,6 +451,8 @@ export const translations: Record<Language, Translations> = {
       reviewMistakes: "Fehler wiederholen",
       buildReviewList: "Übe mehr, um deine Wiederholungsliste zu füllen.",
       energyFull: "Energie voll — komm zurück, wenn du welche verbraucht hast.",
+      donate: "Spenden",
+      openingDonation: "Stripe wird geöffnet…",
     },
     auth: {
       signIn: "Anmelden",

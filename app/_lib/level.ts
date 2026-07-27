@@ -70,8 +70,25 @@ export const PLACEMENT_QUESTION_COUNT =
   CEFR_LEVELS.length * PLACEMENT_QUESTIONS_PER_BAND;
 
 /**
+ * The highest band a placement will put anyone on, however well they do.
+ *
+ * The top band is where the ladder gets expensive: C1 opens at thousands of
+ * mastered words and the ceiling is near ten thousand, so handing it over is
+ * handing over most of the game — and fifteen questions is not a paper that can
+ * justify that. Someone genuinely past B2 loses the last ten levels, which the
+ * level test promotes through one at a time and which they will pass at speed;
+ * someone who is not past B2 keeps the ten levels they would otherwise have
+ * been dropped into the middle of.
+ *
+ * C1 questions stay on the paper regardless. They are what corroborates B2 for
+ * a learner who slipped on B1, and dropping them would send that learner back
+ * to the bottom.
+ */
+export const PLACEMENT_MAX_BAND: CefrLevel = "B2";
+
+/**
  * Where a placement test lands someone: the highest band they cleared that also
- * has the band below it cleared.
+ * has the band below it cleared, up to `PLACEMENT_MAX_BAND`.
  *
  * Graded by band rather than on a total, because twelve out of fifteen is a
  * different learner depending on which three were missed — the answer wanted here
@@ -91,9 +108,11 @@ export function placementBandFromCorrectByBand(
   const cleared = (band: CefrLevel | undefined) =>
     band !== undefined && (correctByBand[band] ?? 0) >= PLACEMENT_BAND_PASS;
 
+  const ceiling = CEFR_LEVELS.indexOf(PLACEMENT_MAX_BAND);
+
   for (let index = CEFR_LEVELS.length - 1; index >= 1; index -= 1) {
     if (cleared(CEFR_LEVELS[index]) && cleared(CEFR_LEVELS[index - 1])) {
-      return CEFR_LEVELS[index];
+      return CEFR_LEVELS[Math.min(index, ceiling)];
     }
   }
 

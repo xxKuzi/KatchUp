@@ -2,12 +2,46 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "@/lib/auth-client";
-import { useRef } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Gamepad2 } from "lucide-react";
 
 gsap.registerPlugin(useGSAP);
+
+type LoginProvider = "google" | "github" | "discord";
+
+const LAST_LOGIN_PROVIDER_KEY = "katchup:last-login-provider";
+const LAST_LOGIN_PROVIDER_EVENT = "katchup:last-login-provider-change";
+
+function isLoginProvider(value: string | null): value is LoginProvider {
+  return value === "google" || value === "github" || value === "discord";
+}
+
+function getLastLoginProvider(): LoginProvider | null {
+  try {
+    const provider = window.localStorage.getItem(LAST_LOGIN_PROVIDER_KEY);
+    return isLoginProvider(provider) ? provider : null;
+  } catch {
+    return null;
+  }
+}
+
+function subscribeToLastLoginProvider(onStoreChange: () => void) {
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === LAST_LOGIN_PROVIDER_KEY) {
+      onStoreChange();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(LAST_LOGIN_PROVIDER_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(LAST_LOGIN_PROVIDER_EVENT, onStoreChange);
+  };
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +50,11 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const isSignedIn = status === "authenticated";
   const container = useRef<HTMLDivElement>(null);
+  const lastLoginProvider = useSyncExternalStore(
+    subscribeToLastLoginProvider,
+    getLastLoginProvider,
+    () => null,
+  );
 
   useGSAP(
     () => {
@@ -32,7 +71,14 @@ export default function LoginPage() {
     { scope: container },
   );
 
-  const loginWithProvider = async (provider: "google" | "github" | "discord") => {
+  const loginWithProvider = async (provider: LoginProvider) => {
+    try {
+      window.localStorage.setItem(LAST_LOGIN_PROVIDER_KEY, provider);
+      window.dispatchEvent(new Event(LAST_LOGIN_PROVIDER_EVENT));
+    } catch {
+      // Remembering the provider is optional; never block authentication.
+    }
+
     await signIn(provider, { callbackUrl });
   };
 
@@ -89,8 +135,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => loginWithProvider("google")}
-              className="animate-item flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-blue-600 px-5 py-4 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+              className="animate-item relative flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-blue-600 px-5 py-4 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
             >
+              {lastLoginProvider === "google" ? (
+                <span className="absolute -top-2 right-3 rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700 shadow-sm dark:border-blue-700 dark:bg-slate-950 dark:text-blue-300">
+                  Last used
+                </span>
+              ) : null}
               <svg
                 className="h-5 w-5 rounded-full bg-white p-0.5 text-blue-600"
                 viewBox="0 0 24 24"
@@ -117,8 +168,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => loginWithProvider("github")}
-              className="animate-item flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-4 font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="animate-item relative flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-4 font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
+              {lastLoginProvider === "github" ? (
+                <span className="absolute -top-2 right-3 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                  Last used
+                </span>
+              ) : null}
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path
                   fillRule="evenodd"
@@ -131,8 +187,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => loginWithProvider("discord")}
-              className="animate-item flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-[#5865F2] px-5 py-4 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#4752C4]"
+              className="animate-item relative flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-[#5865F2] px-5 py-4 font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#4752C4]"
             >
+              {lastLoginProvider === "discord" ? (
+                <span className="absolute -top-2 right-3 rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700 shadow-sm dark:border-indigo-700 dark:bg-slate-950 dark:text-indigo-300">
+                  Last used
+                </span>
+              ) : null}
               <svg
                 className="h-5 w-5"
                 fill="currentColor"

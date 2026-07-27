@@ -5,12 +5,13 @@ import { createPortal } from "react-dom";
 import { ArrowRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../_lib/languageContext";
-import { useLearningLevel } from "../_lib/useLearningLevel";
+import { useLearningLevelState } from "../_lib/useLearningLevel";
 import {
   useLanguageLevels,
   type LanguageStanding,
 } from "../_lib/useLanguageLevels";
 import { LANGS, LANG_FLAGS, LANG_LABELS, type Lang } from "../_lib/languages";
+import { PLACEMENT_TEST_HREF } from "../_lib/placementTest";
 
 export default function LanguageSwitcher({
   open,
@@ -25,7 +26,8 @@ export default function LanguageSwitcher({
   const { language, setLanguage, learningLanguage, setLearningLanguage } =
     useLanguage();
   const [mounted, setMounted] = useState(false);
-  const level = useLearningLevel(learningLanguage);
+  const levelState = useLearningLevelState(learningLanguage);
+  const level = levelState.level;
   const { languages } = useLanguageLevels();
 
   const standingFor = (option: Lang): LanguageStanding | undefined =>
@@ -74,7 +76,7 @@ export default function LanguageSwitcher({
         aria-label={`Change languages (learning ${LANG_LABELS[learningLanguage]})`}
         title={
           level
-            ? `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]} · level ${level.level} (${level.masteredCount} words mastered)`
+            ? `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]} · level ${level.level} (${levelState.knownWords ?? level.masteredCount} words mastered)`
             : `${LANG_LABELS[language]} → ${LANG_LABELS[learningLanguage]}`
         }
         className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-lg leading-none shadow-sm transition hover:scale-105 ${
@@ -143,13 +145,15 @@ export default function LanguageSwitcher({
                 {/* The whole point of showing the levels together: a language you
                   have not started yet is one the placement test can still put you
                   into, and that offer expires the first time you answer anything
-                  in it. Said here rather than left to be discovered. */}
-                {languages && !standingFor(learningLanguage)?.started && (
+                  in it. Said here rather than left to be discovered. Switching to
+                  such a language puts the prompt up on the next page anyway, so
+                  this is the same door reached a step earlier. */}
+                {languages && standingFor(learningLanguage)?.canBePlaced && (
                   <button
                     type="button"
                     onClick={() => {
                       onOpenChange(false);
-                      router.push("/level-test?placement=1");
+                      router.push(PLACEMENT_TEST_HREF);
                     }}
                     className="w-full rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-xs font-bold text-blue-800 transition hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-200 dark:hover:bg-blue-950/70"
                   >

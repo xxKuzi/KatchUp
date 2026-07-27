@@ -43,7 +43,7 @@ const BOT_TARGET_CORRECT = 10;
 const BOT_QUESTION_COUNT = 30;
 // How long a wrong answer stays on screen with the right one highlighted.
 const WRONG_ANSWER_REVEAL_MS = 2000;
-const MATCH_HISTORY_KEY = "katchup-choose-one-multi-history-v1";
+const MATCH_HISTORY_KEY = "katchup-live-duel-history-v1";
 
 interface LiveMatchPayload {
   match: {
@@ -84,7 +84,7 @@ function shuffleArray<T>(items: T[]): T[] {
   return cloned;
 }
 
-export default function ChooseOneMultiplayerPlayPage() {
+export default function LiveDuelPlayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuthState();
@@ -752,11 +752,11 @@ export default function ChooseOneMultiplayerPlayPage() {
       params.set("settingsMode", settingsMode);
     }
 
-    router.push(`/games/choose-one-multiplayer?${params.toString()}`);
+    router.push(`/games/live-duel?${params.toString()}`);
   };
 
   const backToPregame = () => {
-    router.push("/games/choose-one-multiplayer");
+    router.push("/games/live-duel");
   };
 
   const rivalName =

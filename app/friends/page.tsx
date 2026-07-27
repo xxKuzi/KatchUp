@@ -86,8 +86,11 @@ export default function FriendsPage() {
   const router = useRouter();
   const { isSignedIn, isReady, session } = useAuthState();
   const { t, learningLanguage } = useLanguage();
-  const { level: learningLevel, status: levelStatus } =
-    useLearningLevelState(learningLanguage);
+  const {
+    level: learningLevel,
+    knownWords: learningKnownWords,
+    status: levelStatus,
+  } = useLearningLevelState(learningLanguage);
   const userKey = session?.user?.email ?? session?.user?.name ?? "player";
   const fullName = session?.user?.name ?? "You";
   const displayName = fullName.trim().split(/\s+/)[0] || "You";
@@ -557,7 +560,7 @@ export default function FriendsPage() {
                   </p>
                   <p className="truncate text-[0.65rem] font-semibold text-slate-500 dark:text-slate-400">
                     {learningLevel
-                      ? `${learningLevel.masteredCount} words mastered`
+                      ? `${learningKnownWords ?? learningLevel.masteredCount} words mastered`
                       : levelStatus === "signedOut"
                         ? "Sign in to see it"
                         : levelStatus === "error"

@@ -126,20 +126,19 @@ export default function ScoreRushPlayPage() {
       return;
     }
 
-    if (countdown === 0) {
-      runEndsAt.current = Date.now() + RUN_DURATION_MS;
-      questionStartedAt.current = Date.now();
-      const timeoutId = window.setTimeout(() => {
+    // Each number holds for a second; after "1" the run starts straight away,
+    // with no "GO!" beat in between.
+    const timeoutId = window.setTimeout(() => {
+      if (countdown <= 1) {
+        runEndsAt.current = Date.now() + RUN_DURATION_MS;
+        questionStartedAt.current = Date.now();
         setCountdown(null);
-      }, 500);
-      return () => window.clearTimeout(timeoutId);
-    }
-
-    const intervalId = window.setInterval(() => {
-      setCountdown((prev) => (prev !== null ? prev - 1 : null));
+      } else {
+        setCountdown(countdown - 1);
+      }
     }, 1000);
 
-    return () => window.clearInterval(intervalId);
+    return () => window.clearTimeout(timeoutId);
   }, [countdown]);
 
   useEffect(() => {
@@ -292,7 +291,7 @@ export default function ScoreRushPlayPage() {
             Get Ready
           </span>
           <h1 className="mt-4 text-9xl font-black tracking-tight text-white transition-all duration-300 transform scale-110">
-            {countdown === 0 ? "GO!" : countdown}
+            {countdown}
           </h1>
         </div>
       </div>

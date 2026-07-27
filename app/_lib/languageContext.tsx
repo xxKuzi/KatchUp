@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Translations, translationsForLang } from "./translations";
 import { detectBrowserLang, normalizeLang, type Lang } from "./languages";
+import { notifyOnboardingChanged } from "./onboardingEvents";
 
 interface LanguageContextType {
   // The UI language is also the user's native language ("from").
@@ -93,6 +94,11 @@ export function LanguageProvider({
     if (typeof window !== "undefined") {
       window.localStorage.setItem(LEARNING_LANGUAGE_STORAGE_KEY, lang);
     }
+    // Level is per language, and so is the placement that establishes it — so
+    // changing this is the one write that can turn a fully set-up player into
+    // one who owes a test. Announced rather than left to be noticed on the next
+    // page load, which is a page they would spend at an unmeasured level.
+    notifyOnboardingChanged();
   };
 
   const activeTranslations = translationsForLang(language);

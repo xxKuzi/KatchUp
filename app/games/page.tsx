@@ -74,7 +74,7 @@ export default function Games() {
           <div className="flex flex-col gap-8">
             <GameBanner
               name="Live Duel "
-              url="/games/choose-one-multiplayer"
+              url="/games/live-duel"
               img="flip_cards.png"
               tagline="Live 1v1 · Race to 10"
               description="Go head-to-head with another player in real time. Pick the right translation faster than your rival - first to 10 correct answers wins. No one online? Duel the bot instead."
@@ -96,7 +96,7 @@ export default function Games() {
             <span>Explore more</span>
             <TrendingUpDown className="h-7 w-7" />
           </div>
-          <div className="rounded-3xl border border-white/90 bg-white/85 p-6 shadow-lg shadow-black/15 ring-1 ring-white/70 dark:border-slate-600 dark:bg-slate-900/70 dark:shadow-slate-950/25 dark:ring-white/10 sm:p-8">
+          <div className="rounded-3xl border border-white/90 bg-white/85 shadow-lg shadow-black/15 ring-1 ring-white/70 dark:border-slate-600 dark:bg-slate-900/70 dark:shadow-slate-950/25 dark:ring-white/10">
             <Carousel />
           </div>
         </section>

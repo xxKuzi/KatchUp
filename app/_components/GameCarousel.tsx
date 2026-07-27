@@ -55,7 +55,7 @@ function GameCarousel() {
     },
     {
       name: "Live Duel",
-      url: "/games/choose-one-multiplayer",
+      url: "/games/live-duel",
       img: "flip_cards.png",
       color: "blue",
       description: "Duel an online opponent or the bot",
@@ -79,26 +79,27 @@ function GameCarousel() {
       {/* Scroll Buttons - Hidden on very small screens, visible on hover for desktop */}
       <button
         type="button"
-        className="absolute -left-4 top-1/2 z-20 hidden md:flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white/90 text-slate-700 shadow-md backdrop-blur transition-all disabled:opacity-0 sm:-left-6 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-200 hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700"
+        className="absolute left-0 top-1/2 z-20 hidden h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white/90 p-0 text-slate-700 shadow-md backdrop-blur transition-all disabled:opacity-0 md:flex lg:-left-12 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-200 hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700"
         onClick={() => scroll("left")}
         aria-label="Scroll left"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="block h-6 w-6 shrink-0" />
       </button>
 
       <button
         type="button"
-        className="absolute -right-4 top-1/2 z-20 hidden md:flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white/90 text-slate-700 shadow-md backdrop-blur transition-all disabled:opacity-0 sm:-right-6 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-200 hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700"
+        className="absolute right-0 top-1/2 z-20 hidden h-12 w-12 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white/90 p-0 text-slate-700 shadow-md backdrop-blur transition-all disabled:opacity-0 md:flex lg:-right-12 dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-200 hover:scale-105 hover:bg-slate-50 dark:hover:bg-slate-700"
         onClick={() => scroll("right")}
         aria-label="Scroll right"
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight className="block h-6 w-6 shrink-0" />
       </button>
 
-      {/* Overflow Container */}
+      {/* Keep the panel spacing inside the scroll track so the arrows can be
+          centered on the carousel's actual outer edges. */}
       <div
         ref={scrollContainerRef}
-        className="flex w-full snap-x snap-mandatory gap-6 overflow-x-auto pb-8 pt-4 scrollbar-hide"
+        className="flex w-full snap-x snap-mandatory gap-6 overflow-x-auto p-6 scrollbar-hide sm:p-8"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {cards.map((card, index) => (

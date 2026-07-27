@@ -27,7 +27,33 @@ export type LearningLevelStatus = "loading" | "signedOut" | "ready" | "error";
 
 export interface LearningLevelState {
   level: LevelProgress | null;
+  /**
+   * Words actually mastered, as opposed to the rung the ladder puts you on.
+   *
+   * The two come apart the moment anyone is placed: a C1 placement credits
+   * thousands of words toward the level without a single one of them having
+   * been studied, and reporting that number as "mastered" tells a brand-new
+   * account it has learned a vocabulary it has never seen. Null until known.
+   */
+  knownWords: number | null;
+  /** The head start a placement or level test granted, in words. */
+  wordFloor: number | null;
   status: LearningLevelStatus;
+}
+
+/**
+ * The part of the ladder position that was skipped rather than earned.
+ *
+ * Goes to zero once study catches up with the floor, which is the point at
+ * which there is nothing left to distinguish: from there on every word counted
+ * is a word learned.
+ */
+export function headStartWords(state: LearningLevelState): number {
+  if (state.knownWords === null || state.wordFloor === null) {
+    return 0;
+  }
+
+  return Math.max(0, state.wordFloor - state.knownWords);
 }
 
 /**
@@ -41,6 +67,8 @@ export function useLearningLevelState(
   const { data: session, status: sessionStatus } = useSession();
   const [state, setState] = useState<LearningLevelState>({
     level: null,
+    knownWords: null,
+    wordFloor: null,
     status: "loading",
   });
   const [reloadToken, setReloadToken] = useState(0);
@@ -58,7 +86,12 @@ export function useLearningLevelState(
     }
 
     if (sessionStatus !== "authenticated" || !session?.user?.id) {
-      setState({ level: null, status: "signedOut" });
+      setState({
+        level: null,
+        knownWords: null,
+        wordFloor: null,
+        status: "signedOut",
+      });
       return;
     }
 
@@ -69,7 +102,11 @@ export function useLearningLevelState(
         if (!res.ok) {
           throw new Error(`Level request failed (${res.status})`);
         }
-        return (await res.json()) as { masteredCount?: number };
+        return (await res.json()) as {
+          masteredCount?: number;
+          knownWords?: number;
+          wordFloor?: number;
+        };
       })
       .then((data) => {
         if (cancelled) {
@@ -77,12 +114,19 @@ export function useLearningLevelState(
         }
         setState({
           level: levelProgressFromMasteredCount(data.masteredCount ?? 0),
+          knownWords: data.knownWords ?? 0,
+          wordFloor: data.wordFloor ?? 0,
           status: "ready",
         });
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ level: null, status: "error" });
+          setState({
+            level: null,
+            knownWords: null,
+            wordFloor: null,
+            status: "error",
+          });
         }
       });
 

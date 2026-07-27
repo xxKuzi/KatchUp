@@ -6,7 +6,7 @@ import GamePage from "../_components/GamePage";
 import { LANG_LABELS, type CefrLevel } from "@/app/_lib/languages";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
-import { getPlayerProfile, PlayerProfile } from "../choose-one-multiplayer/_lib/playerProfile";
+import { getPlayerProfile, PlayerProfile } from "../live-duel/_lib/playerProfile";
 
 const RUN_HISTORY_KEY = "katchup-score-rush-history-v1";
 

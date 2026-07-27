@@ -15,7 +15,7 @@ interface Slide {
 const slides: Slide[] = [
   {
     name: "Live Duel",
-    url: "/games/choose-one-multiplayer",
+    url: "/games/live-duel",
     img: "flip_cards.png",
     tagline: "Live 1v1 · Race to 10",
     description:

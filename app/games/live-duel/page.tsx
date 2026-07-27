@@ -21,11 +21,11 @@ const DEFAULT_OPPONENTS = [
   { name: "PabloPulse", avatar: "https://i.pravatar.cc/100?img=66" },
 ];
 
-const MATCH_HISTORY_KEY = "katchup-choose-one-multi-history-v1";
+const MATCH_HISTORY_KEY = "katchup-live-duel-history-v1";
 // How long a found duel waits for both players to accept before it is dropped
 // and the players are put back in the lobby.
 const ACCEPT_WINDOW_S = 20;
-const MATCH_SETTINGS_KEY = "katchup-choose-one-multi-settings-v1";
+const MATCH_SETTINGS_KEY = "katchup-live-duel-settings-v1";
 
 type MatchSettings = "fair" | "personal";
 
@@ -46,7 +46,7 @@ interface MatchHistoryEntry {
   winner: "player" | "opponent" | "draw" | null;
 }
 
-const ChooseOneMultiplayerPage = () => {
+const LiveDuelPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -273,7 +273,7 @@ const ChooseOneMultiplayerPage = () => {
     // letting the join call fail as a generic "unavailable".
     if (isAuthReady && !isSignedIn) {
       router.push(
-        `/login?callbackUrl=${encodeURIComponent("/games/choose-one-multiplayer")}`,
+        `/login?callbackUrl=${encodeURIComponent("/games/live-duel")}`,
       );
       return;
     }
@@ -307,7 +307,7 @@ const ChooseOneMultiplayerPage = () => {
 
       if (response.status === 401) {
         router.push(
-          `/login?callbackUrl=${encodeURIComponent("/games/choose-one-multiplayer")}`,
+          `/login?callbackUrl=${encodeURIComponent("/games/live-duel")}`,
         );
         setMatchState("idle");
         return;
@@ -361,7 +361,7 @@ const ChooseOneMultiplayerPage = () => {
       params.set("startAt", String(startAt));
     }
 
-    router.push(`/games/choose-one-multiplayer/play?${params.toString()}`);
+    router.push(`/games/live-duel/play?${params.toString()}`);
   };
 
   // Both players have to say yes before either is sent to the play screen, and
@@ -523,7 +523,7 @@ const ChooseOneMultiplayerPage = () => {
       playerAvatar: profile?.avatar ?? "https://i.pravatar.cc/100?img=12",
     });
 
-    router.push(`/games/choose-one-multiplayer/play?${params.toString()}`);
+    router.push(`/games/live-duel/play?${params.toString()}`);
   };
 
   // "Play again" on a live duel comes back here with ?autostart=1, because a
@@ -541,7 +541,7 @@ const ChooseOneMultiplayerPage = () => {
     }
 
     autoStartHandled.current = true;
-    router.replace("/games/choose-one-multiplayer");
+    router.replace("/games/live-duel");
     void startFindingOpponent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthReady, profile, searchParams, settingsHydrated]);
@@ -779,4 +779,4 @@ const ChooseOneMultiplayerPage = () => {
   );
 };
 
-export default ChooseOneMultiplayerPage;
+export default LiveDuelPage;

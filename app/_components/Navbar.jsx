@@ -13,6 +13,7 @@ import {
   Users,
   Zap,
   Newspaper,
+  Heart,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -49,16 +50,18 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [energyPopoverOpen, setEnergyPopoverOpen] = useState(false);
   const [langModalOpen, setLangModalOpen] = useState(false);
+  const [donationPending, setDonationPending] = useState(false);
+  const [donationError, setDonationError] = useState("");
   const menuRef = useRef(null);
   const energyRef = useRef(null);
   const isSignedIn = status === "authenticated";
   const isHomePage = pathname === "/";
   // First-time-visitor onboarding: while signed out, the navbar is locked down
-  // to just Home/Games/Blog so new visitors get funneled into a free Score Rush
-  // round before browsing the rest of the app. The gate applies on every page,
-  // not only the landing page, because OnboardingGate bounces signed-out
-  // visitors off the locked routes — an unblurred link would only lead back
-  // to "/". It lifts once you're actually authenticated.
+  // to just Home/Games/Blog so new visitors get funneled through setting up and
+  // the placement test before browsing the rest of the app. The gate applies on
+  // every page, not only the landing page, because OnboardingGate bounces
+  // signed-out visitors off the locked routes — an unblurred link would only
+  // lead back to "/". It lifts once you're actually authenticated.
   const gateActive = !isSignedIn;
   const gatedItemClass = gateActive
     ? " pointer-events-none blur-[3px] opacity-50 select-none"
@@ -76,10 +79,11 @@ function Navbar() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   const handleNavigate = (href) => {
-    // While the onboarding gate is up, Games is the one unlocked destination —
-    // and reaching it means answering the setup questions first, so a signed-out
-    // visitor gets the language/level picker rather than the games index.
-    if (gateActive && href === "/games") {
+    // Games is behind setting up for everyone now, not only for visitors: a
+    // brand-new account has no level either, and pushing to /games would land on
+    // a page the setup prompt immediately covers. Asking first means the one
+    // press does the whole thing — prompt, test, or straight into a round.
+    if (href === "/games") {
       openModal();
       return;
     }
@@ -95,6 +99,29 @@ function Navbar() {
   const handleSignOut = async () => {
     setMenuOpen(false);
     await signOut({ callbackUrl: "/" });
+  };
+
+  const handleDonate = async () => {
+    setDonationPending(true);
+    setDonationError("");
+
+    try {
+      const response = await fetch("/api/donate", { method: "POST" });
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || "Unable to open the donation page.");
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      setDonationError(
+        error instanceof Error
+          ? error.message
+          : "Unable to open the donation page.",
+      );
+      setDonationPending(false);
+    }
   };
 
   useEffect(() => {
@@ -434,6 +461,28 @@ function Navbar() {
                     </div>
 
                     <ThemeToggle />
+
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={handleDonate}
+                        disabled={donationPending}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-400/70 bg-rose-500 px-4 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-rose-600 disabled:cursor-wait disabled:opacity-70 dark:border-rose-400 dark:bg-rose-500 dark:hover:bg-rose-400"
+                      >
+                        <Heart className="h-4 w-4 fill-current" />
+                        {donationPending
+                          ? t("navbar.openingDonation", "Opening Stripe…")
+                          : t("navbar.donate", "Donate")}
+                      </button>
+                      {donationError && (
+                        <p
+                          className="px-2 text-xs font-medium text-rose-600 dark:text-rose-400"
+                          role="alert"
+                        >
+                          {donationError}
+                        </p>
+                      )}
+                    </div>
 
                     {/* Auth specific items */}
                     {isSignedIn ? (

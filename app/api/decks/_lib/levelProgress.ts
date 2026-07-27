@@ -13,7 +13,19 @@ import { countKnownWordsForLanguage } from "./spacedRepetition";
 export async function getEffectiveMasteredCount(
   userId: string,
   language: string,
-): Promise<{ masteredCount: number; wordFloor: number; knownWords: number }> {
+): Promise<{
+  masteredCount: number;
+  wordFloor: number;
+  knownWords: number;
+  /**
+   * Whether a floor row exists at all, which is not the same question as whether
+   * it holds anything: a placement onto A1 is worth zero words, and reading that
+   * zero as "never placed" would put the same learner through the same test on
+   * every page load. The row is the record that the language was placed; the
+   * number in it is only how big a head start it came with.
+   */
+  placed: boolean;
+}> {
   const canonical = normalizeLang(language) ?? language.toLowerCase();
 
   const [knownWords, [floorRow]] = await Promise.all([
@@ -36,6 +48,7 @@ export async function getEffectiveMasteredCount(
     masteredCount: Math.max(knownWords, wordFloor),
     wordFloor,
     knownWords,
+    placed: Boolean(floorRow),
   };
 }
 
