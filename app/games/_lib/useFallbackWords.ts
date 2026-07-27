@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevelState } from "@/app/_lib/useLearningLevel";
+import { readSelfReportedLevel } from "@/app/_lib/selfReportedLevel";
 import type { CefrLevel } from "@/app/_lib/languages";
 import { fetchWordPairs } from "./wordPairs";
 
@@ -34,11 +35,29 @@ export interface FallbackWords {
 export function useFallbackWords(count = 60): FallbackWords {
   const { speak, learning } = useLanguagePair();
   const { level: learningLevel, status } = useLearningLevelState(learning);
+  // Signed out there are no mastered words to derive a level from, so the words
+  // come at whatever difficulty the visitor said they were starting from. That
+  // used to fall through to A1 for everyone, which meant someone who told us
+  // they were nearly fluent got a round of first words anyway — and a claim
+  // nothing ever checked, since the round held nothing that could disprove it.
+  //
+  // Read once when the hook mounts rather than on every render: grading the
+  // round writes a corrected level back, and a round that re-read it would
+  // rebuild itself out of new words at the moment it finished, taking its own
+  // results screen with it. The level a round was dealt at belongs to that
+  // round. Null on the server, where there is no storage to read.
+  const [selfReport] = useState<{ level: CefrLevel | null } | null>(() =>
+    typeof window === "undefined" ? null : { level: readSelfReportedLevel() },
+  );
+
   // The player sees a level number; the word pool still needs a difficulty.
-  const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
+  const level: CefrLevel =
+    learningLevel?.wordDifficulty ?? selfReport?.level ?? "A1";
   // Fetching before the level resolves would deal everyone an A1 round and then
-  // swap the words out from under them once their real level arrived.
-  const levelPending = status === "loading";
+  // swap the words out from under them once their real level arrived — which is
+  // just as true of the claimed level as of the earned one.
+  const levelPending =
+    status === "loading" || (status === "signedOut" && selfReport === null);
 
   // What the words on hand were fetched for. Loading is that not yet matching
   // what's being asked for, rather than a flag of its own — a flag would have to

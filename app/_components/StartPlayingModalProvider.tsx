@@ -7,6 +7,8 @@ import StartPlayingModal from "./StartPlayingModal";
 import { readChosenLanguagePair } from "../_lib/languageContext";
 import { levelProgressFromMasteredCount } from "../_lib/level";
 import { scoreRushHref } from "../games/_lib/scoreRushStart";
+import { hasAnonPlaysRemaining } from "../games/_lib/anonPlayGate";
+import { ONBOARDING_SIGN_UP_HREF } from "../games/_lib/onboardingRound";
 
 interface StartPlayingModalContextValue {
   openModal: () => void;
@@ -54,6 +56,14 @@ export function StartPlayingModalProvider({
   // whatever their account level says — so being asked again is just a form
   // standing between them and the round. They go straight into it instead.
   const openModal = useCallback(() => {
+    // Once the free round is spent there is nothing behind these questions to
+    // let anyone into, so asking them again would only be a form to fill in on
+    // the way to the same sign-up ask.
+    if (!session?.user?.id && !hasAnonPlaysRemaining()) {
+      router.push(ONBOARDING_SIGN_UP_HREF);
+      return;
+    }
+
     const pair = session?.user?.id ? readChosenLanguagePair() : null;
 
     if (!pair) {

@@ -17,7 +17,11 @@ import {
   type Lang,
 } from "../_lib/languages";
 import { hasAnonPlaysRemaining } from "../games/_lib/anonPlayGate";
-import { scoreRushHref } from "../games/_lib/scoreRushStart";
+import { ONBOARDING_ROUND_HREF } from "../games/_lib/onboardingRound";
+import {
+  readSelfReportedLevel,
+  saveSelfReportedLevel,
+} from "../_lib/selfReportedLevel";
 
 const LANGUAGE_STORAGE_KEY = "katchup-language";
 
@@ -77,7 +81,10 @@ export default function StartPlayingModal({
     );
     setNativeLanguage(stored ?? detectBrowserLang() ?? language);
     setLearningLanguageChoice(null);
-    setLevel("A1");
+    // A visitor who played a round and came back has had their claim graded
+    // against it, and reopening this on "Just starting" would throw that away
+    // and invite the same overshoot again.
+    setLevel(readSelfReportedLevel() ?? "A1");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -112,6 +119,9 @@ export default function StartPlayingModal({
 
     setLanguage(nativeLanguage);
     setLearningLanguage(learningLanguage);
+    // The round is built from this, and grades it — so it has to be on record
+    // before the round starts, not just carried in the link.
+    saveSelfReportedLevel(level);
     onOpenChange(false);
 
     if (!session?.user?.id && !hasAnonPlaysRemaining()) {
@@ -119,13 +129,7 @@ export default function StartPlayingModal({
       return;
     }
 
-    router.push(
-      scoreRushHref({
-        speak: nativeLanguage,
-        learning: learningLanguage,
-        level,
-      }),
-    );
+    router.push(ONBOARDING_ROUND_HREF);
   };
 
   if (!open || !mounted) {
@@ -151,7 +155,7 @@ export default function StartPlayingModal({
               Ready to play?
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Pick your languages and level, then jump into Score Rush.
+              Pick your languages and level, then jump into your first round.
             </p>
           </div>
           <button

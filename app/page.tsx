@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSession } from "@/lib/auth-client";
+import { useStartPlayingModal } from "./_components/StartPlayingModalProvider";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -430,6 +431,7 @@ export default function Home() {
   const container = useRef<HTMLDivElement>(null);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const { data: session } = useSession();
+  const { openModal } = useStartPlayingModal();
 
   useGSAP(
     () => {
@@ -786,9 +788,12 @@ export default function Home() {
                 </HeroButton>
               )}
 
+              {/* The setup questions are onboarding, so they are only asked of
+                  visitors who have not signed in. A signed-in player has an
+                  account that already answers them and goes to the games. */}
               <HeroButton
                 look={session ? "blue" : "dark"}
-                onClick={() => router.push("/games")}
+                onClick={session ? () => router.push("/games") : openModal}
               >
                 Start Playing
                 <span className="transition-transform duration-300 group-hover:translate-x-1">

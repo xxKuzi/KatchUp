@@ -13,6 +13,18 @@ import PackKeyCelebration, {
 import { TOPIC_LEVEL_COUNT, useTopicLevel } from "../_hooks/useTopicLevel";
 import { usePackCompleted } from "../_hooks/usePackCompleted";
 import { useFallbackWords } from "../_lib/useFallbackWords";
+import {
+  hasAnonPlaysRemaining,
+  recordAnonPlayUsed,
+} from "../_lib/anonPlayGate";
+import {
+  isOnboardingRound,
+  ONBOARDING_SIGN_UP_HREF,
+} from "../_lib/onboardingRound";
+import {
+  applySelfReportCorrection,
+  type SelfReportCorrection,
+} from "@/app/_lib/selfReportedLevel";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
 import { useVocabProgress } from "../_lib/useVocabProgress";
@@ -113,6 +125,21 @@ const OneOfThreePage = () => {
   const sessionMode =
     searchParams.get("mode") === "finish" ? "finish" : "practice";
 
+  // The one free round a signed-out visitor is sent here for, straight off the
+  // setup modal. Signing in ends it: someone who comes back through the sign-up
+  // link is a player with an account, and gets the ordinary round.
+  const onboarding = isOnboardingRound(searchParams) && isReady && !isSignedIn;
+
+  // Whether the free round was still going spare when this page was opened.
+  // Snapshotted rather than read live: finishing the round spends it, and a
+  // live read would replace the results screen with the sign-up wall the moment
+  // the last answer landed. Re-evaluated on the next mount, which is what makes
+  // the back button out of the sign-up page land here rather than on a second
+  // free round.
+  const [freeRoundAvailable] = useState(() =>
+    typeof window === "undefined" ? true : hasAnonPlaysRemaining(),
+  );
+
   const {
     topicId,
     level: safeLevel,
@@ -186,6 +213,19 @@ const OneOfThreePage = () => {
         : false,
     [session],
   );
+
+  // Coming back to the free round after it has been played — usually the back
+  // button off the sign-up page — meets the same ask rather than a second round.
+  if (onboarding && !freeRoundAvailable) {
+    return (
+      <DeckMessage
+        {...GATE}
+        title="You've used your free round"
+        body="Sign up to keep playing — your level and progress are saved from here on."
+        action={{ label: "Continue playing", onClick: signIn }}
+      />
+    );
+  }
 
   if (deckId) {
     if ((isReady && !isSignedIn) || deckSession.status === "unauthorized") {
@@ -265,6 +305,7 @@ const OneOfThreePage = () => {
       topicId={topicId}
       safeLevel={safeLevel}
       backHref={backHref}
+      onboarding={onboarding}
       // On the deck path mastery decides when a level is done — see the
       // `levelAlreadyMastered` effect above — so finishing a round no longer
       // marks it. Without a deck there is nothing else to go on.
@@ -291,6 +332,9 @@ interface OneOfThreeRoundProps {
   topicId: string;
   safeLevel: number;
   backHref: string;
+  /** The signed-out visitor's one free round: it grades their claimed level and
+   *  ends on the sign-up ask rather than on links they can't follow. */
+  onboarding: boolean;
   /** Marks the topic level done. Omitted on the deck path, where mastery does. */
   onComplete?: () => void;
   onResult?: (deckWordId: string, correct: boolean) => void;
@@ -307,6 +351,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     topicId,
     safeLevel,
     backHref,
+    onboarding,
     onComplete,
     onResult,
     checkLevelCleared,
@@ -323,7 +368,17 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
   const [levelCleared, setLevelCleared] = useState(false);
+  const [correction, setCorrection] = useState<SelfReportCorrection | null>(
+    null,
+  );
   const retriesUsed = useRef(new Map<string, number>());
+  // How each word went the *first* time it was asked. The round hands a missed
+  // word back after showing the answer, so the score on the results card can
+  // reach 100% off words that were only right on the second look. That is the
+  // point of the retries and stays how the lesson is scored — but it is no
+  // basis for judging whether someone overstated their level, which is exactly
+  // the case of half the words coming back wrong. Graded on the first look.
+  const firstAttempts = useRef(new Map<string, boolean>());
 
   const currentQuestion = queue[questionIndex] ?? null;
   // Scored over the words of the round, not over how many times they were asked,
@@ -351,6 +406,23 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
       setLessonPassed(passed);
       setLevelCleared(checkLevelCleared?.(nextCorrectIds) ?? false);
       setIsFinished(true);
+
+      // The free round is spent on finishing it, not on starting it: a visitor
+      // who opened the round and walked away has been taught nothing, and
+      // shouldn't come back to a sign-up wall. Grading their claimed level is
+      // the same moment — this round is the only evidence there is.
+      if (onboarding) {
+        recordAnonPlayUsed();
+
+        const rightFirstTime = [...firstAttempts.current.values()].filter(
+          Boolean,
+        ).length;
+        const firstLookPercent =
+          totalQuestions > 0
+            ? Math.round((rightFirstTime / totalQuestions) * 100)
+            : 0;
+        setCorrection(applySelfReportCorrection(firstLookPercent));
+      }
 
       if (passed && topicId && totalQuestions > 0) {
         onComplete?.();
@@ -392,6 +464,10 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     const isCorrect = option === currentQuestion.correctOption;
     setSelectedOption(option);
 
+    if (!firstAttempts.current.has(currentQuestion.wordId)) {
+      firstAttempts.current.set(currentQuestion.wordId, isCorrect);
+    }
+
     // Both paths record. Off-deck the word id is the concept id, so an answer
     // here counts toward the word itself just as a deck round would.
     onResult?.(currentQuestion.wordId, isCorrect);
@@ -428,8 +504,9 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const showNextLevel =
     Boolean(deckId && topicId) && levelCleared && safeLevel < TOPIC_LEVEL_COUNT;
 
-  const headerLabel =
-    sessionMode === "finish"
+  const headerLabel = onboarding
+    ? "Free round"
+    : sessionMode === "finish"
       ? "Finish Round"
       : topicId
         ? `Level ${safeLevel}`
@@ -540,45 +617,73 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                 )}
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                {/* Once the pack is done this is the way to its key, so it
-                    trades the plain dark button for the gold one. */}
-                <Link
-                  href={backHref}
-                  className={
-                    packCompleted
-                      ? `${PACK_COMPLETE_BUTTON_CLASS} inline-flex items-center gap-2`
-                      : "rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
-                  }
-                >
-                  {packCompleted && (
-                    <>
-                      <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md animate-[legendaryShimmer_2.6s_linear_infinite]" />
-                      <KeyRound size={16} />
-                    </>
+              {/* The free round ends here. Every other way on from this screen
+                  leads somewhere a signed-out visitor can't go — the decks and
+                  topics behind it are gated, and replaying would hand out the
+                  free round again — so the ask is the only thing offered. */}
+              {onboarding && (
+                <div className="mt-6 flex flex-col items-center gap-3">
+                  {correction?.changed && (
+                    <p className="max-w-sm rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                      You picked a higher starting point than that round backed
+                      up, so we&apos;ve eased it down. You&apos;ll start on
+                      words that fit and climb from there.
+                    </p>
                   )}
-                  {topicId ? "Back to topic" : "Back to decks"}
-                </Link>
-                {deckId && topicId && (
-                  <NextLevelButton
-                    deckId={deckId}
-                    topicId={topicId}
-                    level={safeLevel}
-                    cleared={levelCleared}
-                  />
-                )}
-                <button
-                  type="button"
-                  onClick={onReplay}
-                  className={
-                    showNextLevel
-                      ? "rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                      : "rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
-                  }
-                >
-                  {showNextLevel ? "Replay lesson" : "Continue practicing"}
-                </button>
-              </div>
+                  <Link
+                    href={ONBOARDING_SIGN_UP_HREF}
+                    className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-500"
+                  >
+                    Continue playing
+                  </Link>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Free round done — sign up to keep going and save your
+                    progress.
+                  </p>
+                </div>
+              )}
+
+              {!onboarding && (
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  {/* Once the pack is done this is the way to its key, so it
+                    trades the plain dark button for the gold one. */}
+                  <Link
+                    href={backHref}
+                    className={
+                      packCompleted
+                        ? `${PACK_COMPLETE_BUTTON_CLASS} inline-flex items-center gap-2`
+                        : "rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                    }
+                  >
+                    {packCompleted && (
+                      <>
+                        <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md animate-[legendaryShimmer_2.6s_linear_infinite]" />
+                        <KeyRound size={16} />
+                      </>
+                    )}
+                    {topicId ? "Back to topic" : "Back to decks"}
+                  </Link>
+                  {deckId && topicId && (
+                    <NextLevelButton
+                      deckId={deckId}
+                      topicId={topicId}
+                      level={safeLevel}
+                      cleared={levelCleared}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={onReplay}
+                    className={
+                      showNextLevel
+                        ? "rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        : "rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+                    }
+                  >
+                    {showNextLevel ? "Replay lesson" : "Continue practicing"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
