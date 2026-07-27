@@ -43,6 +43,33 @@ export interface GetWordPairsOptions {
 
 const DEFAULT_COUNT = 10;
 const MAX_COUNT = 100;
+/** How many extra rows to draw so the same-answer filter can still fill a round. */
+const OVERFETCH = 3;
+const MAX_OVERFETCH = 300;
+
+/**
+ * Keeps one word per answer.
+ *
+ * German writes both "big" and "large" as `groß`, and anger, fury and rage all
+ * as `Wut`. Two such words in one round is not a harder round, it is a broken
+ * one: Guess Match would show two identical tiles with no way to tell which
+ * English word each belongs to, and a multiple-choice round would offer the
+ * same word as two different options, one of them marked wrong.
+ *
+ * Both words stay in the corpus and both can still be taught — just never in
+ * the same round. Rows arrive shuffled, so which one survives is random.
+ */
+export function dedupeByAnswer<T extends { answer: string }>(rows: T[]): T[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = row.answer.trim().toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
 
 /** Which language ends up on each side, given the game's direction. */
 export function resolveDirection(
@@ -84,31 +111,39 @@ export async function getWordPairs({
 
   const limit = Math.min(Math.max(1, count), MAX_COUNT);
   const isRecognition = direction === "recognition";
+  const answerSide = isRecognition ? speakSide : learnSide;
+  const promptSide = isRecognition ? learnSide : speakSide;
 
   const rows = await db
     .select({
       conceptId: learnSide.conceptId,
-      prompt: isRecognition ? learnSide.text : speakSide.text,
-      answer: isRecognition ? speakSide.text : learnSide.text,
+      prompt: promptSide.text,
+      answer: answerSide.text,
       level: learnSide.level,
     })
     .from(learnSide)
     .innerJoin(speakSide, eq(speakSide.conceptId, learnSide.conceptId))
     .where(and(...filters))
     .orderBy(sql`random()`)
-    .limit(limit);
+    // Over-fetch so the same-answer filter below still has enough to fill the
+    // round. Costs nothing worth measuring: it is the same round trip, and the
+    // rows are a few hundred bytes each.
+    .limit(Math.min(limit * OVERFETCH, MAX_OVERFETCH));
 
-  const pairs = rows as WordPair[];
+  const pairs = dedupeByAnswer(rows as WordPair[]).slice(0, limit);
 
   // A thin level would make a round repetitive, so widen to the whole language
   // rather than handing back a stunted set.
   if (level && pairs.length < limit) {
     const topUp = await getWordPairs({ speak, learning, direction, count: limit });
     const seen = new Set(pairs.map((pair) => pair.conceptId));
+    const seenAnswers = new Set(pairs.map((pair) => pair.answer.toLowerCase()));
     for (const pair of topUp) {
       if (pairs.length >= limit) break;
-      if (!seen.has(pair.conceptId)) {
+      const answer = pair.answer.toLowerCase();
+      if (!seen.has(pair.conceptId) && !seenAnswers.has(answer)) {
         seen.add(pair.conceptId);
+        seenAnswers.add(answer);
         pairs.push(pair);
       }
     }

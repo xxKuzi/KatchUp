@@ -24,25 +24,51 @@ export interface LearnedWordsPage {
 async function fetchDeckItems(userId: string): Promise<LearnedWordItem[]> {
   const rows = await db
     .select({
-      id: userWordStats.deckWordId,
-      native: deckWords.native,
-      foreign: deckWords.foreign,
+      // The stat row, not the deck word: a word can outlive the deck it was
+      // learned in, and the id is only ever used as a list key.
+      id: userWordStats.id,
+      vocabKey: userWordStats.vocabKey,
+      nativeLang: userWordStats.nativeLang,
+      foreignLang: userWordStats.foreignLang,
+      // Off the stat row, so a word survives its deck being edited or deleted.
+      native: userWordStats.nativeText,
+      foreign: userWordStats.foreignText,
       timesCorrect: userWordStats.timesCorrect,
       known: userWordStats.known,
       updatedAt: userWordStats.updatedAt,
       deckName: decks.name,
     })
     .from(userWordStats)
-    .innerJoin(deckWords, eq(deckWords.id, userWordStats.deckWordId))
-    .innerJoin(decks, eq(decks.id, deckWords.deckId))
+    // Provenance only: names the deck the word was first practised in, and does
+    // not decide whether the word is listed.
+    .leftJoin(deckWords, eq(deckWords.id, userWordStats.deckWordId))
+    .leftJoin(decks, eq(decks.id, deckWords.deckId))
     .where(eq(userWordStats.userId, userId));
 
-  return rows.map((row) => ({
+  // One entry per word, not per deck row: the same word practised in two decks
+  // used to be listed twice. Mastery wins, then the more-practised copy.
+  const byIdentity = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    if (!row.native || !row.foreign) {
+      continue;
+    }
+    const key = `${row.nativeLang}|${row.foreignLang}|${row.vocabKey ?? row.id}`;
+    const existing = byIdentity.get(key);
+    if (
+      !existing ||
+      (row.known && !existing.known) ||
+      (row.known === existing.known && row.timesCorrect > existing.timesCorrect)
+    ) {
+      byIdentity.set(key, row);
+    }
+  }
+
+  return [...byIdentity.values()].map((row) => ({
     id: row.id,
-    native: row.native,
-    foreign: row.foreign,
+    native: row.native as string,
+    foreign: row.foreign as string,
     source: "deck",
-    sourceLabel: row.deckName,
+    sourceLabel: row.deckName ?? "",
     // Anything short of mastery is still in rotation — it was never a word the
     // user chose to skip, so the label says so.
     status: row.known ? "learned" : "practicing",

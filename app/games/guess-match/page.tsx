@@ -16,6 +16,7 @@ import {
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useAuthState } from "@/app/_lib/auth";
 import DeckRoundProgress from "../_components/DeckRoundProgress";
 
@@ -87,6 +88,7 @@ const GuessMatchPage = () => {
   const [attempt, setAttempt] = useState(0);
 
   const deckSession = useDeckSession(deckId || null, sessionMode);
+  const vocabProgress = useVocabProgress();
 
   const allWords = useFallbackWords();
   const roundSeed = deckId
@@ -162,7 +164,10 @@ const GuessMatchPage = () => {
       safeLevel={safeLevel}
       language={language}
       isEnergyReview={isEnergyReview}
-      onResult={deckId ? deckSession.recordResult : undefined}
+      // Off-deck the word id *is* the concept id, so the same answer counts.
+      // This game has no energy-practice fetch — even an energy round draws from
+      // the corpus — so there is no deck-word id here to guard against.
+      onResult={deckId ? deckSession.recordResult : vocabProgress.record}
       onReplay={() => {
         if (deckId) {
           deckSession.reload();

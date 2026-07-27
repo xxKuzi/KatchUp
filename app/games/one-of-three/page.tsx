@@ -15,6 +15,7 @@ import { usePackCompleted } from "../_hooks/usePackCompleted";
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { useVocabProgress } from "../_lib/useVocabProgress";
 import { predictLevelCleared } from "../_lib/levelCompletion";
 import { useAuthState } from "@/app/_lib/auth";
 
@@ -123,6 +124,7 @@ const OneOfThreePage = () => {
   const [attempt, setAttempt] = useState(0);
 
   const deckSession = useDeckSession(deckId || null, sessionMode, deckLevel);
+  const vocabProgress = useVocabProgress();
 
   // Nothing left in this level's slice means it is already fully mastered, so
   // the level should read as done rather than staying "Pending" forever.
@@ -250,7 +252,9 @@ const OneOfThreePage = () => {
       // `levelAlreadyMastered` effect above — so finishing a round no longer
       // marks it. Without a deck there is nothing else to go on.
       onComplete={deckId ? undefined : markComplete}
-      onResult={deckId ? deckSession.recordResult : undefined}
+      // Off-deck the word id *is* the concept id, so the same answer counts —
+      // it just lands on the shared word rather than on a deck row.
+      onResult={deckId ? deckSession.recordResult : vocabProgress.record}
       checkLevelCleared={deckId ? checkLevelCleared : undefined}
       onReplay={() => {
         if (deckId) {
@@ -371,9 +375,9 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     const isCorrect = option === currentQuestion.correctOption;
     setSelectedOption(option);
 
-    if (deckId) {
-      onResult?.(currentQuestion.wordId, isCorrect);
-    }
+    // Both paths record. Off-deck the word id is the concept id, so an answer
+    // here counts toward the word itself just as a deck round would.
+    onResult?.(currentQuestion.wordId, isCorrect);
 
     const nextCorrectIds = isCorrect
       ? markCorrect(currentQuestion.wordId)

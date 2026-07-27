@@ -1,6 +1,11 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { deckWords, decks, userTopicProgress, userWordStats } from "@/db/schema";
+import {
+  deckWords,
+  decks,
+  userDeckWordClears,
+  userTopicProgress,
+} from "@/db/schema";
 import {
   createDefaultTopicProgress,
   DEFAULT_UNLOCKED,
@@ -18,9 +23,9 @@ import {
  * object, so this reads rows into that shape and writes it back out.
  *
  * What the browser is allowed to assert is deliberately narrow. Cleared levels
- * and finished packs are **derived** from `user_word_stats` — the same counts the
- * topic page renders — because a state object sent by a browser can say anything,
- * and a pack marked finished by hand would mint a key. The crown is set only by
+ * and finished packs are **derived** from `user_deck_word_clears` — what the
+ * player actually answered inside the pack — because a state object sent by a
+ * browser can say anything, and a pack marked finished by hand would mint a key. The crown is set only by
  * `awardLegendary`, off a graded round. That leaves the browser owning two
  * harmless things: which packs it spent keys on, and whether the key popup has
  * been seen.
@@ -38,12 +43,13 @@ function rowToProgress(row: typeof userTopicProgress.$inferSelect): TopicProgres
 }
 
 /**
- * Which levels of each topic pack the user's word stats say are cleared.
+ * Which levels of each topic pack the player has cleared inside the pack.
  *
  * A level is cleared when every word in its slice has been answered right at
- * least once — `isLevelCleared` on the client, `buildSummary` on the deck side,
- * the same bar. One query covers all five packs: the alternative is five deck
- * reads plus five stat reads on every sync.
+ * least once *in that deck* — `isLevelCleared` on the client, `buildSummary` on
+ * the deck side, the same bar. Knowing a word from somewhere else counts toward
+ * mastery but not toward the ladder, so keys stay earned. One query covers all
+ * five packs: the alternative is five deck reads plus five stat reads per sync.
  *
  * Returns an empty map when the packs for this language were never seeded, so a
  * missing deck can only fail to *add* progress, never take any away.
@@ -57,16 +63,18 @@ async function deriveClearedLevels(
       topicKey: decks.topicKey,
       wordId: deckWords.id,
       orderIndex: deckWords.orderIndex,
-      known: userWordStats.known,
-      timesCorrect: userWordStats.timesCorrect,
+      timesCorrect: userDeckWordClears.timesCorrect,
     })
     .from(decks)
     .innerJoin(deckWords, eq(deckWords.deckId, decks.id))
+    // Deck-scoped on purpose. Mastery is shared across decks and games, but a
+    // pack level is only cleared by answering its words *in the pack* — else
+    // playing from the games hub would hand out keys for packs never opened.
     .leftJoin(
-      userWordStats,
+      userDeckWordClears,
       and(
-        eq(userWordStats.deckWordId, deckWords.id),
-        eq(userWordStats.userId, userId),
+        eq(userDeckWordClears.deckWordId, deckWords.id),
+        eq(userDeckWordClears.userId, userId),
       ),
     )
     .where(
@@ -84,7 +92,7 @@ async function deriveClearedLevels(
       continue;
     }
     const words = byTopic.get(row.topicKey) ?? [];
-    words.push({ cleared: Boolean(row.known) || (row.timesCorrect ?? 0) > 0 });
+    words.push({ cleared: (row.timesCorrect ?? 0) > 0 });
     byTopic.set(row.topicKey, words);
   }
 

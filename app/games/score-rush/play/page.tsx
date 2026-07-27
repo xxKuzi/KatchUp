@@ -12,9 +12,16 @@ import {
   type CefrLevel,
 } from "@/app/_lib/languages";
 import { buildOptions, fetchWordPairs, shuffle, type WordPair } from "../../_lib/wordPairs";
+import { useVocabProgress } from "../../_lib/useVocabProgress";
 
 interface RushQuestion {
+  /** Unique per slot in the queue — the same word recurs as the pool recycles. */
   id: string;
+  /**
+   * The word itself, kept separately from `id`. Progress is recorded against
+   * this, and `id` carries a queue-position suffix that would not resolve.
+   */
+  conceptId: string;
   prompt: string;
   options: string[];
   correctOption: string;
@@ -42,6 +49,7 @@ function buildQuestionQueue(pool: WordPair[], count: number): RushQuestion[] {
     .slice(0, Math.min(count, pool.length))
     .map((pair, index) => ({
       id: `${pair.conceptId}-${index}`,
+      conceptId: pair.conceptId,
       prompt: pair.prompt,
       options: buildOptions(pair, pool),
       correctOption: pair.answer,
@@ -65,6 +73,9 @@ export default function ScoreRushPlayPage() {
   const playerName = searchParams.get("playerName") ?? "You";
   const playerAvatar =
     searchParams.get("playerAvatar") ?? "https://i.pravatar.cc/100?img=12";
+
+  // Score Rush takes its pair from the URL, not the stored one.
+  const vocabProgress = useVocabProgress({ speak, learning });
 
   const [wordPool, setWordPool] = useState<WordPair[]>([]);
   const [queue, setQueue] = useState<RushQuestion[]>([]);
@@ -240,6 +251,11 @@ export default function ScoreRushPlayPage() {
     setAnswered((previous) => previous + 1);
 
     const isCorrect = selectedOption === currentQuestion.correctOption;
+    // Speed drill, but still study: an answer here counts toward the word like
+    // it would anywhere else. The queue recycles the same pool until the clock
+    // runs out, so a word can come up several times — the buffer keys by word,
+    // which makes a run count each one once.
+    vocabProgress.record(currentQuestion.conceptId, isCorrect);
     if (isCorrect) {
       setCorrect((previous) => previous + 1);
       setScore((previous) => previous + 100 + speedBonus);

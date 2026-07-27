@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "deck_words_deck_id_text_key" ON "deck_words" USING btree ("deck_id",lower("native"),lower("foreign"));

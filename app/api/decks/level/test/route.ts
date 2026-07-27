@@ -17,6 +17,7 @@ import {
   getEffectiveMasteredCount,
   raiseWordFloor,
 } from "../../_lib/levelProgress";
+import { recordConceptAttempts } from "../../_lib/spacedRepetition";
 
 /**
  * The level-up exam.
@@ -202,13 +203,23 @@ export async function POST(request: NextRequest) {
     speak,
   );
 
-  const correct = answers.filter((entry) => {
+  const graded = answers.map((entry) => {
     const expected = truth.get(entry.conceptId);
-    return (
-      typeof expected === "string" &&
-      expected.trim().toLowerCase() === entry.answer.trim().toLowerCase()
-    );
-  }).length;
+    return {
+      conceptId: entry.conceptId,
+      correct:
+        typeof expected === "string" &&
+        expected.trim().toLowerCase() === entry.answer.trim().toLowerCase(),
+    };
+  });
+
+  // The exam is practice too. It used to move the level number without
+  // recording a single word, so passing it left the learner's vocabulary
+  // looking untouched — and its questions carry real concept ids on both the
+  // way out and the way back.
+  await recordConceptAttempts(session.user.id, speak, learning, graded);
+
+  const correct = graded.filter((entry) => entry.correct).length;
 
   const total = answers.length;
   const passed = correct / total >= LEVEL_TEST_PASS_RATIO;

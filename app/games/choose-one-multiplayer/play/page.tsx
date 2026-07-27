@@ -12,6 +12,7 @@ import {
   type Lang,
 } from "@/app/_lib/languages";
 import { buildOptions, fetchWordPairs } from "../../_lib/wordPairs";
+import { useVocabProgress } from "../../_lib/useVocabProgress";
 import { pusherClient } from "@/lib/realtime/pusher-client";
 import { spendEnergy } from "@/app/_lib/energy";
 import { useAuthState } from "@/app/_lib/auth";
@@ -102,6 +103,9 @@ export default function ChooseOneMultiplayerPlayPage() {
     modeParam === "bot" || modeParam === "async" ? "bot" : "live";
   const levelParam = searchParams.get("level")?.toUpperCase();
   const level: CefrLevel = isCefrLevel(levelParam) ? levelParam : "A1";
+  // The duel takes its pair from the URL, not the stored one.
+  const vocabProgress = useVocabProgress({ speak, learning });
+
   const playerId = searchParams.get("playerId") ?? "player-local";
   const playerName = searchParams.get("playerName") ?? "You";
   const playerAvatar =
@@ -602,6 +606,13 @@ export default function ChooseOneMultiplayerPlayPage() {
     const isCorrect = selectedOption === currentQuestion.correctOption;
     const nextIndex = questionIndex + 1;
     const nextCorrect = isCorrect ? playerCorrect + 1 : playerCorrect;
+
+    // Bot rounds are graded here, so this is where they count toward the word;
+    // its id is already the concept id. Live duels are graded on the server and
+    // recorded there instead — the browser is not trusted with a duel result.
+    if (mode === "bot") {
+      vocabProgress.record(currentQuestion.id, isCorrect);
+    }
 
     if (isCorrect) {
       setPlayerCorrect(nextCorrect);

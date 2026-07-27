@@ -1,0 +1,2 @@
+ALTER TABLE "match_questions" ADD COLUMN "concept_id" uuid;--> statement-breakpoint
+ALTER TABLE "match_questions" ADD CONSTRAINT "match_questions_concept_id_word_concepts_id_fk" FOREIGN KEY ("concept_id") REFERENCES "public"."word_concepts"("id") ON DELETE set null ON UPDATE no action;

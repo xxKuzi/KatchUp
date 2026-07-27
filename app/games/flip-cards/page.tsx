@@ -26,6 +26,7 @@ import {
   LEGENDARY_REVIEW_SIZE,
 } from "../_lib/deckSessionClient";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { usePackCompleted } from "../_hooks/usePackCompleted";
 import { useAuthState } from "@/app/_lib/auth";
@@ -94,6 +95,9 @@ const FlipCardsPage = () => {
   const [learning, setLearning] = useState<Lang>(defaultLearning);
   // Bumped to pull a fresh set of cards for the same pair.
   const [reshuffleToken, setReshuffleToken] = useState(0);
+  // This screen can switch the language being learned, so the round records
+  // under the pair on screen rather than the stored one.
+  const vocabProgress = useVocabProgress({ speak, learning });
   const learningLevel = useLearningLevel(learning);
   // The player sees a level number; the word pool still needs a difficulty.
   const level: CefrLevel = learningLevel?.wordDifficulty ?? "A1";
@@ -289,12 +293,17 @@ const FlipCardsPage = () => {
         // A right swipe is a claim, not a tested answer — worth two practices,
         // so the second swipe is what earns mastery.
         deckSession.recordResult(currentCard.id, true, CONFIDENT_ANSWER_STEPS);
+      } else {
+        // Off-deck the card id *is* the concept id, so the same claim counts.
+        vocabProgress.record(currentCard.id, true, CONFIDENT_ANSWER_STEPS);
       }
     } else {
       setPractice((previous) => [...previous, currentCard]);
       if (deckId) {
         // "Still learning" → a wrong attempt so the word resurfaces.
         deckSession.recordResult(currentCard.id, false);
+      } else {
+        vocabProgress.record(currentCard.id, false);
       }
     }
 

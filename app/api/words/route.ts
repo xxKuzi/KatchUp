@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isCefrLevel, normalizeLang } from "@/app/_lib/languages";
+import { auth } from "@/auth";
 import { getWordPairs, type Direction } from "./_lib/wordPool";
+import { getPersonalWordPairs } from "./_lib/personalPool";
 
 /**
  * Vocabulary for the games.
  *
- * Deliberately unauthenticated: anonymous visitors get a free Score Rush round
- * before signing in, so this must work without a session. Vocabulary is static
- * reference data, not user data.
+ * Works without a session: visitors get a round before signing in, so a missing
+ * session is a normal case rather than an error.
+ *
+ * With one, the round is personalised — a few words carried over from the last
+ * session, some due for review, the rest new — so play builds on itself instead
+ * of re-drawing at random every time. See `getPersonalWordPairs`.
  *
  *   GET /api/words?speak=de&learning=en&direction=recognition&level=A1&count=10
  *
@@ -55,13 +60,29 @@ export async function GET(request: NextRequest) {
   const countParam = Number(searchParams.get("count"));
   const count = Number.isFinite(countParam) && countParam > 0 ? countParam : 10;
 
-  const words = await getWordPairs({
-    speak,
-    learning,
-    direction,
-    level: isCefrLevel(level) ? level : undefined,
-    count,
-  });
+  // Signed in, the round is built from what this player already knows: a few
+  // words carried over from last time, some due for review, the rest new.
+  // Signed out it stays a plain random draw — that path only has to serve the
+  // single round played before signing in.
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  const words = userId
+    ? await getPersonalWordPairs({
+        userId,
+        speak,
+        learning,
+        direction,
+        level: isCefrLevel(level) ? level : undefined,
+        count,
+      })
+    : await getWordPairs({
+        speak,
+        learning,
+        direction,
+        level: isCefrLevel(level) ? level : undefined,
+        count,
+      });
 
   return NextResponse.json(
     { speak, learning, direction, level: level ?? null, words },

@@ -1,0 +1,1 @@
+CREATE INDEX "user_word_stats_user_id_foreign_lang_last_seen_idx" ON "user_word_stats" USING btree ("user_id","foreign_lang","last_seen_at");

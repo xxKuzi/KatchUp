@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -111,6 +112,13 @@ export const matchQuestions = pgTable("match_questions", {
   prompt: text("prompt").notNull(),
   options: json("options").notNull(),
   correctOption: text("correct_option").notNull(),
+  // Which word the question is about. Duels are graded on the server, so the
+  // only way an answer can count toward the word is if the row remembers it —
+  // the question text alone cannot be turned back into a concept. Null for
+  // questions built from a deck word the corpus does not cover.
+  conceptId: uuid("concept_id").references(() => wordConcepts.id, {
+    onDelete: "set null",
+  }),
 });
 
 export const matchAnswers = pgTable("match_answers", {
@@ -187,15 +195,38 @@ export const deckWords = pgTable(
       .references(() => decks.id, { onDelete: "cascade" }),
     native: text("native").notNull(),
     foreign: text("foreign").notNull(),
+    // The corpus entry this word was copied from, when there is one. A deck word
+    // used to be text and nothing else, so the same word in two decks was two
+    // unrelated learnings; this is what lets progress key on the word itself.
+    // Null for free text a user typed or the generator invented — those still
+    // get an identity, just a text-derived one.
+    conceptId: uuid("concept_id").references(() => wordConcepts.id, {
+      onDelete: "set null",
+    }),
     orderIndex: integer("order_index").notNull().default(0),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => ({
     deckIdx: index("deck_words_deck_id_idx").on(table.deckId),
+    conceptIdx: index("deck_words_concept_id_idx").on(table.conceptId),
+    // One row per word per deck. Two decks holding the same word is fine — they
+    // resolve to one identity and share its progress — but two rows inside one
+    // deck would make the deck read as longer than it is, shift its level
+    // windows, and leave both rows competing for a single stat row.
+    deckWordUnique: uniqueIndex("deck_words_deck_id_text_key").on(
+      table.deckId,
+      sql`lower(${table.native})`,
+      sql`lower(${table.foreign})`,
+    ),
   }),
 );
 
-// Per-user spaced-repetition stats for a single deck word (Leitner box + counts).
+// Per-user spaced-repetition stats for one vocabulary item (Leitner box + counts).
+//
+// These used to be keyed on `deck_word_id`, which made the same word in two
+// decks two unrelated learnings: the level counted it twice and mastering it in
+// one deck left the other still drilling it. The identity columns below carry
+// that anchor instead — see `vocabIdentity.ts`.
 export const userWordStats = pgTable(
   "user_word_stats",
   {
@@ -203,9 +234,31 @@ export const userWordStats = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    deckWordId: uuid("deck_word_id")
-      .notNull()
-      .references(() => deckWords.id, { onDelete: "cascade" }),
+    // Provenance, not identity: which deck row first created this stat, kept for
+    // labelling. Null once that deck word is gone, and `set null` rather than
+    // `cascade` because deleting one deck must not destroy progress the user
+    // earned on the same word elsewhere.
+    deckWordId: uuid("deck_word_id").references(() => deckWords.id, {
+      onDelete: "set null",
+    }),
+    // The corpus entry, when the word has one. Null for free text.
+    conceptId: uuid("concept_id").references(() => wordConcepts.id, {
+      onDelete: "set null",
+    }),
+    // Canonical language codes ("de", not "german"), so the identity is stable
+    // against the legacy spellings still sitting in `decks.foreign_lang`.
+    nativeLang: text("native_lang"),
+    foreignLang: text("foreign_lang"),
+    // Normalised texts. Diacritics are preserved deliberately: Czech být/byt are
+    // different words, and folding them would merge two learnings for good.
+    nativeKey: text("native_key"),
+    foreignKey: text("foreign_key"),
+    // "c:<conceptId>" when corpus-backed, else "t:<nativeKey>|<foreignKey>".
+    vocabKey: text("vocab_key"),
+    // Display copies, so a row learned in free play renders without needing a
+    // deck word to join to.
+    nativeText: text("native_text"),
+    foreignText: text("foreign_text"),
     box: integer("box").notNull().default(0),
     streak: integer("streak").notNull().default(0),
     timesSeen: integer("times_seen").notNull().default(0),
@@ -217,10 +270,60 @@ export const userWordStats = pgTable(
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => ({
-    userDeckWordUnique: uniqueIndex(
-      "user_word_stats_user_id_deck_word_id_key",
-    ).on(table.userId, table.deckWordId),
     userIdx: index("user_word_stats_user_id_idx").on(table.userId),
+    // One row per word per user, whichever decks it happens to live in. The old
+    // key was (user, deck word), which is what let the same word be learned
+    // twice; this is the invariant that replaces it.
+    identityUnique: uniqueIndex("user_word_stats_identity_key").on(
+      table.userId,
+      table.nativeLang,
+      table.foreignLang,
+      table.vocabKey,
+    ),
+    // Provenance is no longer unique, but is still probed for deck labels.
+    deckWordIdx: index("user_word_stats_deck_word_id_idx").on(table.deckWordId),
+    // Serves the mastered-word count that drives the CEFR level.
+    knownIdx: index("user_word_stats_user_id_foreign_lang_known_idx").on(
+      table.userId,
+      table.foreignLang,
+      table.known,
+    ),
+    // Serves the free-play round builder: which words were seen last session,
+    // and which are due to come back round again.
+    lastSeenIdx: index("user_word_stats_user_id_foreign_lang_last_seen_idx").on(
+      table.userId,
+      table.foreignLang,
+      table.lastSeenAt,
+    ),
+  }),
+);
+
+// Which deck words a user has actually answered *inside that deck*.
+//
+// Knowing a word and clearing a pack level are different questions. Mastery is
+// per word, shared across every deck and every game — otherwise the same word
+// gets drilled in three places. Pack progress has to stay per deck, or playing
+// from the games hub would silently clear topic levels and mint keys for packs
+// the player never opened. So the ladder reads this, and only deck rounds
+// write it.
+export const userDeckWordClears = pgTable(
+  "user_deck_word_clears",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deckWordId: uuid("deck_word_id")
+      .notNull()
+      .references(() => deckWords.id, { onDelete: "cascade" }),
+    timesCorrect: integer("times_correct").notNull().default(0),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userDeckWordUnique: uniqueIndex(
+      "user_deck_word_clears_user_id_deck_word_id_key",
+    ).on(table.userId, table.deckWordId),
+    userIdx: index("user_deck_word_clears_user_id_idx").on(table.userId),
   }),
 );
 

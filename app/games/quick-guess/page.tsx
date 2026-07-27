@@ -17,6 +17,7 @@ import { useFallbackWords } from "../_lib/useFallbackWords";
 import { CONFIDENT_ANSWER_STEPS } from "../_lib/deckSessionClient";
 import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useAuthState } from "@/app/_lib/auth";
 import DeckRoundProgress from "../_components/DeckRoundProgress";
 
@@ -95,6 +96,7 @@ const QuickGuessPage = () => {
   const [knownWords, setKnownWords] = useState<PracticeWord[]>([]);
 
   const deckSession = useDeckSession(deckId || null, sessionMode);
+  const vocabProgress = useVocabProgress();
 
   // Fetch the user's known words from the DB for energy-practice.
   useEffect(() => {
@@ -184,14 +186,26 @@ const QuickGuessPage = () => {
       safeLevel={safeLevel}
       language={language}
       isEnergyReview={isEnergyReview}
-      onResult={deckId ? deckSession.recordResult : undefined}
+      // Off-deck the word id *is* the concept id, so the same answer counts.
+      onResult={
+        deckId
+          ? deckSession.recordResult
+          : // The energy round replays words the player already owns, and its ids
+            // are deck words rather than concepts — nothing new to record.
+            isEnergyReview
+            ? undefined
+            : vocabProgress.record
+      }
       // "I already know this" is the same claim as swiping a flip card right, so
       // it earns the same two practices rather than mastery on the spot.
       onKnown={
         deckId
           ? (deckWordId: string) =>
               deckSession.recordResult(deckWordId, true, CONFIDENT_ANSWER_STEPS)
-          : undefined
+          : isEnergyReview
+            ? undefined
+            : (conceptId: string) =>
+                vocabProgress.record(conceptId, true, CONFIDENT_ANSWER_STEPS)
       }
       onReplay={() => {
         if (deckId) {
@@ -302,7 +316,9 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
 
     const nextCorrect = correctCount + (wasCorrect ? 1 : 0);
 
-    if (currentWord && deckId) {
+    // Both paths record. Off-deck the word id is the concept id, so an answer
+    // here counts toward the word itself just as a deck round would.
+    if (currentWord) {
       onResult?.(currentWord.id, wasCorrect);
     }
 
@@ -497,7 +513,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Correct answers: {correctCount}/{totalWords}
                 </p>
-                {deckId && onKnown && (
+                {onKnown && (
                   <button
                     type="button"
                     onClick={handleKnowIt}

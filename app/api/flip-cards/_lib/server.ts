@@ -13,9 +13,16 @@ import {
 } from "@/db/schema";
 import { eq, and, or, isNull, asc, desc, ne, inArray } from "drizzle-orm";
 import { listDecksForUser, getDeckForUser } from "@/app/api/decks/_lib/deckStore";
+import { recordConceptAttempts } from "@/app/api/decks/_lib/spacedRepetition";
 
 export interface MatchQuestionPayload {
   id: string;
+  /**
+   * The word behind the question, when it came from the corpus. Carried through
+   * to the stored row so a graded answer can count toward the word — the server
+   * cannot recover it from the question text afterwards.
+   */
+  conceptId: string | null;
   prompt: string;
   options: string[];
   correctOption: string;
@@ -111,6 +118,7 @@ function toQuestions(
 
     return {
       id: pair.conceptId ?? `${idPrefix}-${idx}-${Math.random()}`,
+      conceptId: pair.conceptId ?? null,
       prompt: pair.prompt,
       correctOption: pair.answer,
       options: shuffleArray([...wrong, pair.answer]),
@@ -371,6 +379,7 @@ export async function tryMatch(
         prompt: question.prompt,
         options: question.options,
         correctOption: question.correctOption,
+        conceptId: question.conceptId,
       })),
     ),
   );
@@ -664,6 +673,17 @@ export async function submitLiveAnswer(params: {
     isCorrect,
     responseMs: params.responseMs,
   });
+
+  // A duel is still practice: the answer counts toward the word like it would
+  // in any other game. Recorded here rather than from the client because the
+  // duel is graded on the server — there is nothing to trust the browser with.
+  const nativeLang = normalizeLang(match.nativeLang);
+  const foreignLang = normalizeLang(match.language);
+  if (question.conceptId && nativeLang && foreignLang) {
+    await recordConceptAttempts(params.userId, nativeLang, foreignLang, [
+      { conceptId: question.conceptId, correct: isCorrect },
+    ]);
+  }
 
   const nextProgress = player.progress + 1;
   const nextCorrectCount = isCorrect
