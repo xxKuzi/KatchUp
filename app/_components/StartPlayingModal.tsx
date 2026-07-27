@@ -14,6 +14,7 @@ import {
   type Lang,
 } from "../_lib/languages";
 import { PLACEMENT_TEST_HREF } from "../_lib/placementTest";
+import { useLanguageLevels } from "../_lib/useLanguageLevels";
 
 const LANGUAGE_STORAGE_KEY = "katchup-language";
 
@@ -33,6 +34,7 @@ const LANGUAGE_STORAGE_KEY = "katchup-language";
 export default function StartPlayingModal({ open }: { open: boolean }) {
   const router = useRouter();
   const { language, setLanguage, setLearningLanguage } = useLanguage();
+  const { languages } = useLanguageLevels();
   const [mounted, setMounted] = useState(false);
   const [nativeLanguage, setNativeLanguage] = useState<Lang>(language);
   // Deliberately unset: the learning language is the one real choice here, so
@@ -68,6 +70,41 @@ export default function StartPlayingModal({ open }: { open: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !languages || readChosenLanguagePair()) {
+      return;
+    }
+
+    const stored = normalizeLang(
+      window.localStorage.getItem(LANGUAGE_STORAGE_KEY),
+    );
+    const native = stored ?? detectBrowserLang() ?? language;
+    const existing = languages.filter(
+      (standing) =>
+        standing.learning !== native && standing.canBePlaced === false,
+    );
+
+    // The account already answers both questions when it has progress in one
+    // learning language. Restore that language on a new browser and let its
+    // saved level drive the games immediately; a returning B2 learner should
+    // never have to press a button labelled "Take the placement test".
+    if (existing.length === 1) {
+      const learning = existing[0].learning;
+      setNativeLanguage(native);
+      setLearningLanguageChoice(learning);
+      setLanguage(native);
+      setLearningLanguage(learning);
+      router.replace("/games");
+    }
+  }, [
+    language,
+    languages,
+    open,
+    router,
+    setLanguage,
+    setLearningLanguage,
+  ]);
+
   // A dialog nothing can be done behind should not have a page scrolling behind
   // it either — otherwise the content it is blocking is still there to be read.
   useEffect(() => {
@@ -98,6 +135,18 @@ export default function StartPlayingModal({ open }: { open: boolean }) {
 
     setLanguage(nativeLanguage);
     setLearningLanguage(learningLanguage);
+
+    const standing = languages?.find(
+      (entry) => entry.learning === learningLanguage,
+    );
+
+    // Accounts with existing progress have already been placed. This also
+    // covers accounts with several active languages, where choosing which one
+    // to restore cannot safely be automatic.
+    if (standing?.canBePlaced === false) {
+      router.push("/games");
+      return;
+    }
 
     // Everyone setting up a language is placed by sitting the test, signed in or
     // not: a claim of A1 is no more checkable than a claim of C1, and someone
@@ -142,6 +191,9 @@ export default function StartPlayingModal({ open }: { open: boolean }) {
             <div className="grid grid-cols-3 gap-2">
               {learningOptions.map((option) => {
                 const active = option === learningLanguage;
+                const standing = languages?.find(
+                  (entry) => entry.learning === option,
+                );
                 return (
                   <button
                     key={option}
@@ -157,6 +209,11 @@ export default function StartPlayingModal({ open }: { open: boolean }) {
                       {LANG_FLAGS[option]}
                     </span>
                     <span>{LANG_LABELS[option]}</span>
+                    {standing?.canBePlaced === false && (
+                      <span className="text-[0.6rem] font-bold leading-none text-slate-500 dark:text-slate-400">
+                        Lv {standing.level} · {standing.band}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -170,7 +227,15 @@ export default function StartPlayingModal({ open }: { open: boolean }) {
           disabled={!learningLanguage}
           className="mt-7 w-full cursor-pointer rounded-2xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:bg-blue-500 dark:hover:bg-blue-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
         >
-          {learningLanguage ? "Take the placement test" : "Pick a language to learn"}
+          {learningLanguage
+            ? languages?.find(
+                (entry) => entry.learning === learningLanguage,
+              )?.canBePlaced === false
+              ? `Continue at ${languages.find(
+                  (entry) => entry.learning === learningLanguage,
+                )?.band}`
+              : "Take the placement test"
+            : "Pick a language to learn"}
         </button>
 
         {/* Not an escape hatch — a returning player with an account still has to

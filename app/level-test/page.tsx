@@ -165,6 +165,14 @@ export default function LevelTestPage() {
       const body = await response.json();
 
       if (!response.ok) {
+        // A returning learner can arrive here with a stale placement URL (for
+        // example, after signing into an account that already has progress).
+        // The account's existing level wins; a closed placement is therefore a
+        // route away from this one-time test, not an error screen with no exit.
+        if (placement && response.status === 409) {
+          router.replace("/games");
+          return;
+        }
         throw new Error(body?.error ?? "Could not start the test");
       }
 
@@ -177,7 +185,14 @@ export default function LevelTestPage() {
     } finally {
       setLoading(false);
     }
-  }, [language, learningLanguage, endpoint, cancelAutoAdvance]);
+  }, [
+    language,
+    learningLanguage,
+    endpoint,
+    placement,
+    router,
+    cancelAutoAdvance,
+  ]);
 
   useEffect(() => {
     // Wait for the session to resolve — acting on the not-yet-known signed-out
@@ -237,6 +252,13 @@ export default function LevelTestPage() {
       const body = (await response.json()) as TestResult & { error?: string };
 
       if (!response.ok) {
+        // Progress may have been claimed or recorded in another tab while this
+        // paper was open. Honor that standing instead of trapping the learner
+        // on a placement the server has correctly closed.
+        if (placement && response.status === 409) {
+          router.replace("/games");
+          return;
+        }
         throw new Error(body?.error ?? "Could not grade the test");
       }
 

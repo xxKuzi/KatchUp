@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import {
 } from "../_lib/useLanguageLevels";
 import { LANGS, LANG_FLAGS, LANG_LABELS, type Lang } from "../_lib/languages";
 import { PLACEMENT_TEST_HREF } from "../_lib/placementTest";
+import { notifyOnboardingChanged } from "../_lib/onboardingEvents";
 
 export default function LanguageSwitcher({
   open,
@@ -29,14 +30,26 @@ export default function LanguageSwitcher({
   const levelState = useLearningLevelState(learningLanguage);
   const level = levelState.level;
   const { languages } = useLanguageLevels();
+  const learningChanged = useRef(false);
 
   const standingFor = (option: Lang): LanguageStanding | undefined =>
     languages?.find((entry) => entry.learning === option);
+  const selectedStanding = standingFor(learningLanguage);
+  const needsPlacement = selectedStanding?.canBePlaced === true;
+
+  const close = useCallback(() => {
+    onOpenChange(false);
+    if (learningChanged.current) {
+      learningChanged.current = false;
+      notifyOnboardingChanged();
+    }
+  }, [onOpenChange]);
 
   // Keep the two languages distinct: picking the other side's value swaps them.
   const handleSetSpeak = (option: Lang) => {
     if (option === learningLanguage) {
-      setLearningLanguage(language);
+      learningChanged.current = true;
+      setLearningLanguage(language, { notifyOnboarding: false });
     }
     setLanguage(option);
   };
@@ -45,7 +58,11 @@ export default function LanguageSwitcher({
     if (option === language) {
       setLanguage(learningLanguage);
     }
-    setLearningLanguage(option);
+    learningChanged.current = true;
+    // Keep this dialog in control while the learner is choosing. Broadcasting
+    // here used to open the mandatory setup dialog on top of this one as soon
+    // as an unstarted language was clicked, visibly replacing the layout.
+    setLearningLanguage(option, { notifyOnboarding: false });
   };
 
   useEffect(() => {
@@ -59,13 +76,13 @@ export default function LanguageSwitcher({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onOpenChange(false);
+        close();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onOpenChange]);
+  }, [close, open]);
 
   return (
     <>
@@ -99,7 +116,7 @@ export default function LanguageSwitcher({
           >
             <div
               className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm"
-              onClick={() => onOpenChange(false)}
+              onClick={close}
             />
 
             <div className="relative my-auto w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
@@ -115,7 +132,7 @@ export default function LanguageSwitcher({
                 </div>
                 <button
                   type="button"
-                  onClick={() => onOpenChange(false)}
+                  onClick={close}
                   aria-label="Close"
                   className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 >
@@ -142,33 +159,22 @@ export default function LanguageSwitcher({
                   standingFor={standingFor}
                 />
 
-                {/* The whole point of showing the levels together: a language you
-                  have not started yet is one the placement test can still put you
-                  into, and that offer expires the first time you answer anything
-                  in it. Said here rather than left to be discovered. Switching to
-                  such a language puts the prompt up on the next page anyway, so
-                  this is the same door reached a step earlier. */}
-                {languages && standingFor(learningLanguage)?.canBePlaced && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onOpenChange(false);
-                      router.push(PLACEMENT_TEST_HREF);
-                    }}
-                    className="w-full rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-xs font-bold text-blue-800 transition hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-200 dark:hover:bg-blue-950/70"
-                  >
-                    New to {LANG_LABELS[learningLanguage]} here — take the
-                    placement test
-                  </button>
-                )}
               </div>
 
               <button
                 type="button"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  if (needsPlacement) {
+                    learningChanged.current = false;
+                    onOpenChange(false);
+                    router.push(PLACEMENT_TEST_HREF);
+                    return;
+                  }
+                  close();
+                }}
                 className="mt-7 w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
               >
-                Done
+                {needsPlacement ? "Take the placement test" : "Done"}
               </button>
             </div>
           </div>,

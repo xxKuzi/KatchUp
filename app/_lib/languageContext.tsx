@@ -10,7 +10,10 @@ interface LanguageContextType {
   language: Lang;
   setLanguage: (lang: Lang) => void;
   learningLanguage: Lang;
-  setLearningLanguage: (lang: Lang) => void;
+  setLearningLanguage: (
+    lang: Lang,
+    options?: { notifyOnboarding?: boolean },
+  ) => void;
   t: (key: string, defaultValue?: string) => string;
   translations: Translations;
 }
@@ -89,7 +92,10 @@ export function LanguageProvider({
     }
   };
 
-  const setLearningLanguage = (lang: Lang) => {
+  const setLearningLanguage = (
+    lang: Lang,
+    options?: { notifyOnboarding?: boolean },
+  ) => {
     setLearningLanguageState(lang);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(LEARNING_LANGUAGE_STORAGE_KEY, lang);
@@ -98,7 +104,9 @@ export function LanguageProvider({
     // changing this is the one write that can turn a fully set-up player into
     // one who owes a test. Announced rather than left to be noticed on the next
     // page load, which is a page they would spend at an unmeasured level.
-    notifyOnboardingChanged();
+    if (options?.notifyOnboarding !== false) {
+      notifyOnboardingChanged();
+    }
   };
 
   const activeTranslations = translationsForLang(language);
