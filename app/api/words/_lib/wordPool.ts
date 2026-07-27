@@ -135,7 +135,12 @@ export async function getWordPairs({
   // A thin level would make a round repetitive, so widen to the whole language
   // rather than handing back a stunted set.
   if (level && pairs.length < limit) {
-    const topUp = await getWordPairs({ speak, learning, direction, count: limit });
+    const topUp = await getWordPairs({
+      speak,
+      learning,
+      direction,
+      count: limit,
+    });
     const seen = new Set(pairs.map((pair) => pair.conceptId));
     const seenAnswers = new Set(pairs.map((pair) => pair.answer.toLowerCase()));
     for (const pair of topUp) {
@@ -213,6 +218,37 @@ export async function getTranslationsForConcepts(
     );
 
   return new Map(rows.map((row) => [row.conceptId, row.text]));
+}
+
+/**
+ * The difficulty each concept carries in one language.
+ *
+ * The placement test needs this at grading time: it tallies answers by band, and
+ * which band a question belonged to has to come from the corpus rather than from
+ * whatever the client says it was sitting.
+ */
+export async function getLevelsForConcepts(
+  conceptIds: string[],
+  lang: Lang,
+): Promise<Map<string, CefrLevel>> {
+  if (conceptIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({
+      conceptId: conceptTranslations.conceptId,
+      level: conceptTranslations.level,
+    })
+    .from(conceptTranslations)
+    .where(
+      and(
+        eq(conceptTranslations.lang, lang),
+        inArray(conceptTranslations.conceptId, conceptIds.slice(0, MAX_COUNT)),
+      ),
+    );
+
+  return new Map(rows.map((row) => [row.conceptId, row.level as CefrLevel]));
 }
 
 /** How many concepts a pair has available — used to validate a selection. */

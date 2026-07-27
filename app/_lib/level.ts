@@ -53,6 +53,56 @@ export const LEVEL_THRESHOLDS: number[] = (() => {
 export const LEVEL_TEST_PASS_RATIO = 0.9;
 export const LEVEL_TEST_QUESTION_COUNT = 10;
 
+/**
+ * The placement test, sat once when a language is set up.
+ *
+ * It asks the same questions of everyone and spans every band, because a test
+ * built from one band can only ever confirm that band — someone who walks
+ * through an A1 round has proved nothing about A2, and the whole point of
+ * placing a learner is to find the ceiling rather than the floor. Three
+ * questions a band, and a band counts as cleared at two of them: one unlucky
+ * guess should not decide where somebody starts, and three is enough to make
+ * guessing your way up unlikely.
+ */
+export const PLACEMENT_QUESTIONS_PER_BAND = 3;
+export const PLACEMENT_BAND_PASS = 2;
+export const PLACEMENT_QUESTION_COUNT =
+  CEFR_LEVELS.length * PLACEMENT_QUESTIONS_PER_BAND;
+
+/**
+ * Where a placement test lands someone: the highest band they cleared that also
+ * has the band below it cleared.
+ *
+ * Graded by band rather than on a total, because twelve out of fifteen is a
+ * different learner depending on which three were missed — the answer wanted here
+ * is "you have this much", not "you scored this much".
+ *
+ * Two bands in a row rather than an unbroken run from the bottom. An unbroken run
+ * reads better but is brittle at three questions a band: one odd word in A2 would
+ * send someone who then answered every B1, B2 and C1 question correctly back to
+ * A1, which is plainly the wrong reading of that paper. Requiring the band below
+ * as corroboration keeps that learner where they belong while still making a
+ * fluke expensive — clearing one band by guesswork is unlikely, and clearing two
+ * adjacent bands that way is not worth designing around.
+ */
+export function placementBandFromCorrectByBand(
+  correctByBand: Partial<Record<CefrLevel, number>>,
+): CefrLevel {
+  const cleared = (band: CefrLevel | undefined) =>
+    band !== undefined && (correctByBand[band] ?? 0) >= PLACEMENT_BAND_PASS;
+
+  for (let index = CEFR_LEVELS.length - 1; index >= 1; index -= 1) {
+    if (cleared(CEFR_LEVELS[index]) && cleared(CEFR_LEVELS[index - 1])) {
+      return CEFR_LEVELS[index];
+    }
+  }
+
+  // Nothing corroborated: everyone starts at the bottom, which is where a
+  // beginner belongs and costs a strong learner only the levels they will pass
+  // through in an evening.
+  return CEFR_LEVELS[0];
+}
+
 export interface LevelProgress {
   /** 1 to MAX_LEVEL. */
   level: number;

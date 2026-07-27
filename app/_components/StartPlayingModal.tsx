@@ -63,12 +63,13 @@ export default function StartPlayingModal({
   // with. Each option also says which level a new account starts on.
   const [level, setLevel] = useState<CefrLevel>("A1");
 
-  // Everyone is asked where they are starting from, but the answer buys
-  // different things. A visitor's only picks their free round's words, and the
-  // round grades it on the way out. A player's is a claim on an account, which
-  // cannot be handed a band for saying so — anything above the starting band
-  // sends them to the test for it, and they keep it only if they pass.
   const signedIn = Boolean(session?.user?.id);
+  // Only a visitor is asked where they are starting from, and only because their
+  // answer does something: it picks the words for the free round, which then
+  // grades it. A player is placed by the test instead, so asking them would be
+  // collecting an answer nothing reads — and a question whose answer is ignored
+  // is worse than one that was never put.
+  const askLevel = !signedIn;
 
   // Every language is learnable now, including English — the only one excluded
   // is whichever you just said you already speak.
@@ -128,17 +129,12 @@ export default function StartPlayingModal({
     setLearningLanguage(learningLanguage);
     onOpenChange(false);
 
-    // A player has an account to put the claim on, so it has to be earned rather
-    // than taken at their word. Claiming the starting band asks for nothing, so
-    // there is nothing to prove and they go straight to the games; anything above
-    // it goes to the test for that band, which the server only offers on a
-    // language they have never answered a question in.
+    // Everyone setting up a language is placed by sitting the test, including
+    // anyone who would have said they were a beginner: a claim of A1 is no more
+    // checkable than a claim of C1, and someone who quietly knows more than they
+    // let on should be found out by the test rather than started at the bottom.
     if (signedIn) {
-      router.push(
-        level === "A1"
-          ? "/games"
-          : `/level-test?claim=${encodeURIComponent(level)}`,
-      );
+      router.push("/level-test?placement=1");
       return;
     }
 
@@ -178,7 +174,7 @@ export default function StartPlayingModal({
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {signedIn
-                ? "We never asked you this. Say where you're starting from — above the first band, you'll take a short test to prove it."
+                ? "We never asked you this. Pick the pair and a short test will place you — do well and you start higher."
                 : "Pick your languages and level, then jump into your first round."}
             </p>
           </div>
@@ -227,33 +223,35 @@ export default function StartPlayingModal({
             </div>
           </div>
 
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
-              How much do you know?
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {STARTING_POINTS.map((option) => {
-                const active = option.difficulty === level;
-                return (
-                  <button
-                    key={option.difficulty}
-                    type="button"
-                    onClick={() => setLevel(option.difficulty)}
-                    className={`flex flex-col items-start gap-0.5 rounded-2xl border px-3 py-3 text-left text-xs font-semibold transition ${
-                      active
-                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-300"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    <span>{option.label}</span>
-                    <span className="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">
-                      {option.hint}
-                    </span>
-                  </button>
-                );
-              })}
+          {askLevel && (
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
+                How much do you know?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {STARTING_POINTS.map((option) => {
+                  const active = option.difficulty === level;
+                  return (
+                    <button
+                      key={option.difficulty}
+                      type="button"
+                      onClick={() => setLevel(option.difficulty)}
+                      className={`flex flex-col items-start gap-0.5 rounded-2xl border px-3 py-3 text-left text-xs font-semibold transition ${
+                        active
+                          ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-300"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span>{option.label}</span>
+                      <span className="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400">
+                        {option.hint}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <button
@@ -264,11 +262,9 @@ export default function StartPlayingModal({
         >
           {!learningLanguage
             ? "Pick a language to learn"
-            : !signedIn
-              ? "Play"
-              : level === "A1"
-                ? "Start learning"
-                : `Prove ${level} and start`}
+            : signedIn
+              ? "Take the placement test"
+              : "Play"}
         </button>
       </div>
     </div>,

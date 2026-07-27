@@ -16,24 +16,33 @@ interface TestQuestion {
   options: string[];
 }
 
+/**
+ * Two exams share this page, because the paper looks the same either way — a
+ * prompt, four options, no feedback until the end. Only what is on the line
+ * differs, so the promotion fields are absent on a placement and vice versa.
+ */
 interface TestPayload {
-  currentLevel: number;
-  targetLevel: number;
-  /** Mastered-word count that passing lands you on. */
-  wordsAtTargetLevel: number;
-  /** The band being sat for, when this is a placement rather than a promotion. */
-  placementBand: string | null;
+  /** Promotion only: the level being sat for and what it normally costs. */
+  currentLevel?: number;
+  targetLevel?: number;
+  wordsAtTargetLevel?: number;
+  /** Placement only: how many of a band's questions must land to clear it. */
+  bandPass?: number;
+  questionsPerBand?: number;
   questions: TestQuestion[];
 }
 
 interface TestResult {
   correct: number;
   total: number;
-  passed: boolean;
-  previousLevel: number;
   level: number;
   masteredCount: number;
-  placementBand: string | null;
+  /** Promotion only. */
+  passed?: boolean;
+  previousLevel?: number;
+  /** Placement only: where the answers put the learner. */
+  band?: string;
+  correctByBand?: Record<string, number>;
 }
 
 const PASS_PERCENT = Math.round(LEVEL_TEST_PASS_RATIO * 100);
@@ -43,10 +52,13 @@ export default function LevelTestPage() {
   const searchParams = useSearchParams();
   const { isSignedIn, isReady } = useAuthState();
   const { language, learningLanguage } = useLanguage();
-  // Set when a learner has just told the setup modal they already have some of
-  // this language. It puts that band on the line instead of the next level up,
-  // and the server refuses it on any language they have already answered in.
-  const claim = searchParams.get("claim");
+  // Setting a language up sends the learner here to be placed. The server is the
+  // one that decides whether they are still entitled to it — this only picks
+  // which exam to ask for.
+  const placement = searchParams.get("placement") === "1";
+  const endpoint = placement
+    ? "/api/decks/level/placement"
+    : "/api/decks/level/test";
 
   const [test, setTest] = useState<TestPayload | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -64,11 +76,8 @@ export default function LevelTestPage() {
     setIndex(0);
 
     try {
-      // The claim is a request, not a grant: the server decides whether this
-      // account is still entitled to sit for a band, and ignores it otherwise.
       const response = await fetch(
-        `/api/decks/level/test?speak=${language}&learning=${learningLanguage}` +
-          (claim ? `&claim=${encodeURIComponent(claim)}` : ""),
+        `${endpoint}?speak=${language}&learning=${learningLanguage}`,
       );
       const body = await response.json();
 
@@ -85,7 +94,7 @@ export default function LevelTestPage() {
     } finally {
       setLoading(false);
     }
-  }, [language, learningLanguage, claim]);
+  }, [language, learningLanguage, endpoint]);
 
   useEffect(() => {
     // Wait for the session to resolve — acting on the not-yet-known signed-out
@@ -113,13 +122,12 @@ export default function LevelTestPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/decks/level/test", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           speak: language,
           learning: learningLanguage,
-          claim,
           answers: test.questions.map((question) => ({
             conceptId: question.conceptId,
             answer: answers[question.conceptId] ?? "",
@@ -133,8 +141,9 @@ export default function LevelTestPage() {
       }
 
       setResult(body as TestResult);
-      if (body.passed) {
-        // Repaint the navbar badge with the new level.
+      // A placement always moves the level — even A1 is a level to be put on —
+      // so the badge repaints either way rather than only on a pass.
+      if (body.passed || placement) {
         notifyLevelChanged();
       }
     } catch (cause) {
@@ -174,7 +183,7 @@ export default function LevelTestPage() {
             </span>
             <div>
               <h1 className="text-2xl font-black text-slate-900 dark:text-white">
-                {test?.placementBand ? "Prove your level" : "Level test"}
+                {placement ? "Where do you start?" : "Level test"}
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 {LANG_LABELS[learningLanguage]} · answer in{" "}
@@ -207,17 +216,31 @@ export default function LevelTestPage() {
             <div className="mt-8">
               <p
                 className={`text-4xl font-black ${
-                  result.passed ? "text-emerald-500" : "text-rose-500"
+                  result.passed || placement
+                    ? "text-emerald-500"
+                    : "text-rose-500"
                 }`}
               >
                 {result.correct}/{result.total}
               </p>
-              {result.passed ? (
+              {/* A placement has no pass or fail — it has an answer. Being put at
+                  A1 is the correct outcome for a beginner, not a failure, so it
+                  is not dressed as one. */}
+              {placement ? (
                 <>
                   <p className="mt-3 text-lg font-bold text-slate-900 dark:text-white">
-                    {result.placementBand
-                      ? `${result.placementBand} it is — you start at level ${result.level}.`
-                      : `Passed — welcome to level ${result.level}!`}
+                    You start at {result.band} — level {result.level}.
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {result.level > 1
+                      ? `That is a head start of ${result.masteredCount} words. Everything above it is climbed a level at a time.`
+                      : "Right at the beginning, which is where most people start. The first levels go quickly."}
+                  </p>
+                </>
+              ) : result.passed ? (
+                <>
+                  <p className="mt-3 text-lg font-bold text-slate-900 dark:text-white">
+                    Passed — welcome to level {result.level}!
                   </p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     You jumped from level {result.previousLevel} to level{" "}
@@ -226,33 +249,20 @@ export default function LevelTestPage() {
                 </>
               ) : (
                 <>
-                  {/* A failed placement is not a failed promotion: nothing was
-                      lost, because nothing had been earned yet. It is also the
-                      only attempt, so the copy must not invite a retry. */}
                   <p className="mt-3 text-lg font-bold text-slate-900 dark:text-white">
-                    {result.placementBand
-                      ? `That didn't hold up — ${PASS_PERCENT}% was needed to start at ${result.placementBand}.`
-                      : `Not quite — ${PASS_PERCENT}% is needed to move up.`}
+                    Not quite — {PASS_PERCENT}% is needed to move up.
                   </p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {result.placementBand ? (
-                      <>
-                        You start at level {result.level} like everyone else —
-                        the words you know will come quickly, and the test for
-                        each level is there whenever you want it.
-                      </>
-                    ) : (
-                      <>
-                        You&apos;re still level {result.level}. Practise a
-                        little and try again.
-                      </>
-                    )}
+                    You&apos;re still level {result.level}. Practise a little
+                    and try again.
                   </p>
                 </>
               )}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {!result.passed && (
+                {/* Placement is sat once, so no retake — the server would refuse
+                    it anyway now that the answers are on record. */}
+                {!result.passed && !placement && (
                   <button
                     type="button"
                     onClick={() => void loadTest()}
@@ -277,16 +287,28 @@ export default function LevelTestPage() {
             <div className="mt-8">
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                 <span>
-                  Level {test.currentLevel} → {test.targetLevel}
+                  {placement
+                    ? "Placement"
+                    : `Level ${test.currentLevel} → ${test.targetLevel}`}
                 </span>
                 <span>
                   {index + 1} / {test.questions.length}
                 </span>
               </div>
               <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                Level {test.targetLevel} normally takes{" "}
-                {test.wordsAtTargetLevel} mastered words — score {PASS_PERCENT}%
-                to skip straight to it.
+                {placement ? (
+                  <>
+                    These get harder as they go, and they are not in order.
+                    Answer what you know and guess the rest — you start wherever
+                    the answers say, which may well be higher than you expect.
+                  </>
+                ) : (
+                  <>
+                    Level {test.targetLevel} normally takes{" "}
+                    {test.wordsAtTargetLevel} mastered words — score{" "}
+                    {PASS_PERCENT}% to skip straight to it.
+                  </>
+                )}
               </p>
 
               <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
