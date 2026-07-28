@@ -145,9 +145,9 @@ function Navbar() {
 
   return (
     <>
-      <div className="relative mb-20 lg:mb-32 flex w-full items-center justify-center px-3">
+      <div className="app-safe-top-gap relative flex w-full items-center justify-center px-3">
         <div
-          className={`fixed top-3 z-50 flex w-full max-w-5xl items-center justify-between rounded-xl p-2 backdrop-blur-md transition-all duration-300 sm:top-2 sm:px-3 ${
+          className={`app-safe-top fixed top-3 z-50 flex w-full max-w-5xl items-center justify-between rounded-xl p-2 backdrop-blur-md transition-all duration-300 sm:top-2 sm:px-3 ${
             isHomePage
               ? "border border-blue-300/20 bg-slate-950/60 text-slate-100 shadow-lg shadow-blue-900/20 hover:border-blue-300/35"
               : "border border-slate-300/70 bg-white/85 text-slate-700 shadow-md hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-200"

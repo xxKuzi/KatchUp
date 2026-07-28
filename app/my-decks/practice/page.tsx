@@ -12,6 +12,13 @@ import {
   getDeck,
 } from "../../games/_lib/deckSessionClient";
 import DeckProgress from "@/app/_components/DeckProgress";
+import OfflineDeckButton from "@/app/_components/OfflineDeckButton";
+import SyncStatusBadge from "@/app/_components/SyncStatusBadge";
+import { useAccountKey } from "@/app/_lib/offline/useOffline";
+import {
+  getOfflineDeckRecord,
+  readOfflineProgress,
+} from "@/app/_lib/offline/offlineDecks";
 
 const GAME_MODE_IDS = [
   {
@@ -49,6 +56,7 @@ function PracticeModeSelector() {
   const [status, setStatus] = useState<"loading" | "ready" | "notfound">(
     deckId ? "loading" : "notfound",
   );
+  const accountKey = useAccountKey();
 
   useEffect(() => {
     if (!deckId) {
@@ -57,36 +65,71 @@ function PracticeModeSelector() {
 
     let cancelled = false;
 
-    fetchDeckProgress(deckId)
-      .then((value) => {
-        if (!cancelled) {
-          setProgress(value);
+    void (async () => {
+      // The downloaded copy first: this launcher is the way into every game, so
+      // reaching it has to work without a network or the offline decks behind it
+      // are unreachable.
+      if (accountKey) {
+        const local = await getOfflineDeckRecord(accountKey, deckId).catch(
+          () => null,
+        );
+        if (cancelled) {
+          return;
         }
-      })
-      .catch(() => {
-        // Non-critical: the launcher still works without the progress bar.
-      });
-
-    getDeck(deckId)
-      .then((data) => {
-        if (!cancelled) {
-          setDeck(data.deck);
+        if (local) {
+          setDeck({
+            id: local.deckId,
+            ownerUserId: null,
+            kind: "custom",
+            topicKey: null,
+            name: local.name,
+            nativeLang: local.nativeLang,
+            foreignLang: local.foreignLang,
+            wordCount: local.words.length,
+            knownCount: 0,
+            words: local.words,
+          });
           setStatus("ready");
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setStatus("notfound");
-          if (!(err instanceof ApiError)) {
-            // network/parse error — treat as not found for the selector
+
+          const localProgress = await readOfflineProgress(accountKey, deckId);
+          if (!cancelled && localProgress) {
+            setProgress(localProgress);
           }
+          return;
         }
-      });
+      }
+
+      fetchDeckProgress(deckId)
+        .then((value) => {
+          if (!cancelled) {
+            setProgress(value);
+          }
+        })
+        .catch(() => {
+          // Non-critical: the launcher still works without the progress bar.
+        });
+
+      getDeck(deckId)
+        .then((data) => {
+          if (!cancelled) {
+            setDeck(data.deck);
+            setStatus("ready");
+          }
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            setStatus("notfound");
+            if (!(err instanceof ApiError)) {
+              // network/parse error — treat as not found for the selector
+            }
+          }
+        });
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [deckId]);
+  }, [accountKey, deckId]);
 
   if (status !== "ready" || !deck) {
     return (
@@ -125,6 +168,12 @@ function PracticeModeSelector() {
             <p className="mt-2 text-slate-600 dark:text-slate-300">
               {deck.name} ({deck.nativeLang} ↔ {deck.foreignLang})
             </p>
+            {deck.kind === "custom" && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <OfflineDeckButton deckId={deck.id} />
+                <SyncStatusBadge />
+              </div>
+            )}
           </div>
         </div>
 

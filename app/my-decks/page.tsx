@@ -16,6 +16,8 @@ import {
   writeCachedDecks,
 } from "../games/_lib/deckCache";
 import DeckProgress from "@/app/_components/DeckProgress";
+import OfflineDeckButton from "@/app/_components/OfflineDeckButton";
+import SyncStatusBadge from "@/app/_components/SyncStatusBadge";
 import WordCountSelect from "./_components/WordCountSelect";
 
 export default function MyDecksOverview() {
@@ -277,9 +279,12 @@ export default function MyDecksOverview() {
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               {t("myDecks.customDecksByLanguages")}
             </h2>
-            <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-1 text-center text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              {filteredDecks.length} {t("common.totalDecks")}
-            </span>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <SyncStatusBadge />
+              <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-1 text-center text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {filteredDecks.length} {t("common.totalDecks")}
+              </span>
+            </div>
           </div>
 
           {unauthorized ? (
@@ -366,6 +371,14 @@ export default function MyDecksOverview() {
                             {t("common.practice")}
                           </Link>
                         </div>
+                        {/* Custom decks only: a topic deck is topped up on the
+                            server, so a copy of one here would go stale. */}
+                        {deck.kind === "custom" && (
+                          <OfflineDeckButton
+                            deckId={deck.id}
+                            className="mt-3"
+                          />
+                        )}
                       </article>
                     ))}
                   </div>

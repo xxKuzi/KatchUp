@@ -17,6 +17,7 @@ import {
   listDecks,
   updateDeck,
 } from "../../games/_lib/deckSessionClient";
+import { useOnlineStatus } from "../../_lib/offline/useOffline";
 
 function tempId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -29,6 +30,7 @@ function DeckEditorPage() {
   const { language, learningLanguage } = useLanguage();
   const { isSignedIn, isReady, signIn } = useAuthState();
   const searchParams = useSearchParams();
+  const online = useOnlineStatus();
 
   const [decks, setDecks] = useState<DeckMeta[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
@@ -351,6 +353,19 @@ function DeckEditorPage() {
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Create custom decks by language pair and edit words in each deck.
             </p>
+            {/* Editing stays online-only for now. A deck edited on two devices
+                at once is a merge problem, and practising offline — which is
+                what the downloads are for — does not create one. */}
+            {!online && (
+              <p
+                role="status"
+                className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+              >
+                You&rsquo;re offline. Decks can only be created and edited with a
+                connection — downloaded decks are still practisable from My
+                Decks.
+              </p>
+            )}
           </section>
 
           <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm dark:border-violet-900/60 dark:from-violet-950/40 dark:to-slate-950">

@@ -313,3 +313,60 @@ body {
 }
 
 
+
+/* ---------------------------------------------------------------------------
+ * Installed (standalone) display
+ *
+ * The viewport is `viewport-fit=cover`, so an installed KatchUp paints under the
+ * status bar and the home indicator. In a browser tab those insets are zero and
+ * every rule here is a no-op; only an installed window pays for them.
+ * ------------------------------------------------------------------------- */
+
+/* The floating top bar is `fixed`, so it has to clear the notch itself. */
+.app-safe-top {
+  top: calc(0.75rem + env(safe-area-inset-top));
+}
+
+@media (min-width: 640px) {
+  .app-safe-top {
+    top: calc(0.5rem + env(safe-area-inset-top));
+  }
+}
+
+/* …and the spacer that reserves room for it has to grow by the same amount. */
+.app-safe-top-gap {
+  margin-bottom: calc(5rem + env(safe-area-inset-top));
+}
+
+@media (min-width: 1024px) {
+  .app-safe-top-gap {
+    margin-bottom: calc(8rem + env(safe-area-inset-top));
+  }
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  /* No browser chrome to pull against, so an accidental drag must not bounce
+   * the whole app up and down; individual scroll containers still scroll. */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Long-pressing UI in an installed app reads as a broken app, not a browser
+   * text selection. Inputs and prose are exempt below. */
+  body {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"],
+  p,
+  h1,
+  h2,
+  h3 {
+    -webkit-touch-callout: default;
+    user-select: text;
+  }
+}

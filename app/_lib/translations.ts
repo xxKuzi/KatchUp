@@ -21,6 +21,19 @@ export const LANGUAGE_FLAGS: Record<Language, string> = {
 
 export const translations: Record<Language, Translations> = {
   english: {
+    offline: {
+      download: "Download for offline use",
+      downloading: "Downloading…",
+      available: "Available offline",
+      remove: "Remove",
+      needsConnection: "Connect to download this deck.",
+      pendingSync: "Pending sync",
+      syncing: "Syncing…",
+      syncFailed: "Sync failed",
+      retry: "Retry",
+      lastSynced: "Last synced",
+      offline: "Offline",
+    },
     navbar: {
       games: "Games",
       topics: "Topics",
@@ -234,6 +247,19 @@ export const translations: Record<Language, Translations> = {
     },
   },
   czech: {
+    offline: {
+      download: "Stáhnout pro offline",
+      downloading: "Stahuji…",
+      available: "Dostupné offline",
+      remove: "Odebrat",
+      needsConnection: "Pro stažení balíčku se připoj k internetu.",
+      pendingSync: "Čeká na synchronizaci",
+      syncing: "Synchronizuji…",
+      syncFailed: "Synchronizace selhala",
+      retry: "Zkusit znovu",
+      lastSynced: "Naposledy synchronizováno",
+      offline: "Offline",
+    },
     navbar: {
       games: "Hry",
       topics: "Temata",
@@ -447,6 +473,19 @@ export const translations: Record<Language, Translations> = {
     },
   },
   deutsch: {
+    offline: {
+      download: "Für offline herunterladen",
+      downloading: "Wird geladen…",
+      available: "Offline verfügbar",
+      remove: "Entfernen",
+      needsConnection: "Verbinde dich, um dieses Deck zu laden.",
+      pendingSync: "Warten auf Synchronisierung",
+      syncing: "Synchronisiere…",
+      syncFailed: "Synchronisierung fehlgeschlagen",
+      retry: "Erneut versuchen",
+      lastSynced: "Zuletzt synchronisiert",
+      offline: "Offline",
+    },
     navbar: {
       games: "Spiele",
       topics: "Themen",

@@ -21,9 +21,10 @@ export function isGatedPath(pathname: string | null) {
   return matchesRoute(GATED_ROUTES, pathname);
 }
 
-// The two pages the setup prompt may not cover, because they are the two ways
-// through it: the test it is asking for, and the sign-in it offers.
-const SETUP_EXEMPT_ROUTES = ["/level-test", "/login"];
+// The pages the setup prompt may not cover: the two ways through it — the test
+// it is asking for and the sign-in it offers — plus the offline fallback, where
+// a prompt that needs the network to answer would be a dead end.
+const SETUP_EXEMPT_ROUTES = ["/level-test", "/login", "/offline"];
 
 // Everything above, plus what a visitor is allowed to read before being asked
 // anything. The landing page has to stay legible to someone deciding whether to
