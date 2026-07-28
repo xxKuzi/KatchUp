@@ -597,7 +597,7 @@ export default function LiveDuelPlayPage() {
       return;
     }
     energySpent.current = true;
-    spendEnergy();
+    void spendEnergy();
   }, [status]);
 
   const showFeedback = (text: string, tone: "good" | "bad") => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/Navbar";
+import EnergySync from "./_components/EnergySync";
 import OnboardingGate from "./_components/OnboardingGate";
 import ScrollToTop from "./_components/ScrollToTop";
 import { ThemeProvider } from "next-themes";
@@ -47,6 +48,7 @@ export default async function RootLayout({
             <LanguageProvider>
               <StartPlayingModalProvider>
                 <ScrollToTop />
+                <EnergySync />
                 <Navbar />
                 <main className="pb-20 lg:pb-0">
                   <OnboardingGate>{children}</OnboardingGate>

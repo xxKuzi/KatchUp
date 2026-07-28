@@ -262,9 +262,9 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     const passed = scorePercent >= 70;
 
     if (isEnergyReview) {
-      gainEnergy(ENERGY_PRACTICE_REWARD);
+      void gainEnergy(ENERGY_PRACTICE_REWARD);
     } else {
-      spendEnergy(1);
+      void spendEnergy(1);
     }
     setLessonPassed(passed);
     setIsFinished(true);

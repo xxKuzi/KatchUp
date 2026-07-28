@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuthState } from "@/app/_lib/auth";
-import { getEnergy, useEnergy } from "@/app/_lib/energy";
+import { useEnergyState } from "@/app/_lib/energy";
 
 /**
  * Whether this player has run out of the day's energy and should be held out of
@@ -19,15 +19,29 @@ import { getEnergy, useEnergy } from "@/app/_lib/energy";
  */
 export function useEnergyBlocked(exempt = false): boolean {
   const { isSignedIn } = useAuthState();
-  const energy = useEnergy();
+  const { value: energy, ready } = useEnergyState();
 
   // What the meter said on arrival, frozen for as long as this page is mounted.
   // A round costs its energy at the end, and a live read alone would drop the
   // player to zero and swap their own results screen for this block.
-  const [energyAtDoor] = useState(getEnergy);
+  //
+  // For a signed-in player that reading now comes from the server, so it latches
+  // on the first loaded value rather than at mount — the placeholder we render
+  // while the fetch is in flight is not a reading and must not become the door.
+  const [energyAtDoor, setEnergyAtDoor] = useState<number | null>(null);
+  if (ready && energyAtDoor === null) {
+    setEnergyAtDoor(energy);
+  }
 
   // Both readings have to agree, which is what makes the block one-way: it can
   // lift the moment energy is earned back (or midnight refills it) without a
   // reload, but it can never fall shut on a player who was let in.
-  return !exempt && isSignedIn && energyAtDoor <= 0 && energy <= 0;
+  return (
+    !exempt &&
+    isSignedIn &&
+    ready &&
+    energyAtDoor !== null &&
+    energyAtDoor <= 0 &&
+    energy <= 0
+  );
 }

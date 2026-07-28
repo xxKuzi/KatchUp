@@ -298,9 +298,9 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
       const passed = finalScore >= 70;
 
       if (isEnergyReview) {
-        gainEnergy(ENERGY_PRACTICE_REWARD);
+        void gainEnergy(ENERGY_PRACTICE_REWARD);
       } else {
-        spendEnergy(1);
+        void spendEnergy(1);
       }
       setCorrectCount(nextCorrect);
       setLessonPassed(passed);

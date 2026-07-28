@@ -412,7 +412,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
           : 0;
       const passed = scorePercent >= 70;
 
-      spendEnergy();
+      void spendEnergy();
       setLessonPassed(passed);
       setLevelCleared(checkLevelCleared?.(nextCorrectIds) ?? false);
       setIsFinished(true);

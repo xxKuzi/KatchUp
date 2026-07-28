@@ -19,7 +19,7 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import LevelBadge from "./LevelBadge";
 import { useLanguage } from "../_lib/languageContext";
-import { useEnergy, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
+import { useEnergyState, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useStartPlayingModal } from "./StartPlayingModalProvider";
 
@@ -43,7 +43,7 @@ function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { t, learningLanguage } = useLanguage();
-  const energy = useEnergy();
+  const { value: energy, ready: energyReady } = useEnergyState();
   const reset = useResetCountdown();
   const { data: session, status } = useSession();
   const { openModal } = useStartPlayingModal();
@@ -287,7 +287,9 @@ function Navbar() {
                 }}
                 aria-label={
                   isSignedIn
-                    ? `${t("navbar.energy")}: ${energy}/${MAX_ENERGY}`
+                    ? energyReady
+                      ? `${t("navbar.energy")}: ${energy}/${MAX_ENERGY}`
+                      : t("navbar.energy")
                     : "Sign in to track energy"
                 }
                 aria-expanded={isSignedIn ? energyPopoverOpen : undefined}
@@ -295,7 +297,7 @@ function Navbar() {
                   !isSignedIn
                     ? "cursor-default border-slate-400/40 bg-slate-400/10 text-slate-400 dark:border-slate-600/60 dark:text-slate-500"
                     : `cursor-pointer hover:scale-105 ${
-                        energy <= 0
+                        energyReady && energy <= 0
                           ? "border-rose-400/60 bg-rose-500/10 text-rose-500 dark:border-rose-500/50 dark:text-rose-400"
                           : isHomePage
                             ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
@@ -305,7 +307,9 @@ function Navbar() {
               >
                 <Zap className="h-4 w-4 fill-current" />
                 <span className="tabular-nums leading-none">
-                  {isSignedIn ? energy : 1}
+                  {/* A signed-in bar comes from the server, so it holds a dash
+                      rather than guessing a number the API might contradict. */}
+                  {!isSignedIn ? 1 : energyReady ? energy : "–"}
                 </span>
               </button>
 

@@ -1,202 +1,308 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { msUntilReset, pragueDayKey } from "./pragueDay";
+import { ENERGY_PRACTICE_REWARD, MAX_ENERGY } from "./energyConstants";
 
-export const MAX_ENERGY = 20;
-/** Energy granted for completing an energy-practice review round. */
-export const ENERGY_PRACTICE_REWARD = 5;
+export { MAX_ENERGY, ENERGY_PRACTICE_REWARD, msUntilReset };
+
+/**
+ * Where a player's daily energy lives depends on whether we know who they are.
+ *
+ * Signed in, it lives in Redis behind /api/energy: the browser holds a cache
+ * for rendering and the server is the only thing that decides what the number
+ * actually is. Clearing site data, or a second device, no longer buys a fresh
+ * day. Signed out, there is nobody to bill, so it stays in this browser's
+ * storage — which the Navbar is honest about, showing a locked pip rather than
+ * a count.
+ */
 
 const STORAGE_KEY = "katchup-energy";
-const ENERGY_EVENT = "katchup-energy-change";
-const TIME_ZONE = "Europe/Prague";
 
-type EnergyState = {
-  date: string; // Prague YYYY-MM-DD of the last reset
+export type EnergySnapshot = {
   value: number;
+  /**
+   * Whether `value` is a real reading. False while we are still waiting on the
+   * session or on the first fetch — callers that gate play must not treat an
+   * unloaded bar as an empty one.
+   */
+  ready: boolean;
 };
 
-const PRAGUE_CLOCK = new Intl.DateTimeFormat("en-CA", {
-  timeZone: TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hourCycle: "h23",
-});
+const INITIAL: EnergySnapshot = { value: MAX_ENERGY, ready: false };
 
-type Wall = {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-};
+let snapshot: EnergySnapshot = INITIAL;
+let userId: string | null = null;
+let identityKnown = false;
 
-/** The wall clock a person in Prague is reading at this instant. */
-function pragueWallClock(instant: Date): Wall {
-  const parts = PRAGUE_CLOCK.formatToParts(instant);
-  const get = (type: string) =>
-    Number(parts.find((part) => part.type === type)?.value ?? "0");
+const listeners = new Set<() => void>();
 
-  return {
-    year: get("year"),
-    month: get("month"),
-    day: get("day"),
-    hour: get("hour") % 24, // some engines say "24" at exactly midnight
-    minute: get("minute"),
-    second: get("second"),
-  };
+function publish(value: number, ready: boolean) {
+  const next = Math.max(0, Math.min(MAX_ENERGY, value));
+  if (snapshot.value === next && snapshot.ready === ready) return;
+  snapshot = { value: next, ready };
+  listeners.forEach((listener) => listener());
 }
 
-/** How far Prague's clock runs ahead of UTC at this instant (+1h or +2h). */
-function pragueOffsetMs(instant: Date): number {
-  const wall = pragueWallClock(instant);
-  const asIfUtc = Date.UTC(
-    wall.year,
-    wall.month - 1,
-    wall.day,
-    wall.hour,
-    wall.minute,
-    wall.second,
-  );
-  // Drop the milliseconds the formatter never reported, so the difference is
-  // the zone offset alone.
-  return asIfUtc - Math.floor(instant.getTime() / 1000) * 1000;
-}
+/* -------------------------------------------------------------------------- */
+/* Signed-out storage                                                          */
+/* -------------------------------------------------------------------------- */
 
-/** Current calendar day in Prague, as YYYY-MM-DD (day boundary = Prague midnight). */
-function todayKey(): string {
-  const wall = pragueWallClock(new Date());
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${wall.year}-${pad(wall.month)}-${pad(wall.day)}`;
-}
+type StoredState = { date: string; value: number };
 
-/** Milliseconds remaining until the next Prague midnight (when energy refills). */
-export function msUntilReset(): number {
-  const now = new Date();
-  const wall = pragueWallClock(now);
-  const nextMidnightWall = Date.UTC(wall.year, wall.month - 1, wall.day + 1);
+function readLocal(): number {
+  if (typeof window === "undefined") return MAX_ENERGY;
 
-  // Twice a year the day is 23 or 25 hours long, so counting down "24h minus
-  // the time on the clock" is an hour out. Convert the next local midnight to a
-  // real instant instead, using the offset that will be in force when it lands.
-  const firstGuess = nextMidnightWall - pragueOffsetMs(now);
-  const instant = nextMidnightWall - pragueOffsetMs(new Date(firstGuess));
-
-  return Math.max(0, instant - now.getTime());
-}
-
-function readState(): EnergyState {
-  if (typeof window === "undefined") {
-    return { date: todayKey(), value: MAX_ENERGY };
-  }
-
-  const today = todayKey();
+  const today = pragueDayKey();
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<EnergyState>;
+      const parsed = JSON.parse(raw) as Partial<StoredState>;
       if (parsed.date === today && typeof parsed.value === "number") {
-        return {
-          date: today,
-          value: Math.max(0, Math.min(MAX_ENERGY, parsed.value)),
-        };
+        return Math.max(0, Math.min(MAX_ENERGY, parsed.value));
       }
     }
   } catch {
     // ignore malformed storage and fall through to a fresh daily reset
   }
 
-  const fresh = { date: today, value: MAX_ENERGY };
-  writeState(fresh);
-  return fresh;
+  writeLocal(MAX_ENERGY);
+  return MAX_ENERGY;
 }
 
-function writeState(state: EnergyState) {
+function writeLocal(value: number) {
   if (typeof window === "undefined") return;
   try {
+    const state: StoredState = { date: pragueDayKey(), value };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
     // ignore write failures (e.g. storage disabled)
   }
 }
 
-function emit(value: number) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(ENERGY_EVENT, { detail: value }));
+/* -------------------------------------------------------------------------- */
+/* Signed-in storage                                                           */
+/* -------------------------------------------------------------------------- */
+
+type ServerSnapshot = { energy: number; max: number; resetInMs: number };
+
+async function callEnergyApi(
+  path: string,
+  init?: RequestInit,
+): Promise<number | null> {
+  try {
+    const response = await fetch(path, {
+      cache: "no-store",
+      ...init,
+    });
+    if (!response.ok) return null;
+
+    const body = (await response.json()) as Partial<ServerSnapshot>;
+    return typeof body.energy === "number" ? body.energy : null;
+  } catch {
+    // Offline or a failed round trip. The cache keeps showing the last known
+    // number and the next refresh reconciles it.
+    return null;
+  }
 }
 
+let refreshInFlight: Promise<void> | null = null;
+
+/** Pull the authoritative number for the signed-in player. */
+function refreshRemote(): Promise<void> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = callEnergyApi("/api/energy")
+    .then((energy) => {
+      if (!userId) return; // signed out while the request was in the air
+      if (energy === null) {
+        // Keep whatever we had, but stop blocking on a load that won't come.
+        publish(snapshot.value, true);
+        return;
+      }
+      publish(energy, true);
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Identity                                                                    */
+/* -------------------------------------------------------------------------- */
+
+let resolveIdentity: (() => void) | null = null;
+const identitySettled = new Promise<void>((resolve) => {
+  resolveIdentity = resolve;
+});
+
+/**
+ * Tell the store who is playing. Called by <EnergySync> once the session has
+ * loaded, and again on sign-in or sign-out.
+ */
+export function setEnergyIdentity(nextUserId: string | null) {
+  const changed = nextUserId !== userId || !identityKnown;
+
+  userId = nextUserId;
+  identityKnown = true;
+  resolveIdentity?.();
+  resolveIdentity = null;
+
+  if (!changed) return;
+
+  if (nextUserId) {
+    publish(snapshot.value, false);
+    void refreshRemote();
+  } else {
+    publish(readLocal(), true);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Public surface                                                              */
+/* -------------------------------------------------------------------------- */
+
+/** The cached energy right now. Pair it with `getEnergySnapshot().ready`. */
 export function getEnergy(): number {
-  return readState().value;
+  return snapshot.value;
+}
+
+export function getEnergySnapshot(): EnergySnapshot {
+  return snapshot;
 }
 
 /**
- * Spend a single point of energy for completing an exercise.
- * Returns the remaining energy. Never drops below 0.
+ * Spend energy for a finished round. Resolves with the remaining energy.
+ *
+ * Signed in, the server decides the result; the cache moves first so the navbar
+ * reacts immediately and is corrected a moment later if the two disagree.
  */
-export function spendEnergy(amount = 1): number {
-  const state = readState();
-  const value = Math.max(0, state.value - amount);
-  const next = { date: state.date, value };
-  writeState(next);
-  emit(value);
-  return value;
+export async function spendEnergy(amount = 1): Promise<number> {
+  await identitySettled;
+
+  if (!userId) {
+    const value = Math.max(0, readLocal() - amount);
+    writeLocal(value);
+    publish(value, true);
+    return value;
+  }
+
+  publish(snapshot.value - amount, true);
+
+  const energy = await callEnergyApi("/api/energy/spend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount }),
+  });
+
+  if (energy !== null) publish(energy, true);
+  return snapshot.value;
 }
 
 /**
- * Grant energy back as a reward for reviewing your mistakes.
- * Returns the new energy. Never rises above MAX_ENERGY.
+ * Grant energy back as a reward for reviewing your mistakes. Resolves with the
+ * new energy. The server applies its own daily ceiling, so the number that
+ * comes back can be lower than the optimistic one.
  */
-export function gainEnergy(amount = 1): number {
-  const state = readState();
-  const value = Math.min(MAX_ENERGY, state.value + amount);
-  const next = { date: state.date, value };
-  writeState(next);
-  emit(value);
-  return value;
+export async function gainEnergy(amount = 1): Promise<number> {
+  await identitySettled;
+
+  if (!userId) {
+    const value = Math.min(MAX_ENERGY, readLocal() + amount);
+    writeLocal(value);
+    publish(value, true);
+    return value;
+  }
+
+  publish(snapshot.value + amount, true);
+
+  const energy = await callEnergyApi("/api/energy/gain", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount }),
+  });
+
+  if (energy !== null) publish(energy, true);
+  return snapshot.value;
 }
 
-/** Every way the stored energy can change under a mounted component. */
-function subscribeToEnergy(onChange: () => void): () => void {
-  // The refill happens on read, so a tab left open over midnight would sit on
-  // yesterday's empty bar until something touched it. Wake it at the boundary.
-  let resetTimer = 0;
+/* -------------------------------------------------------------------------- */
+/* Subscription                                                                */
+/* -------------------------------------------------------------------------- */
+
+/** Re-read from whichever store is authoritative for this player. */
+function revalidate() {
+  if (userId) {
+    void refreshRemote();
+  } else if (identityKnown) {
+    publish(readLocal(), true);
+  }
+}
+
+let watcherCount = 0;
+let resetTimer = 0;
+let detachWatchers: (() => void) | null = null;
+
+/**
+ * Install the triggers that make a mounted bar keep up with reality: the
+ * midnight refill, another tab, and a phone coming back from the background.
+ * Installed once however many components are subscribed.
+ */
+function attachWatchers() {
   const scheduleReset = () => {
     resetTimer = window.setTimeout(() => {
-      onChange();
+      revalidate();
       scheduleReset();
     }, msUntilReset() + 1000);
   };
   scheduleReset();
 
-  window.addEventListener(ENERGY_EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  window.addEventListener("focus", onChange);
+  window.addEventListener("storage", revalidate);
+  window.addEventListener("focus", revalidate);
   // Phones background the tab rather than blur it, and throttled timers can
   // fire late, so re-read whenever the page comes back into view.
-  document.addEventListener("visibilitychange", onChange);
+  document.addEventListener("visibilitychange", revalidate);
 
-  return () => {
+  detachWatchers = () => {
     window.clearTimeout(resetTimer);
-    window.removeEventListener(ENERGY_EVENT, onChange);
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener("focus", onChange);
-    document.removeEventListener("visibilitychange", onChange);
+    window.removeEventListener("storage", revalidate);
+    window.removeEventListener("focus", revalidate);
+    document.removeEventListener("visibilitychange", revalidate);
   };
 }
 
-/** The server has no storage to read, so it renders a full bar. */
-function serverEnergy(): number {
-  return MAX_ENERGY;
+function subscribe(onChange: () => void): () => void {
+  listeners.add(onChange);
+
+  watcherCount += 1;
+  if (watcherCount === 1) attachWatchers();
+
+  return () => {
+    listeners.delete(onChange);
+    watcherCount -= 1;
+    if (watcherCount === 0) {
+      detachWatchers?.();
+      detachWatchers = null;
+    }
+  };
+}
+
+/** The server has no player to read for, so it renders a full, unready bar. */
+function serverSnapshot(): EnergySnapshot {
+  return INITIAL;
+}
+
+/** Reactive energy plus whether it has actually loaded yet. */
+export function useEnergyState(): EnergySnapshot {
+  return useSyncExternalStore(subscribe, getEnergySnapshot, serverSnapshot);
 }
 
 /** Reactive hook that reflects the current daily energy across the app. */
 export function useEnergy(): number {
-  return useSyncExternalStore(subscribeToEnergy, getEnergy, serverEnergy);
+  return useEnergyState().value;
 }
 
 /**

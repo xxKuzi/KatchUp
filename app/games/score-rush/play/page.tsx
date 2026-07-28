@@ -187,7 +187,7 @@ export default function ScoreRushPlayPage() {
 
     // A run costs one energy, like every other round. It used to cost one per
     // answer, which meant a single thirty-second run could swallow the day.
-    spendEnergy();
+    void spendEnergy();
 
     const submitScore = async () => {
       try {
