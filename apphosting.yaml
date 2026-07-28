@@ -33,6 +33,10 @@ env:
   - variable: UPSTASH_REDIS_REST_TOKEN
     secret: redis-token
 
+  # AI deck generation
+  - variable: GEMINI_API_KEY
+    secret: gemini-api-key
+
   # Pusher
   - variable: PUSHER_APP_ID
     value: "2141801"
