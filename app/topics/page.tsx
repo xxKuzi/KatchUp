@@ -17,6 +17,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import TopicCard from "./_components/TopicCard";
 import TopicCardSkeleton from "./_components/TopicCardSkeleton";
+import dynamic from "next/dynamic";
+
+// Decoration at the foot of the page, and the whole of three.js behind it, so
+// it loads after the topic list rather than alongside it.
+const PizzaChickenScene = dynamic(
+  () => import("./_components/PizzaChickenScene"),
+  { ssr: false },
+);
 
 export default function TopicsPage() {
   const { t, language, learningLanguage } = useLanguage();
@@ -156,6 +164,10 @@ export default function TopicsPage() {
           </section>
         </div>
       </FeatureGate>
+
+      <div className="mx-auto mt-12 w-full max-w-6xl">
+        <PizzaChickenScene />
+      </div>
     </div>
   );
 }
