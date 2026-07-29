@@ -229,6 +229,58 @@ export const deckWords = pgTable(
   }),
 );
 
+// The share link for one custom deck. Sharing is live rather than a copy: the
+// link points at the deck itself, so words the owner adds later show up for
+// everyone who joined. One link per deck — rotating it (delete + recreate)
+// invalidates the old URL without touching who already joined.
+export const deckShares = pgTable(
+  "deck_shares",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    deckId: uuid("deck_id")
+      .notNull()
+      .references(() => decks.id, { onDelete: "cascade" }),
+    // Random, unguessable; the link is the only credential needed to preview.
+    code: text("code").notNull(),
+    // What the link grants: "viewer" may practise, "editor" may also change
+    // the words. Stored on the link so the owner can hand out edit rights
+    // without approving each person.
+    role: text("role").notNull().default("viewer"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    deckUnique: uniqueIndex("deck_shares_deck_id_key").on(table.deckId),
+    codeUnique: uniqueIndex("deck_shares_code_key").on(table.code),
+  }),
+);
+
+// Who, besides the owner, has access to a custom deck. A row is written when
+// someone opens a share link and joins. Role is copied from the link at join
+// time, so downgrading a link later does not silently demote people who
+// already joined — the owner changes that per member.
+export const deckMembers = pgTable(
+  "deck_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    deckId: uuid("deck_id")
+      .notNull()
+      .references(() => decks.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("viewer"), // "viewer" | "editor"
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    memberUnique: uniqueIndex("deck_members_deck_id_user_id_key").on(
+      table.deckId,
+      table.userId,
+    ),
+    userIdx: index("deck_members_user_id_idx").on(table.userId),
+  }),
+);
+
 // Per-user spaced-repetition stats for one vocabulary item (Leitner box + counts).
 //
 // These used to be keyed on `deck_word_id`, which made the same word in two

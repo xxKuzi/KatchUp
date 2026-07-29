@@ -1,10 +1,12 @@
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import {
   conceptTranslations,
+  deckMembers,
   deckWords,
   decks,
+  users,
   userWordStats,
   wordConcepts,
 } from "@/db/schema";
@@ -21,6 +23,15 @@ import {
 } from "./vocabIdentity";
 
 export type DeckKind = "topic" | "custom";
+
+/**
+ * What a user may do with a deck they can see.
+ *
+ * "owner" created it; "editor" joined through a share link that grants edits;
+ * "viewer" joined a read-only link. Topic decks belong to nobody and carry a
+ * null role — everyone practises them, nobody edits them.
+ */
+export type DeckRole = "owner" | "editor" | "viewer";
 
 export interface DeckWordRecord {
   id: string;
@@ -42,6 +53,10 @@ export interface DeckRecord {
   wordCount: number;
   /** Words the user has mastered in this deck. 0 when signed out. */
   knownCount: number;
+  /** What this user may do with the deck; null for topic decks. */
+  role: DeckRole | null;
+  /** Owner's display name, so a shared deck can say who it came from. */
+  ownerName: string | null;
 }
 
 export interface DeckWithWords extends DeckRecord {
@@ -60,10 +75,16 @@ export interface WordInput {
   foreign: string;
 }
 
+interface DeckAccess {
+  role: DeckRole | null;
+  ownerName: string | null;
+}
+
 function toDeckRecord(
   row: typeof decks.$inferSelect,
   wordCount = 0,
   knownCount = 0,
+  access: DeckAccess = { role: null, ownerName: null },
 ): DeckRecord {
   return {
     id: row.id,
@@ -75,7 +96,14 @@ function toDeckRecord(
     foreignLang: row.foreignLang,
     wordCount,
     knownCount,
+    role: access.role,
+    ownerName: access.ownerName,
   };
+}
+
+/** The role a membership row carries, falling back to the safer one. */
+function toDeckRole(value: string | null): DeckRole {
+  return value === "editor" ? "editor" : "viewer";
 }
 
 /**
@@ -557,36 +585,93 @@ async function loadWords(deckId: string): Promise<DeckWordRecord[]> {
   return rows;
 }
 
-/** All decks a user may practice: their own custom decks plus every topic deck. */
-export async function listDecksForUser(userId: string): Promise<DeckRecord[]> {
-  const rows = await db
-    .select()
+/**
+ * Selects decks together with the caller's access to them.
+ *
+ * The membership join is what makes a shared deck show up in the friend's own
+ * list: they never own the row, so ownership alone would hide it. The join is
+ * on the caller's user id only, so at most one membership row can match.
+ */
+function selectDecksWithAccess(userId: string) {
+  const owner = alias(users, "deck_owner");
+  return db
+    .select({
+      deck: decks,
+      memberRole: deckMembers.role,
+      ownerName: owner.name,
+    })
     .from(decks)
-    .where(or(eq(decks.kind, "topic"), eq(decks.ownerUserId, userId)))
-    .orderBy(desc(decks.updatedAt));
+    .leftJoin(
+      deckMembers,
+      and(eq(deckMembers.deckId, decks.id), eq(deckMembers.userId, userId)),
+    )
+    .leftJoin(owner, eq(owner.id, decks.ownerUserId));
+}
 
-  const deckIds = rows.map((row) => row.id);
+type DeckAccessRow = {
+  deck: typeof decks.$inferSelect;
+  memberRole: string | null;
+  ownerName: string | null;
+};
+
+function accessOf(row: DeckAccessRow, userId: string): DeckAccess {
+  if (row.deck.kind !== "custom") {
+    return { role: null, ownerName: null };
+  }
+  return {
+    role:
+      row.deck.ownerUserId === userId ? "owner" : toDeckRole(row.memberRole),
+    ownerName: row.ownerName,
+  };
+}
+
+async function decorateDecks(
+  rows: DeckAccessRow[],
+  userId: string,
+): Promise<DeckRecord[]> {
+  const deckIds = rows.map((row) => row.deck.id);
   const counts = await countWordsByDeck(deckIds);
   const known = await countKnownByDeck(userId, deckIds);
   return rows.map((row) =>
-    toDeckRecord(row, counts.get(row.id) ?? 0, known.get(row.id) ?? 0),
+    toDeckRecord(
+      row.deck,
+      counts.get(row.deck.id) ?? 0,
+      known.get(row.deck.id) ?? 0,
+      accessOf(row, userId),
+    ),
   );
 }
 
-/** Only the user's own custom decks. */
-export async function listCustomDecks(userId: string): Promise<DeckRecord[]> {
-  const rows = await db
-    .select()
-    .from(decks)
-    .where(and(eq(decks.kind, "custom"), eq(decks.ownerUserId, userId)))
+/**
+ * All decks a user may practice: their own custom decks, decks shared with
+ * them, plus every topic deck.
+ */
+export async function listDecksForUser(userId: string): Promise<DeckRecord[]> {
+  const rows = await selectDecksWithAccess(userId)
+    .where(
+      or(
+        eq(decks.kind, "topic"),
+        eq(decks.ownerUserId, userId),
+        isNotNull(deckMembers.id),
+      ),
+    )
     .orderBy(desc(decks.updatedAt));
 
-  const deckIds = rows.map((row) => row.id);
-  const counts = await countWordsByDeck(deckIds);
-  const known = await countKnownByDeck(userId, deckIds);
-  return rows.map((row) =>
-    toDeckRecord(row, counts.get(row.id) ?? 0, known.get(row.id) ?? 0),
-  );
+  return decorateDecks(rows, userId);
+}
+
+/** The user's own custom decks plus the ones friends have shared with them. */
+export async function listCustomDecks(userId: string): Promise<DeckRecord[]> {
+  const rows = await selectDecksWithAccess(userId)
+    .where(
+      and(
+        eq(decks.kind, "custom"),
+        or(eq(decks.ownerUserId, userId), isNotNull(deckMembers.id)),
+      ),
+    )
+    .orderBy(desc(decks.updatedAt));
+
+  return decorateDecks(rows, userId);
 }
 
 /** Deck name of the starter deck, in the language the user speaks. */
@@ -693,19 +778,22 @@ async function starterWords(
 
 /**
  * Fetches a single deck with its words if the user is allowed to see it
- * (a topic deck, or a custom deck they own). Returns null otherwise.
+ * (a topic deck, a custom deck they own, or one shared with them). Returns
+ * null otherwise.
  */
 export async function getDeckForUser(
   deckId: string,
   userId: string,
 ): Promise<DeckWithWords | null> {
-  const [row] = await db
-    .select()
-    .from(decks)
+  const [row] = await selectDecksWithAccess(userId)
     .where(
       and(
         eq(decks.id, deckId),
-        or(eq(decks.kind, "topic"), eq(decks.ownerUserId, userId)),
+        or(
+          eq(decks.kind, "topic"),
+          eq(decks.ownerUserId, userId),
+          isNotNull(deckMembers.id),
+        ),
       ),
     )
     .limit(1);
@@ -714,8 +802,11 @@ export async function getDeckForUser(
     return null;
   }
 
-  const words = await loadWords(row.id);
-  return { ...toDeckRecord(row, words.length), words };
+  const words = await loadWords(row.deck.id);
+  return {
+    ...toDeckRecord(row.deck, words.length, 0, accessOf(row, userId)),
+    words,
+  };
 }
 
 /**
@@ -793,24 +884,48 @@ export async function createCustomDeck(
   return { ...toDeckRecord(deck, created.length), words: created };
 }
 
+/**
+ * The user's role on a custom deck, or null when they have no access to it
+ * (or it is a topic deck, which nobody owns).
+ */
+export async function getDeckRole(
+  userId: string,
+  deckId: string,
+): Promise<DeckRole | null> {
+  const [row] = await db
+    .select({ ownerUserId: decks.ownerUserId, memberRole: deckMembers.role })
+    .from(decks)
+    .leftJoin(
+      deckMembers,
+      and(eq(deckMembers.deckId, decks.id), eq(deckMembers.userId, userId)),
+    )
+    .where(and(eq(decks.id, deckId), eq(decks.kind, "custom")))
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+  if (row.ownerUserId === userId) {
+    return "owner";
+  }
+  return row.memberRole === null ? null : toDeckRole(row.memberRole);
+}
+
 /** Confirms the deck exists and is a custom deck owned by the user. */
 async function assertOwnedDeck(
   userId: string,
   deckId: string,
 ): Promise<boolean> {
-  const [row] = await db
-    .select({ id: decks.id })
-    .from(decks)
-    .where(
-      and(
-        eq(decks.id, deckId),
-        eq(decks.kind, "custom"),
-        eq(decks.ownerUserId, userId),
-      ),
-    )
-    .limit(1);
+  return (await getDeckRole(userId, deckId)) === "owner";
+}
 
-  return Boolean(row);
+/** Owner or someone who joined through an edit link. */
+async function assertEditableDeck(
+  userId: string,
+  deckId: string,
+): Promise<boolean> {
+  const role = await getDeckRole(userId, deckId);
+  return role === "owner" || role === "editor";
 }
 
 export interface UpdateDeckInput {
@@ -824,18 +939,24 @@ export async function updateCustomDeck(
   deckId: string,
   input: UpdateDeckInput,
 ): Promise<DeckWithWords | null> {
-  if (!(await assertOwnedDeck(userId, deckId))) {
+  const role = await getDeckRole(userId, deckId);
+  if (role !== "owner" && role !== "editor") {
     return null;
   }
+
+  // The language pair decides which words the deck can even hold and which
+  // progress rows it matches, so only the owner may move it. Editors change
+  // the name and the words.
+  const isOwner = role === "owner";
 
   await db
     .update(decks)
     .set({
       ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.nativeLang !== undefined
+      ...(isOwner && input.nativeLang !== undefined
         ? { nativeLang: input.nativeLang }
         : {}),
-      ...(input.foreignLang !== undefined
+      ...(isOwner && input.foreignLang !== undefined
         ? { foreignLang: input.foreignLang }
         : {}),
       updatedAt: new Date(),
@@ -875,7 +996,7 @@ export async function syncDeckWords(
   words: WordInput[],
 ): Promise<DeckWithWords | null> {
   const deck = await getDeckForUser(deckId, userId);
-  if (!deck || !(await assertOwnedDeck(userId, deckId))) {
+  if (!deck || !(await assertEditableDeck(userId, deckId))) {
     return null;
   }
 

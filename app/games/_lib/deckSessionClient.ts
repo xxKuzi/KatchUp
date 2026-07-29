@@ -58,6 +58,13 @@ export interface DeckMeta {
   wordCount: number;
   /** Words mastered in this deck; 0 when signed out. */
   knownCount: number;
+  /**
+   * What this user may do with the deck: "owner" for their own, "editor" or
+   * "viewer" for one a friend shared with them, null for topic decks.
+   */
+  role?: "owner" | "editor" | "viewer" | null;
+  /** Who shared it, when it is not the user's own deck. */
+  ownerName?: string | null;
 }
 
 export interface DeckWithWords extends DeckMeta {

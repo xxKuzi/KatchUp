@@ -18,14 +18,20 @@ import {
 import DeckProgress from "@/app/_components/DeckProgress";
 import OfflineDeckButton from "@/app/_components/OfflineDeckButton";
 import SyncStatusBadge from "@/app/_components/SyncStatusBadge";
+import ShareDeckDialog from "./_components/ShareDeckDialog";
 import WordCountSelect from "./_components/WordCountSelect";
+import { leaveDeck } from "./_lib/shareClient";
+import { useOnlineStatus } from "../_lib/offline/useOffline";
 
 export default function MyDecksOverview() {
   const { t, language, learningLanguage } = useLanguage();
   const { isSignedIn, isReady, signIn } = useAuthState();
+  const online = useOnlineStatus();
   const [decks, setDecks] = useState<DeckMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
+  // The deck whose sharing dialog is open, if any.
+  const [sharingDeck, setSharingDeck] = useState<DeckMeta | null>(null);
 
   // AI deck generation, mirroring the editor's panel.
   const [aiTopic, setAiTopic] = useState("");
@@ -46,12 +52,24 @@ export default function MyDecksOverview() {
   }, [language, learningLanguage]);
 
   useEffect(() => {
-    if (isReady && !isSignedIn) {
+    // Offline, "not signed in" usually means the session check could not reach
+    // the server, not that anyone signed out. Showing the sign-in wall there
+    // hides decks that are sitting on the device ready to practise, so the
+    // cached list wins until the network is back to say otherwise.
+    if (isReady && !isSignedIn && online) {
       setUnauthorized(true);
       setLoading(false);
       return;
     }
-    if (!isSignedIn) {
+    if (!isSignedIn && online) {
+      return;
+    }
+
+    if (!online) {
+      const offlineDecks = readCachedDecks(language, learningLanguage);
+      setDecks(offlineDecks ?? []);
+      setUnauthorized(false);
+      setLoading(false);
       return;
     }
 
@@ -91,7 +109,7 @@ export default function MyDecksOverview() {
     return () => {
       cancelled = true;
     };
-  }, [isSignedIn, isReady, language, learningLanguage]);
+  }, [isSignedIn, isReady, online, language, learningLanguage]);
 
   // How many AI decks are still allowed today.
   useEffect(() => {
@@ -170,6 +188,23 @@ export default function MyDecksOverview() {
       );
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  // Leaving only drops this user's access; the owner's deck is untouched.
+  const handleLeaveDeck = async (deck: DeckMeta) => {
+    const confirmed = window.confirm(
+      t("share.confirmLeave", "Remove this shared deck from your list?"),
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await leaveDeck(deck.id);
+      await refreshDecks();
+    } catch {
+      // Nothing changed server-side, so the list on screen is still correct.
     }
   };
 
@@ -347,6 +382,17 @@ export default function MyDecksOverview() {
                         <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                           {deck.name}
                         </h4>
+                        {/* Decks a friend shared say so, because the actions
+                            below differ: no sharing on, no deleting of, and
+                            sometimes no editing of someone else's deck. */}
+                        {deck.role && deck.role !== "owner" && (
+                          <p className="mt-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                            {t("share.sharedBy", "Shared by")}{" "}
+                            {deck.ownerName ?? t("share.someone", "Someone")}
+                            {deck.role === "viewer" &&
+                              ` · ${t("share.roleViewerShort", "Can practise")}`}
+                          </p>
+                        )}
                         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                           {deck.wordCount} {t("common.words")}
                         </p>
@@ -358,18 +404,38 @@ export default function MyDecksOverview() {
                           />
                         )}
                         <div className="mt-4 flex flex-wrap gap-2">
-                          <Link
-                            href={`/my-decks/edit?deck=${deck.id}`}
-                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
-                          >
-                            {t("common.edit")}
-                          </Link>
+                          {deck.role !== "viewer" && (
+                            <Link
+                              href={`/my-decks/edit?deck=${deck.id}`}
+                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+                            >
+                              {t("common.edit")}
+                            </Link>
+                          )}
                           <Link
                             href={`/my-decks/practice?deck=${deck.id}`}
                             className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
                           >
                             {t("common.practice")}
                           </Link>
+                          {deck.role === "owner" && (
+                            <button
+                              type="button"
+                              onClick={() => setSharingDeck(deck)}
+                              className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-700 transition hover:bg-violet-100 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
+                            >
+                              {t("share.share", "Share")}
+                            </button>
+                          )}
+                          {deck.role && deck.role !== "owner" && (
+                            <button
+                              type="button"
+                              onClick={() => handleLeaveDeck(deck)}
+                              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                            >
+                              {t("share.leave", "Leave")}
+                            </button>
+                          )}
                         </div>
                         {/* Custom decks only: a topic deck is topped up on the
                             server, so a copy of one here would go stale. */}
@@ -388,6 +454,14 @@ export default function MyDecksOverview() {
           )}
         </section>
       </div>
+
+      {sharingDeck && (
+        <ShareDeckDialog
+          deckId={sharingDeck.id}
+          deckName={sharingDeck.name}
+          onClose={() => setSharingDeck(null)}
+        />
+      )}
     </div>
   );
 }

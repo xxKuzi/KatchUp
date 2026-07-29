@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../_lib/languageContext";
 import { useAuthState } from "../../_lib/auth";
 import { LANG_LABELS } from "../../_lib/languages";
+import ShareDeckDialog from "../_components/ShareDeckDialog";
 import WordCountSelect from "../_components/WordCountSelect";
+import { leaveDeck } from "../_lib/shareClient";
 import {
   DeckMeta,
   DeckWithWords,
@@ -46,6 +48,7 @@ function DeckEditorPage() {
   );
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deletingDeck, setDeletingDeck] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [newNativeWord, setNewNativeWord] = useState("");
   const [newForeignWord, setNewForeignWord] = useState("");
 
@@ -254,12 +257,24 @@ function DeckEditorPage() {
     }
   };
 
+  // A deck a friend shared is not ours to delete — the same gesture removes it
+  // from our list instead, leaving the owner's copy alone.
+  const isSharedWithMe = (deck: DeckMeta) =>
+    Boolean(deck.role) && deck.role !== "owner";
+
   const handleConfirmDeleteDeck = async () => {
     if (!deckPendingDelete) return;
-    if (deleteConfirmText.trim() !== deckPendingDelete.name.trim()) return;
+    const leaving = isSharedWithMe(deckPendingDelete);
+    if (!leaving && deleteConfirmText.trim() !== deckPendingDelete.name.trim()) {
+      return;
+    }
     setDeletingDeck(true);
     try {
-      await deleteDeck(deckPendingDelete.id);
+      if (leaving) {
+        await leaveDeck(deckPendingDelete.id);
+      } else {
+        await deleteDeck(deckPendingDelete.id);
+      }
       const remaining = await refreshDecks();
       if (selectedDeckId === deckPendingDelete.id) {
         const nextPair = remaining.filter(
@@ -556,18 +571,35 @@ function DeckEditorPage() {
             </p>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {dirty ? "Unsaved changes" : "All changes saved"}
+                  {draft.role === "viewer"
+                    ? `Shared by ${draft.ownerName ?? "a friend"} — view only`
+                    : draft.role === "editor"
+                      ? `Shared by ${draft.ownerName ?? "a friend"} — you can edit`
+                      : dirty
+                        ? "Unsaved changes"
+                        : "All changes saved"}
                 </p>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={!dirty || saving}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {saving ? "Saving…" : "Save changes"}
-                </button>
+                <div className="flex gap-2">
+                  {draft.role === "owner" && (
+                    <button
+                      type="button"
+                      onClick={() => setShareDialogOpen(true)}
+                      className="rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
+                    >
+                      Share
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={!dirty || saving || draft.role === "viewer"}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : "Save changes"}
+                  </button>
+                </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -706,6 +738,14 @@ function DeckEditorPage() {
         </section>
       </div>
 
+      {shareDialogOpen && draft && (
+        <ShareDeckDialog
+          deckId={draft.id}
+          deckName={draft.name}
+          onClose={() => setShareDialogOpen(false)}
+        />
+      )}
+
       {deckPendingDelete && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4"
@@ -719,23 +759,37 @@ function DeckEditorPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              Delete deck?
+              {isSharedWithMe(deckPendingDelete)
+                ? "Remove shared deck?"
+                : "Delete deck?"}
             </h3>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-              This will permanently delete{" "}
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
-                {deckPendingDelete.name}
-              </span>{" "}
-              and all its words. Type its name to confirm.
-            </p>
-            <input
-              type="text"
-              autoFocus
-              value={deleteConfirmText}
-              onChange={(event) => setDeleteConfirmText(event.target.value)}
-              placeholder={deckPendingDelete.name}
-              className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            />
+            {isSharedWithMe(deckPendingDelete) ? (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {deckPendingDelete.name}
+                </span>{" "}
+                belongs to {deckPendingDelete.ownerName ?? "a friend"}. It leaves
+                your list; their deck stays as it is.
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  This will permanently delete{" "}
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {deckPendingDelete.name}
+                  </span>{" "}
+                  and all its words. Type its name to confirm.
+                </p>
+                <input
+                  type="text"
+                  autoFocus
+                  value={deleteConfirmText}
+                  onChange={(event) => setDeleteConfirmText(event.target.value)}
+                  placeholder={deckPendingDelete.name}
+                  className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </>
+            )}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
@@ -751,12 +805,18 @@ function DeckEditorPage() {
                 type="button"
                 onClick={handleConfirmDeleteDeck}
                 disabled={
-                  deleteConfirmText.trim() !== deckPendingDelete.name.trim() ||
+                  (!isSharedWithMe(deckPendingDelete) &&
+                    deleteConfirmText.trim() !==
+                      deckPendingDelete.name.trim()) ||
                   deletingDeck
                 }
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-400"
               >
-                {deletingDeck ? "Deleting…" : "Delete Deck"}
+                {deletingDeck
+                  ? "Removing…"
+                  : isSharedWithMe(deckPendingDelete)
+                    ? "Remove"
+                    : "Delete Deck"}
               </button>
             </div>
           </div>
