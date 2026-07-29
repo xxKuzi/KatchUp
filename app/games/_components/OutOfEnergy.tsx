@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useResetCountdown } from "@/app/_lib/energy";
+import WatchAdButton from "@/app/_components/WatchAdButton";
 import DeckMessage from "./DeckMessage";
 
 interface OutOfEnergyProps {
@@ -35,6 +36,9 @@ export default function OutOfEnergy(props: OutOfEnergyProps) {
       }}
       backHref="/games"
       backLabel={t("energyGate.backToGames")}
+      // The other way out. Once the ad pays, the gate lifts on its own — the
+      // block reads live energy — so the player lands back in the round.
+      extra={<WatchAdButton />}
     />
   );
 }

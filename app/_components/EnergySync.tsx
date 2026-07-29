@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "@/lib/auth-client";
 import { setEnergyIdentity } from "../_lib/energy";
+import { preloadAds } from "../_lib/adPlacement";
 
 /**
  * Connects the energy store to the session.
@@ -21,6 +22,11 @@ export default function EnergySync() {
   useEffect(() => {
     if (status === "loading") return;
     setEnergyIdentity(status === "authenticated" ? userId : null);
+
+    // Rewarded ads only pay a signed-in player, so only they load Google's
+    // script — and they load it now rather than when the button is pressed,
+    // because an ad has to be preloaded before it can be offered.
+    if (status === "authenticated") preloadAds();
   }, [status, userId]);
 
   return null;

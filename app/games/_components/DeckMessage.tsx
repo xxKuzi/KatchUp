@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import GamePage from "./GamePage";
@@ -20,6 +21,8 @@ export interface DeckMessageProps {
    */
   highlightBack?: boolean;
   action?: { label: string; onClick: () => void };
+  /** Extra controls under the buttons, e.g. a second way to earn energy. */
+  extra?: ReactNode;
 }
 
 /** Shared full-screen status card for the deck-session games (loading, sign-in,
@@ -69,6 +72,7 @@ export default function DeckMessage(props: DeckMessageProps) {
             </Link>
           )}
         </div>
+        {props.extra && <div className="mt-4">{props.extra}</div>}
       </div>
     </GamePage>
   );

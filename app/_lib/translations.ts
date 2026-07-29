@@ -56,9 +56,19 @@ export const translations: Record<Language, Translations> = {
       body: "Practice the words you already know to earn some back, or wait for the daily refill.",
       backToGames: "Back to games",
     },
+    energyAd: {
+      watchAd: "Watch a short ad",
+      playNow: "Ad ready — play it",
+      loading: "Loading ad…",
+      limitReached: "No more ads today — try the drill or wait for the refill.",
+      unavailable:
+        "No ad available right now. Turn off your ad blocker or try again later.",
+      error: "That didn't go through. Please try again.",
+    },
     auth: {
       signIn: "Sign in",
       signOut: "Sign out",
+      loginRegister: "Sign in or register",
     },
     authGate: {
       games:
@@ -327,9 +337,20 @@ export const translations: Record<Language, Translations> = {
       body: "Procvič slova, která už znáš, a něco si vyděláš zpět. Nebo počkej na denní doplnění.",
       backToGames: "Zpět na hry",
     },
+    energyAd: {
+      watchAd: "Přehrát krátkou reklamu",
+      playNow: "Reklama je připravená — spustit",
+      loading: "Načítám reklamu…",
+      limitReached:
+        "Dnes už žádná reklama — zkus procvičování nebo počkej na doplnění.",
+      unavailable:
+        "Teď není žádná reklama k dispozici. Vypni blokování reklam nebo to zkus později.",
+      error: "Nepovedlo se to. Zkus to prosím znovu.",
+    },
     auth: {
       signIn: "Prihlasit se",
       signOut: "Odhlasit se",
+      loginRegister: "Přihlásit / Registrovat",
     },
     authGate: {
       games:
@@ -597,9 +618,20 @@ export const translations: Record<Language, Translations> = {
       body: "Übe Wörter, die du schon kannst, und verdiene welche zurück — oder warte auf die tägliche Auffüllung.",
       backToGames: "Zurück zu den Spielen",
     },
+    energyAd: {
+      watchAd: "Kurze Werbung ansehen",
+      playNow: "Werbung bereit — abspielen",
+      loading: "Werbung wird geladen…",
+      limitReached:
+        "Heute keine Werbung mehr — probier die Übung oder warte auf die Auffüllung.",
+      unavailable:
+        "Gerade ist keine Werbung verfügbar. Deaktiviere deinen Adblocker oder versuch es später.",
+      error: "Das hat nicht geklappt. Bitte versuch es noch einmal.",
+    },
     auth: {
       signIn: "Anmelden",
       signOut: "Abmelden",
+      loginRegister: "Anmelden oder registrieren",
     },
     authGate: {
       games:

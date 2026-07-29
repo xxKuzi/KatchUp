@@ -2,9 +2,15 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { msUntilReset, pragueDayKey } from "./pragueDay";
-import { ENERGY_PRACTICE_REWARD, MAX_ENERGY } from "./energyConstants";
+import { adsConfigured, requestRewardedAd } from "./adPlacement";
+import {
+  ENERGY_AD_REWARD,
+  ENERGY_PRACTICE_REWARD,
+  MAX_ENERGY,
+} from "./energyConstants";
 
-export { MAX_ENERGY, ENERGY_PRACTICE_REWARD, msUntilReset };
+export { MAX_ENERGY, ENERGY_PRACTICE_REWARD, ENERGY_AD_REWARD, msUntilReset };
+export { adsConfigured };
 
 /**
  * Where a player's daily energy lives depends on whether we know who they are.
@@ -227,6 +233,84 @@ export async function gainEnergy(amount = 1): Promise<number> {
 
   if (energy !== null) publish(energy, true);
   return snapshot.value;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Rewarded video                                                              */
+/* -------------------------------------------------------------------------- */
+
+export type AdEnergyResult =
+  /** The video played and the server paid out. */
+  | "rewarded"
+  /** Closed early — nothing earned, nothing lost. */
+  | "skipped"
+  /** Today's ads are used up. */
+  | "limit"
+  /** No ad to show: blocked script, no fill, or ads not configured. */
+  | "unavailable"
+  /** Signed out, or the round trip failed. */
+  | "error";
+
+/**
+ * Trade one rewarded video for energy.
+ *
+ * The order matters: we ask the server for a ticket *before* the ad, so a
+ * player who has already used the day's videos is turned away instead of
+ * sitting through an ad that can't pay. Only a watched ad comes back to claim,
+ * and the server decides what it's worth.
+ *
+ * `onAdReady` is handed the function that plays the ad, which Google requires
+ * be called from a real user gesture — so the caller shows a button and the
+ * player's press starts the video.
+ */
+export async function watchAdForEnergy(
+  onAdReady: (playAd: () => void) => void,
+): Promise<AdEnergyResult> {
+  await identitySettled;
+
+  // Ads pay into the server-side meter, which a signed-out visitor doesn't have.
+  if (!userId) return "error";
+  if (!adsConfigured()) return "unavailable";
+
+  let ticket: string;
+  try {
+    const response = await fetch("/api/energy/ad/start", {
+      method: "POST",
+      cache: "no-store",
+    });
+
+    if (response.status === 429) return "limit";
+    if (!response.ok) return "error";
+
+    const body = (await response.json()) as { ticket?: string };
+    if (!body.ticket) return "error";
+    ticket = body.ticket;
+  } catch {
+    return "error";
+  }
+
+  const outcome = await requestRewardedAd({ onReady: onAdReady });
+  if (outcome !== "watched") {
+    // The unspent ticket is left to expire on its own; it is worth nothing
+    // without an ad, and a claim it never makes costs nobody anything.
+    return outcome === "skipped" ? "skipped" : "unavailable";
+  }
+
+  const energy = await callEnergyApi("/api/energy/ad/claim", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ticket }),
+  });
+
+  if (energy === null) {
+    // The ad was watched but the payout didn't land. Re-read rather than guess,
+    // so the bar shows what the server actually holds.
+    void refreshRemote();
+    return "error";
+  }
+
+  publish(energy, true);
+  return "rewarded";
 }
 
 /* -------------------------------------------------------------------------- */

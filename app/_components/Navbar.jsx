@@ -18,6 +18,7 @@ import {
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import LevelBadge from "./LevelBadge";
+import WatchAdButton from "./WatchAdButton";
 import { useLanguage } from "../_lib/languageContext";
 import { useEnergyState, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
@@ -359,6 +360,10 @@ function Navbar() {
                           {ENERGY_PRACTICE_REWARD}
                         </span>
                       </button>
+
+                      {/* Second way back: a rewarded video. The popover stays
+                          open afterwards so the player watches the bar fill. */}
+                      <WatchAdButton disabled={energy >= MAX_ENERGY} />
 
                       {energy >= MAX_ENERGY && (
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
