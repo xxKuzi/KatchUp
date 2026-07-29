@@ -21,6 +21,9 @@ import {
   LEGENDARY_REVIEW_SIZE,
 } from "../_lib/deckSessionClient";
 import { useDeckSession } from "../_hooks/useDeckSession";
+import { spendEnergy } from "@/app/_lib/energy";
+import { useEnergyBlocked } from "../_lib/energyGate";
+import OutOfEnergy from "../_components/OutOfEnergy";
 import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { usePackCompleted } from "../_hooks/usePackCompleted";
@@ -64,6 +67,7 @@ type Verdict = "known" | "practice";
 const FlipCardsPage = () => {
   const searchParams = useSearchParams();
   const { isSignedIn, isReady, signIn } = useAuthState();
+  const energyBlocked = useEnergyBlocked();
 
   const deckId = searchParams.get("deck") ?? "";
   const sessionMode =
@@ -107,6 +111,10 @@ const FlipCardsPage = () => {
     "unplayed" | "grading" | "passed" | "failed"
   >("unplayed");
   const submittedRound = useRef(false);
+  // One charge per pass through the cards, not per page visit — `resetPiles`
+  // clears this, so replaying the ones you're still learning is another round
+  // and costs another energy, like every other game's replay.
+  const energySpent = useRef(false);
 
   const [deck, setDeck] = useState<CardWord[]>([]);
   const [index, setIndex] = useState(0);
@@ -134,8 +142,9 @@ const FlipCardsPage = () => {
     setPractice([]);
     setDragX(0);
     setLeaving(null);
-    // A fresh round is a fresh attempt at the crown.
+    // A fresh round is a fresh attempt at the crown, and a fresh charge.
     submittedRound.current = false;
+    energySpent.current = false;
     setLegendaryVerdict("unplayed");
   };
 
@@ -245,6 +254,19 @@ const FlipCardsPage = () => {
       ...practice.map((card) => ({ deckWordId: card.id, correct: false })),
     ]).then((passed) => setLegendaryVerdict(passed ? "passed" : "failed"));
   }, [finished, isLegendaryRound, known, practice, submitLegendaryResults]);
+
+  // A pass through the cards costs one energy, like every other round. Charged
+  // at the end rather than the start: a player who opens the deck and walks away
+  // has practised nothing. `commitVerdict` only ever bumps the index, so there
+  // is no end-of-round branch to put this in — `finished` plus a ref is the
+  // guard against the effect firing twice on the results screen.
+  useEffect(() => {
+    if (!finished || energySpent.current) {
+      return;
+    }
+    energySpent.current = true;
+    void spendEnergy();
+  }, [finished]);
 
   const legendaryPassed = legendaryVerdict === "passed";
 
@@ -364,6 +386,10 @@ const FlipCardsPage = () => {
       setDragX(0);
     }
   };
+
+  if (energyBlocked) {
+    return <OutOfEnergy {...GATE} />;
+  }
 
   // Deck-path gating.
   if (deckId) {
