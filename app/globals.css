@@ -333,14 +333,18 @@ body {
   }
 }
 
-/* …and the spacer that reserves room for it has to grow by the same amount. */
+/* …and the spacer that reserves room for it has to grow by the same amount.
+ * Use real height rather than a margin on the empty wrapper: an empty block's
+ * margins can collapse, which lets the first page section slide under the
+ * fixed navbar. */
 .app-safe-top-gap {
-  margin-bottom: calc(5rem + env(safe-area-inset-top));
+  height: calc(5rem + env(safe-area-inset-top));
+  flex-shrink: 0;
 }
 
 @media (min-width: 1024px) {
   .app-safe-top-gap {
-    margin-bottom: calc(8rem + env(safe-area-inset-top));
+    height: calc(8rem + env(safe-area-inset-top));
   }
 }
 

@@ -19,7 +19,7 @@ env:
   - variable: AUTH_GOOGLE_SECRET
     secret: auth-google-secret
   - variable: AUTH_GITHUB_ID
-    value: "Ov23lidmByY3P2NvPeEb"
+    value: "Ov23li14mOjj2c0c4tCw"
   - variable: AUTH_GITHUB_SECRET
     secret: auth-github-secret
   - variable: AUTH_DISCORD_ID
