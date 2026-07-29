@@ -8,7 +8,7 @@
  * update at all.
  */
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const SHELL_CACHE = `katchup-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `katchup-assets-${CACHE_VERSION}`;
 const PAGE_CACHE = `katchup-pages-${CACHE_VERSION}`;
@@ -119,12 +119,18 @@ self.addEventListener("activate", (event) => {
     (async () => {
       // Navigation preload stays off, and an earlier version's setting is
       // undone here. The browser fires the preload for *every* in-scope
-      // navigation, including the ones `fetch` below declines to answer — and
-      // a declined navigation then goes to the network a second time. On
+      // navigation, including the ones a worker declines to answer — and a
+      // declined navigation then goes to the network a second time. On
       // /api/auth/callback/* that is fatal: the first request spends the
       // one-time code and sets the session cookie, the second finds the code
       // already used and lands the player on Auth.js's "server configuration"
       // page while actually being signed in.
+      //
+      // Turning it off here is not enough on its own, because it only takes
+      // effect once *this* worker activates — a device still controlled by the
+      // version that enabled preload keeps failing until it updates. So every
+      // navigation below is answered, and answered with the preloaded response
+      // when there is one, which makes a second request impossible either way.
       if (self.registration.navigationPreload) {
         await self.registration.navigationPreload.disable();
       }
@@ -232,7 +238,9 @@ async function trimCache(cacheName, limit) {
   if (keys.length <= limit) {
     return;
   }
-  await Promise.all(keys.slice(0, keys.length - limit).map((key) => cache.delete(key)));
+  await Promise.all(
+    keys.slice(0, keys.length - limit).map((key) => cache.delete(key)),
+  );
 }
 
 /**
@@ -288,6 +296,18 @@ async function staleWhileRevalidate(request, cacheName) {
 }
 
 /**
+ * Navigations that must reach the server untouched: one request, no cache, no
+ * offline fallback. The preloaded response is used when the browser made one,
+ * because the alternative is asking for the same URL twice — which signs a
+ * player in and then shows them an error, since the second request replays an
+ * OAuth code the first one already spent.
+ */
+async function passThroughNavigation(event) {
+  const preloaded = await event.preloadResponse.catch(() => null);
+  return preloaded || fetch(event.request);
+}
+
+/**
  * Navigations: network first so a signed-in page is never a stale one, falling
  * back to the last copy of this exact page, then to the offline page.
  */
@@ -295,7 +315,8 @@ async function handleNavigation(event) {
   const cache = await caches.open(PAGE_CACHE);
 
   try {
-    const response = await fetch(event.request);
+    const response =
+      (await event.preloadResponse) || (await fetch(event.request));
     if (response && response.ok) {
       cache.put(event.request, response.clone());
       void trimCache(PAGE_CACHE, PAGE_CACHE_LIMIT);
@@ -384,12 +405,24 @@ self.addEventListener("fetch", (event) => {
   }
 
   const url = new URL(request.url);
-  if (!isSameOrigin(url) || isNeverCached(url)) {
+  if (!isSameOrigin(url)) {
     return;
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(handleNavigation(event));
+    // Never-cached navigations — /api/auth/callback/* above all — are still
+    // answered here rather than declined, so a navigation preload that some
+    // older registration turned on is consumed instead of thrown away and
+    // repeated. See the note in `activate`.
+    event.respondWith(
+      isNeverCached(url)
+        ? passThroughNavigation(event)
+        : handleNavigation(event),
+    );
+    return;
+  }
+
+  if (isNeverCached(url)) {
     return;
   }
 
