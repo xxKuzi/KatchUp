@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useSession } from "@/lib/auth-client";
 import { readChosenLanguagePair } from "./languageContext";
 import { subscribeToOnboardingChanges } from "./onboardingEvents";
 import { readStoredPlacement } from "./placement";
+import { useSignedIn } from "./useSignedIn";
 import type { Lang } from "./languages";
 
 /**
@@ -36,8 +36,7 @@ export interface OnboardingStatus {
 }
 
 export function useOnboardingStatus(): OnboardingStatus {
-  const { data: session, status: sessionStatus } = useSession();
-  const signedIn = sessionStatus === "authenticated" && Boolean(session?.user?.id);
+  const { signedIn, resolving } = useSignedIn();
   const [status, setStatus] = useState<OnboardingStatus>({
     state: "loading",
     pair: null,
@@ -51,8 +50,10 @@ export function useOnboardingStatus(): OnboardingStatus {
 
   useEffect(() => {
     // Acting on a not-yet-known session would put a signed-in player through the
-    // visitor's flow for as long as the session takes to resolve.
-    if (sessionStatus === "loading") {
+    // visitor's flow for as long as the session takes to resolve — and a session
+    // dropped by a failed refocus refetch is exactly that, not-yet-known rather
+    // than signed out. See `useSignedIn`.
+    if (resolving) {
       setStatus({ state: "loading", pair: null, signedIn: false });
       return;
     }
@@ -126,7 +127,7 @@ export function useOnboardingStatus(): OnboardingStatus {
     return () => {
       cancelled = true;
     };
-  }, [sessionStatus, signedIn, token]);
+  }, [resolving, signedIn, token]);
 
   return status;
 }

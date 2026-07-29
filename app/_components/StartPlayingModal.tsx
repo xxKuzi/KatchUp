@@ -31,7 +31,14 @@ const LANGUAGE_STORAGE_KEY = "katchup-language";
  * playing a language nobody chose at a level nobody measured. Leaving means
  * leaving the page, and it is put again on the way back.
  */
-export default function StartPlayingModal({ open }: { open: boolean }) {
+export default function StartPlayingModal({
+  open,
+  onResolved,
+}: {
+  open: boolean;
+  /** Fired when the dialog has nothing left to ask — see the provider. */
+  onResolved?: (pair: { speak: Lang; learning: Lang }) => void;
+}) {
   const router = useRouter();
   const { language, setLanguage, setLearningLanguage } = useLanguage();
   const { languages } = useLanguageLevels();
@@ -144,6 +151,11 @@ export default function StartPlayingModal({ open }: { open: boolean }) {
     // covers accounts with several active languages, where choosing which one
     // to restore cannot safely be automatic.
     if (standing?.canBePlaced === false) {
+      // Said out loud rather than left for the onboarding status to work out on
+      // its own: this is the one press that answers everything the dialog was
+      // asking, and a status that disagrees would otherwise put the dialog back
+      // up with the same button doing the same nothing.
+      onResolved?.({ speak: nativeLanguage, learning: learningLanguage });
       router.push("/games");
       return;
     }

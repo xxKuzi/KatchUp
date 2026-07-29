@@ -7,8 +7,10 @@ import {
   isSetupExemptPath,
   isVisitorPublicPath,
 } from "../_lib/onboardingGate";
+import { useLanguage } from "../_lib/languageContext";
 import { useOnboardingStatus } from "../_lib/useOnboardingStatus";
 import { usePlacementClaim } from "../_lib/usePlacementClaim";
+import type { Lang } from "../_lib/languages";
 
 interface StartPlayingModalContextValue {
   openModal: () => void;
@@ -26,7 +28,17 @@ export function StartPlayingModalProvider({
   const router = useRouter();
   const pathname = usePathname();
   const status = useOnboardingStatus();
+  const { language, learningLanguage } = useLanguage();
   const [requested, setRequested] = useState(false);
+  // A pair the player has taken through this dialog on a language the server
+  // itself says is already placed. Not a dismissal — it is the answer to the
+  // only question the dialog had, kept so that a status which somehow still
+  // reads "owed" cannot put the same answered dialog straight back up and leave
+  // the button doing nothing. It lasts only as long as the pair does.
+  const [answered, setAnswered] = useState<{
+    speak: Lang;
+    learning: Lang;
+  } | null>(null);
 
   // A test sat before signing up is spent here, wherever in the app the sign-in
   // happens to land — it is the only thing a visitor's test left behind.
@@ -46,7 +58,18 @@ export function StartPlayingModalProvider({
     ? !isSetupExemptPath(pathname)
     : !isVisitorPublicPath(pathname);
 
-  const open = owed && (forced || (requested && !isSetupExemptPath(pathname)));
+  const settled =
+    answered?.speak === language && answered?.learning === learningLanguage;
+
+  const open =
+    owed && !settled && (forced || (requested && !isSetupExemptPath(pathname)));
+
+  // Called when the dialog has nothing left to ask: the pair is set and this
+  // language is placed on the server already.
+  const handleResolved = useCallback((pair: { speak: Lang; learning: Lang }) => {
+    setRequested(false);
+    setAnswered(pair);
+  }, []);
 
   const openModal = useCallback(() => {
     if (status.state === "loading") {
@@ -85,7 +108,7 @@ export function StartPlayingModalProvider({
   return (
     <StartPlayingModalContext.Provider value={{ openModal }}>
       {children}
-      <StartPlayingModal open={open} />
+      <StartPlayingModal open={open} onResolved={handleResolved} />
     </StartPlayingModalContext.Provider>
   );
 }
