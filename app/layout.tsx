@@ -12,6 +12,7 @@ import { LanguageProvider } from "./_lib/languageContext";
 import { StartPlayingModalProvider } from "./_components/StartPlayingModalProvider";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/lib/auth-client";
+import SiteTranslationBridge from "./_components/SiteTranslationBridge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,6 +83,7 @@ export default async function RootLayout({
         >
           <SessionProvider session={session}>
             <LanguageProvider>
+              <SiteTranslationBridge />
               <StartPlayingModalProvider>
                 <ScrollToTop />
                 <ServiceWorkerManager />

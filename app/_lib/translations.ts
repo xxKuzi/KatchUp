@@ -1,4 +1,5 @@
 import type { Lang } from "./languages";
+import { spanishTranslations } from "./translations.es";
 
 /** @deprecated Use `Lang` from ./languages — kept for legacy call sites. */
 export type Language = "english" | "czech" | "deutsch";
@@ -35,6 +36,7 @@ export const translations: Record<Language, Translations> = {
       offline: "Offline",
     },
     navbar: {
+      home: "Home",
       games: "Games",
       topics: "Topics",
       myDecks: "My Decks",
@@ -105,6 +107,9 @@ export const translations: Record<Language, Translations> = {
       words: "words",
       noDecksYet: "No decks yet. Create your first one in the deck editor.",
       totalDecks: "total decks",
+      close: "Close",
+      loading: "Loading…",
+      signIn: "Sign in",
     },
     home: {
       hello: "Hello",
@@ -228,8 +233,12 @@ export const translations: Record<Language, Translations> = {
       chooseAMode: "words. Choose a practice mode to start.",
       deckNotFound: "Deck not found. Please select a deck from the overview.",
       gameInfoText: "Choose a practice mode",
+      finishRound: "Finish Round",
+      finishRoundDesc: "Practise your difficult words to earn energy back.",
+      startFinishRound: "Start Finish Round",
     },
     games: {
+      browse: "Browse games",
       flipCards: "Flip Cards",
       flipCardsDesc: "Flip through cards and test your memory",
       oneOfThree: "One of Three",
@@ -316,6 +325,7 @@ export const translations: Record<Language, Translations> = {
       offline: "Offline",
     },
     navbar: {
+      home: "Domů",
       games: "Hry",
       topics: "Temata",
       myDecks: "Moje balíčky",
@@ -387,6 +397,9 @@ export const translations: Record<Language, Translations> = {
       words: "slov",
       noDecksYet: "Dosud žádné balíčky. Vytvořte si první v editoru balíčků.",
       totalDecks: "celkem balíčků",
+      close: "Zavřít",
+      loading: "Načítám…",
+      signIn: "Přihlásit se",
     },
     home: {
       hello: "Ahoj",
@@ -508,8 +521,12 @@ export const translations: Record<Language, Translations> = {
       chooseAMode: "slov. Vyberte si režim tréninku a začněte.",
       deckNotFound: "Balíček nenalezen. Vyberte si prosím balíček z přehledu.",
       gameInfoText: "Vyberte si režim tréninku",
+      finishRound: "Závěrečné kolo",
+      finishRoundDesc: "Procvičte obtížná slova a získejte zpět energii.",
+      startFinishRound: "Spustit závěrečné kolo",
     },
     games: {
+      browse: "Procházet hry",
       flipCards: "Obrácené karty",
       flipCardsDesc: "Obraťte karty a testujte svou paměť",
       oneOfThree: "Jeden ze tří",
@@ -597,6 +614,7 @@ export const translations: Record<Language, Translations> = {
       offline: "Offline",
     },
     navbar: {
+      home: "Startseite",
       games: "Spiele",
       topics: "Themen",
       myDecks: "Meine Decks",
@@ -668,6 +686,9 @@ export const translations: Record<Language, Translations> = {
       words: "Wörter",
       noDecksYet: "Noch keine Decks. Erstellen Sie Ihr erstes im Deck-Editor.",
       totalDecks: "Decks insgesamt",
+      close: "Schließen",
+      loading: "Wird geladen…",
+      signIn: "Anmelden",
     },
     home: {
       hello: "Hallo",
@@ -794,8 +815,12 @@ export const translations: Record<Language, Translations> = {
       deckNotFound:
         "Deck nicht gefunden. Bitte wählen Sie ein Deck aus der Übersicht.",
       gameInfoText: "Wählen Sie einen Übungsmodus",
+      finishRound: "Abschlussrunde",
+      finishRoundDesc: "Übe schwierige Wörter, um Energie zurückzugewinnen.",
+      startFinishRound: "Abschlussrunde starten",
     },
     games: {
+      browse: "Spiele entdecken",
       flipCards: "Lernkarten",
       flipCardsDesc: "Lernkarten umblättern und Ihr Gedächtnis testen",
       oneOfThree: "Eins von drei",
@@ -839,7 +864,8 @@ export const translations: Record<Language, Translations> = {
       legendaryTitle: "Legendares Paket",
       legendaryText:
         "Du hast die Wiederholungsrunde geschafft. Komm jederzeit wieder, damit die Worter sitzen.",
-      legendaryHint: "30 Worter - erreiche 85 %, damit das Paket legendar wird.",
+      legendaryHint:
+        "30 Worter - erreiche 85 %, damit das Paket legendar wird.",
       keyEarnedTitle: "Du hast einen Schlussel erhalten!",
       keyEarnedText:
         "Alle Level dieses Pakets sind fertig. Loese damit ein neues Paket ein - oder hole dir die Krone.",
@@ -852,16 +878,31 @@ export const translations: Record<Language, Translations> = {
       subtitle:
         "Demnachst: Einladungen, Wochenrennen und gemeinsame Meilensteine.",
     },
+    friendsPage: {
+      title: "Freunde-Liga",
+      subtitle:
+        "Füge Freunde hinzu, bilde ein Viererteam und besiege Rivalen, um aufzusteigen.",
+      currentLeague: "Aktuelle Liga",
+      yourXp: "Deine XP",
+      teamGap: "Teamabstand",
+      promotionProgress: "Aufstiegsfortschritt",
+      leagueLadder: "Ligaübersicht",
+      squadTitle: "Stelle dein Team zusammen",
+      addFriends: "Freunde hinzufügen",
+      yourTeam: "Dein Team",
+      rivalTeam: "Gegnerisches Team",
+      leaderboardTitle: "Liga-Rangliste",
+      trainingTitle: "XP-Aufgaben",
+    },
   },
 };
 
-// UI copy exists only for these languages. Others (Spanish) are perfectly
-// valid to learn or speak, they just read the interface in English until a
-// dictionary is written for them.
-export const TRANSLATIONS_BY_LANG: Partial<Record<Lang, Translations>> = {
+// Every supported speaking/learning language also has a complete UI catalogue.
+export const TRANSLATIONS_BY_LANG: Record<Lang, Translations> = {
   en: translations.english,
   cs: translations.czech,
   de: translations.deutsch,
+  es: spanishTranslations,
 };
 
 export function translationsForLang(lang: Lang): Translations {
