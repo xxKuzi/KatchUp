@@ -13,7 +13,12 @@ import {
   normalizeLang,
   type CefrLevel,
 } from "@/app/_lib/languages";
-import { buildOptions, fetchWordPairs, shuffle, type WordPair } from "../../_lib/wordPairs";
+import {
+  buildOptions,
+  fetchWordPairs,
+  shuffle,
+  type WordPair,
+} from "../../_lib/wordPairs";
 import { useVocabProgress } from "../../_lib/useVocabProgress";
 
 interface RushQuestion {
@@ -238,7 +243,16 @@ export default function ScoreRushPlayPage() {
     };
 
     void submitScore();
-  }, [correct, learning, level, playerAvatar, playerId, playerName, score, status]);
+  }, [
+    correct,
+    learning,
+    level,
+    playerAvatar,
+    playerId,
+    playerName,
+    score,
+    status,
+  ]);
 
   const currentQuestion = queue[queueIndex] ?? null;
 
@@ -252,7 +266,10 @@ export default function ScoreRushPlayPage() {
   const advanceQuestion = () => {
     const nextIndex = queueIndex + 1;
     if (nextIndex >= queue.length) {
-      setQueue((previous) => [...previous, ...buildQuestionQueue(wordPool, 40)]);
+      setQueue((previous) => [
+        ...previous,
+        ...buildQuestionQueue(wordPool, 40),
+      ]);
     }
     setQueueIndex(nextIndex);
     questionStartedAt.current = Date.now();
@@ -302,14 +319,17 @@ export default function ScoreRushPlayPage() {
   };
 
   const secondsRemaining = Math.max(0, Math.ceil(msRemaining / 1000));
-  const timerPercent = Math.max(0, Math.min(100, (msRemaining / RUN_DURATION_MS) * 100));
+  const timerPercent = Math.max(
+    0,
+    Math.min(100, (msRemaining / RUN_DURATION_MS) * 100),
+  );
 
   if (energyBlocked) {
     return (
       <OutOfEnergy
         name="Score Rush"
         description="Answer as many translations as you can before the clock runs out."
-        bgImage="one_of_three.png"
+        bgImage="score_rush.webp"
       />
     );
   }
@@ -333,7 +353,7 @@ export default function ScoreRushPlayPage() {
     <GamePage
       name="Score Rush"
       description="Answer as many translations as you can before the clock runs out."
-      bgImage="one_of_three.png"
+      bgImage="score_rush.webp"
     >
       <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600 dark:text-zinc-300">

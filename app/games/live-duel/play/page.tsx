@@ -136,9 +136,7 @@ export default function LiveDuelPlayPage() {
       : (() => {
           const raw = searchParams.get("startAt");
           const parsed = raw ? Number(raw) : NaN;
-          return Number.isFinite(parsed) && parsed > Date.now()
-            ? parsed
-            : null;
+          return Number.isFinite(parsed) && parsed > Date.now() ? parsed : null;
         })();
 
   const [matchStartAt, setMatchStartAt] = useState<number | null>(
@@ -551,10 +549,7 @@ export default function LiveDuelPlayPage() {
   // there's a rival to race without needing a second human.
   const rivalProgress =
     mode === "bot"
-      ? Math.min(
-          Math.floor(elapsedSinceStart / BOT_MS_PER_QUESTION),
-          botTarget,
-        )
+      ? Math.min(Math.floor(elapsedSinceStart / BOT_MS_PER_QUESTION), botTarget)
       : opponentProgress;
 
   // A live duel is a race to a number of correct answers, not to the end of
@@ -766,9 +761,7 @@ export default function LiveDuelPlayPage() {
   };
 
   const rivalName =
-    mode === "live"
-      ? (livePayload?.opponent?.name ?? opponentName)
-      : BOT_NAME;
+    mode === "live" ? (livePayload?.opponent?.name ?? opponentName) : BOT_NAME;
   const rivalAvatar =
     mode === "live"
       ? (livePayload?.opponent?.avatar ?? opponentAvatar)
@@ -797,7 +790,7 @@ export default function LiveDuelPlayPage() {
           ? "Both players race through a shared set of prompts. First player to reach 10 correct answers wins."
           : "Race the bot to 10 correct answers. Only right answers move you forward, so answer quickly but get them right."
       }
-      bgImage="flip_cards.png"
+      bgImage="live_duel.webp"
     >
       <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600 dark:text-zinc-300">
@@ -838,8 +831,7 @@ export default function LiveDuelPlayPage() {
           </div>
           <div className="mt-8 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-300">
             <p>
-              {playerName}: {Math.min(playerRaceValue, raceTarget)}/
-              {raceTarget}
+              {playerName}: {Math.min(playerRaceValue, raceTarget)}/{raceTarget}
             </p>
             <p>
               {rivalName}: {Math.min(rivalRaceValue, raceTarget)}/{raceTarget}
@@ -935,7 +927,8 @@ export default function LiveDuelPlayPage() {
                 Back to lobby
               </button>
             </>
-          ) : mode === "live" && questionIndex >= liveQuestions.length &&
+          ) : mode === "live" &&
+            questionIndex >= liveQuestions.length &&
             liveQuestions.length > 0 ? (
             <>
               <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
@@ -989,9 +982,7 @@ export default function LiveDuelPlayPage() {
               <button
                 type="button"
                 onClick={() =>
-                  router.push(
-                    `/login?callbackUrl=${encodeURIComponent("/")}`,
-                  )
+                  router.push(`/login?callbackUrl=${encodeURIComponent("/")}`)
                 }
                 className="mt-3 w-full rounded-xl bg-blue-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-400 dark:bg-blue-500 dark:hover:bg-blue-400"
               >
@@ -999,7 +990,6 @@ export default function LiveDuelPlayPage() {
               </button>
             </div>
           )}
-
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button

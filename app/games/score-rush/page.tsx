@@ -7,7 +7,10 @@ import GamePage from "../_components/GamePage";
 import { type CefrLevel } from "@/app/_lib/languages";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
-import { getPlayerProfile, PlayerProfile } from "../live-duel/_lib/playerProfile";
+import {
+  getPlayerProfile,
+  PlayerProfile,
+} from "../live-duel/_lib/playerProfile";
 import { useDuelNickname } from "../live-duel/_lib/useDuelNickname";
 import { useSession } from "@/lib/auth-client";
 
@@ -57,8 +60,9 @@ const ScoreRushPage = () => {
   const { speak, learning } = useLanguagePair();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [topPlayers, setTopPlayers] = useState<LeaderboardEntry[]>([]);
-  const [currentPlayer, setCurrentPlayer] =
-    useState<LeaderboardEntry | null>(null);
+  const [currentPlayer, setCurrentPlayer] = useState<LeaderboardEntry | null>(
+    null,
+  );
   const [recentRuns, setRecentRuns] = useState<RunHistoryEntry[]>([]);
   const [recentRunsCacheScope, setRecentRunsCacheScope] = useState<
     string | null
@@ -106,9 +110,8 @@ const ScoreRushPage = () => {
       }
 
       try {
-        const cachedLeaderboard = window.localStorage.getItem(
-          leaderboardCacheKey,
-        );
+        const cachedLeaderboard =
+          window.localStorage.getItem(leaderboardCacheKey);
         if (cachedLeaderboard) {
           const parsed = JSON.parse(cachedLeaderboard) as LeaderboardPayload;
           if (Array.isArray(parsed.leaderboard)) {
@@ -236,7 +239,7 @@ const ScoreRushPage = () => {
     <GamePage
       name="Score Rush"
       description="You've got 30 seconds. Answer as many translations correctly as you can and climb the leaderboard."
-      bgImage="one_of_three.png"
+      bgImage="score_rush.webp"
       heroFirst
     >
       <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-800/40">
@@ -368,62 +371,63 @@ const ScoreRushPage = () => {
             </div>
           ) : (
             displayedPlayers.map((entry) => {
-              const isCurrentPlayer =
-                currentPlayer?.userId === entry.userId;
+              const isCurrentPlayer = currentPlayer?.userId === entry.userId;
 
               return (
-              <div
-                key={entry.userId}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 ${
-                  isCurrentPlayer
-                    ? "border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-950/30"
-                    : entry.rank === 1
-                    ? "bg-amber-50 dark:bg-amber-950/20"
-                    : "odd:bg-zinc-50 dark:odd:bg-zinc-800/40"
-                }`}
-              >
-                <span
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                <div
+                  key={entry.userId}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-3 ${
                     isCurrentPlayer
-                      ? "bg-blue-600 text-white"
+                      ? "border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-950/30"
                       : entry.rank === 1
-                      ? "bg-amber-400 text-amber-950"
-                      : entry.rank === 2
-                        ? "bg-zinc-300 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100"
-                        : entry.rank === 3
-                          ? "bg-orange-200 text-orange-800 dark:bg-orange-900/60 dark:text-orange-200"
-                          : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                        ? "bg-amber-50 dark:bg-amber-950/20"
+                        : "odd:bg-zinc-50 dark:odd:bg-zinc-800/40"
                   }`}
                 >
-                  {entry.rank === 1 && !isCurrentPlayer ? (
-                    <Crown className="size-5 fill-current" aria-label="First place" />
-                  ) : (
-                    entry.rank
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                  {entry.name}
-                  {isCurrentPlayer && (
-                    <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-300">
-                      You
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                      isCurrentPlayer
+                        ? "bg-blue-600 text-white"
+                        : entry.rank === 1
+                          ? "bg-amber-400 text-amber-950"
+                          : entry.rank === 2
+                            ? "bg-zinc-300 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100"
+                            : entry.rank === 3
+                              ? "bg-orange-200 text-orange-800 dark:bg-orange-900/60 dark:text-orange-200"
+                              : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                    }`}
+                  >
+                    {entry.rank === 1 && !isCurrentPlayer ? (
+                      <Crown
+                        className="size-5 fill-current"
+                        aria-label="First place"
+                      />
+                    ) : (
+                      entry.rank
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    {entry.name}
+                    {isCurrentPlayer && (
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-300">
+                        You
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-right">
+                    <span className="block text-base font-black tabular-nums text-blue-600 dark:text-blue-400">
+                      {entry.score}
                     </span>
-                  )}
-                </span>
-                <span className="text-right">
-                  <span className="block text-base font-black tabular-nums text-blue-600 dark:text-blue-400">
-                    {entry.score}
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-zinc-400">
+                      points
+                    </span>
                   </span>
-                  <span className="block text-[10px] font-bold uppercase tracking-wide text-zinc-400">
-                    points
-                  </span>
-                </span>
-              </div>
+                </div>
               );
             })
           )}
         </div>
       </div>
-
     </GamePage>
   );
 };
