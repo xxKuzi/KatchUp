@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSession } from "@/lib/auth-client";
 
 /**
  * Registers the service worker and surfaces the one thing a user has to decide
@@ -10,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * cannot reload the tab under the player. It waits here until they say yes.
  */
 export default function ServiceWorkerManager() {
+  const { status: sessionStatus } = useSession();
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [dismissed, setDismissed] = useState(false);
   // A controller swap means a worker took over. That happens on the very first
@@ -102,6 +104,43 @@ export default function ServiceWorkerManager() {
       );
     };
   }, []);
+
+  // Ask the worker to keep the offline-capable pages fresh. Tied to the session
+  // because the cached copy carries it: warming again after a sign-in replaces
+  // the signed-out markup that would otherwise greet you offline.
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !("serviceWorker" in navigator) ||
+      sessionStatus === "loading" ||
+      !navigator.onLine
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const warm = () => {
+      navigator.serviceWorker.ready
+        .then((registration) => {
+          if (!cancelled) {
+            registration.active?.postMessage({ type: "WARM_PAGES" });
+          }
+        })
+        .catch(() => {
+          // No worker, no offline pages to warm.
+        });
+    };
+
+    // After the first paint has had its turn at the network.
+    const timer = window.setTimeout(warm, 3000);
+    window.addEventListener("online", warm);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("online", warm);
+    };
+  }, [sessionStatus]);
 
   const applyUpdate = useCallback(() => {
     updateRequested.current = true;

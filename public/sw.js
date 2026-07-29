@@ -8,13 +8,33 @@
  * update at all.
  */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const SHELL_CACHE = `katchup-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `katchup-assets-${CACHE_VERSION}`;
 const PAGE_CACHE = `katchup-pages-${CACHE_VERSION}`;
-const CURRENT_CACHES = [SHELL_CACHE, ASSET_CACHE, PAGE_CACHE];
+const DATA_CACHE = `katchup-data-${CACHE_VERSION}`;
+const CURRENT_CACHES = [SHELL_CACHE, ASSET_CACHE, PAGE_CACHE, DATA_CACHE];
 
 const OFFLINE_URL = "/offline";
+
+/**
+ * The routes that have to survive with no network, because everything they
+ * need is already on the device: the deck list, the deck's practice menu and
+ * the four games that can run from a downloaded deck.
+ *
+ * They are warmed by the page (see WARM_PAGES below) rather than precached at
+ * install, because a signed-in page is rendered with the session in it — a copy
+ * fetched at install time would be the signed-out one, and the whole point is
+ * that My Decks opens offline with your decks in it.
+ */
+const OFFLINE_ROUTES = [
+  "/my-decks",
+  "/my-decks/practice",
+  "/games/flip-cards",
+  "/games/one-of-three",
+  "/games/guess-match",
+  "/games/quick-guess",
+];
 
 /**
  * The minimum needed to render *something* without a network: the offline page
@@ -28,7 +48,7 @@ const SHELL_ASSETS = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
-  "/katchup_mascot.png",
+  "/katchup_mascot.webp",
 ];
 
 /** How long a cached page may be served before the network is preferred. */
@@ -48,7 +68,12 @@ async function precacheOfflinePageAssets(cache) {
     return;
   }
 
-  const html = await page.clone().text();
+  await precacheDocumentAssets(page.clone(), cache);
+}
+
+/** Caches the /_next/static chunks an HTML document references. */
+async function precacheDocumentAssets(response, cache) {
+  const html = await response.text();
   const urls = new Set();
   const pattern = /(?:src|href)="(\/_next\/static\/[^"]+)"/g;
 
@@ -92,8 +117,16 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
+      // Navigation preload stays off, and an earlier version's setting is
+      // undone here. The browser fires the preload for *every* in-scope
+      // navigation, including the ones `fetch` below declines to answer — and
+      // a declined navigation then goes to the network a second time. On
+      // /api/auth/callback/* that is fatal: the first request spends the
+      // one-time code and sets the session cookie, the second finds the code
+      // already used and lands the player on Auth.js's "server configuration"
+      // page while actually being signed in.
       if (self.registration.navigationPreload) {
-        await self.registration.navigationPreload.enable();
+        await self.registration.navigationPreload.disable();
       }
 
       const names = await caches.keys();
@@ -120,7 +153,46 @@ self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING" || event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+
+  if (event.data?.type === "WARM_PAGES") {
+    event.waitUntil(warmPages(event.data.urls ?? OFFLINE_ROUTES));
+  }
 });
+
+/**
+ * Fetches the offline-capable routes while there *is* a network and keeps them,
+ * with the chunks they need to hydrate.
+ *
+ * Inside an installed PWA almost every route change is a client-side one, so
+ * the browser never issues a navigation request for it and the network-first
+ * handler below never sees it. That is why opening My Decks offline used to
+ * land on the offline page: the deck list had simply never been cached, only
+ * whichever page the app happened to start on. Warming closes that gap, and
+ * runs with the session cookie so the cached copy is the signed-in one.
+ */
+async function warmPages(urls) {
+  const pages = await caches.open(PAGE_CACHE);
+  const assets = await caches.open(ASSET_CACHE);
+
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const request = new Request(new URL(url, self.location.origin).href, {
+          credentials: "same-origin",
+        });
+        const response = await fetch(request);
+        if (!response.ok) {
+          return;
+        }
+
+        await pages.put(request, response.clone());
+        await precacheDocumentAssets(response.clone(), assets);
+      } catch {
+        // Warming is best effort: a route that fails now is retried next launch.
+      }
+    }),
+  );
+}
 
 function isSameOrigin(url) {
   return url.origin === self.location.origin;
@@ -223,15 +295,20 @@ async function handleNavigation(event) {
   const cache = await caches.open(PAGE_CACHE);
 
   try {
-    const preloaded = await event.preloadResponse;
-    const response = preloaded || (await fetch(event.request));
+    const response = await fetch(event.request);
     if (response && response.ok) {
       cache.put(event.request, response.clone());
       void trimCache(PAGE_CACHE, PAGE_CACHE_LIMIT);
     }
     return response;
   } catch {
-    const hit = await cache.match(event.request, { ignoreSearch: true });
+    // ignoreVary because Next varies its HTML on the router headers, which a
+    // warmed copy does not carry: without it a perfectly good cached page is
+    // treated as a miss and the user is bounced to the offline page.
+    const hit = await cache.match(event.request, {
+      ignoreSearch: true,
+      ignoreVary: true,
+    });
     if (hit) {
       return hit;
     }
@@ -263,6 +340,42 @@ async function handleNavigation(event) {
   }
 }
 
+/**
+ * The payload the app router fetches when you tap a link instead of reloading.
+ * Same content as the page, different wrapper.
+ */
+function isPageData(request, url) {
+  return url.searchParams.has("_rsc") || request.headers.get("RSC") === "1";
+}
+
+/**
+ * Router payloads: network first, and kept under a key without the `_rsc`
+ * cache-buster so one copy per route answers every later request for it.
+ *
+ * When nothing is cached this deliberately fails rather than inventing a
+ * response — the app router answers a failed payload fetch with a full page
+ * navigation, which `handleNavigation` can serve from the page cache.
+ */
+async function handlePageData(request) {
+  const key = new URL(request.url);
+  key.searchParams.delete("_rsc");
+  const cache = await caches.open(DATA_CACHE);
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(key.href, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const hit = await cache.match(key.href, { ignoreVary: true });
+    if (hit) {
+      return hit;
+    }
+    throw error;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
@@ -277,6 +390,11 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(handleNavigation(event));
+    return;
+  }
+
+  if (isPageData(request, url)) {
+    event.respondWith(handlePageData(request));
     return;
   }
 

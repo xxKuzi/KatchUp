@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import OfflineRetry from "./OfflineRetry";
 
 export const metadata: Metadata = {
@@ -43,12 +42,16 @@ export default function OfflinePage() {
         </p>
 
         <div className="mt-6 flex flex-col gap-2">
-          <Link
+          {/* A plain anchor, not next/link: a client-side navigation here asks
+              the network for the route's payload, which is exactly what is
+              missing. A real navigation is one the service worker can answer
+              from the cached page. */}
+          <a
             href="/my-decks"
             className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
           >
             Go to My Decks
-          </Link>
+          </a>
           <OfflineRetry />
         </div>
 
