@@ -16,7 +16,11 @@ import {
 } from "@/app/topics/_lib/topicsProgress";
 import { useFallbackWords } from "../_lib/useFallbackWords";
 import { CONFIDENT_ANSWER_STEPS } from "../_lib/deckSessionClient";
-import { gainEnergy, spendEnergy, ENERGY_PRACTICE_REWARD } from "@/app/_lib/energy";
+import {
+  gainEnergy,
+  spendEnergy,
+  ENERGY_PRACTICE_REWARD,
+} from "@/app/_lib/energy";
 import { useEnergyBlocked } from "../_lib/energyGate";
 import OutOfEnergy from "../_components/OutOfEnergy";
 import { useDeckSession } from "../_hooks/useDeckSession";
@@ -37,7 +41,7 @@ const GATE = {
   name: "Speed Spelling",
   description:
     "Type the correct word before the timer runs out. Reach 70% to complete the lesson.",
-  bgImage: "flip_cards.png",
+  bgImage: "speed_spelling.webp",
 };
 
 const QUESTION_SECONDS = 12;
@@ -117,7 +121,9 @@ const QuickGuessPage = () => {
         }
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [isEnergyReview, deckId, attempt]);
 
   // The energy round is the way back from empty, so it is never blocked by it.
@@ -139,7 +145,14 @@ const QuickGuessPage = () => {
       return knownWords;
     }
     return buildRoundWords(allWords, roundSeed);
-  }, [deckId, deckSession.session, isEnergyReview, knownWords, allWords, roundSeed]);
+  }, [
+    deckId,
+    deckSession.session,
+    isEnergyReview,
+    knownWords,
+    allWords,
+    roundSeed,
+  ]);
 
   if (energyBlocked) {
     return <OutOfEnergy {...GATE} />;
@@ -562,9 +575,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
               <p className="mt-3 text-slate-600 dark:text-slate-300">
                 Score: {scorePercent}% ({correctCount}/{totalWords})
               </p>
-              {deckId && (
-                <DeckRoundProgress deckId={deckId} className="mt-5" />
-              )}
+              {deckId && <DeckRoundProgress deckId={deckId} className="mt-5" />}
               <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold">
                 {lessonPassed ? (
                   <>

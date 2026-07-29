@@ -26,7 +26,7 @@ export default function OfflinePage() {
             exactly the one that isn't there when this page is shown. The raw
             file is in the precached shell. */}
         <Image
-          src="/katchup_mascot.png"
+          src="/katchup_mascot.webp"
           alt=""
           width={120}
           height={120}

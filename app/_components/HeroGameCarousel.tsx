@@ -16,7 +16,7 @@ const slides: Slide[] = [
   {
     name: "Live Duel",
     url: "/games/live-duel",
-    img: "flip_cards.png",
+    img: "live_duel.webp",
     tagline: "Live 1v1 · Race to 10",
     description:
       "Go head-to-head with another player in real time. Pick the right translation faster than your rival - first to 10 correct answers wins. No one online? Duel the bot instead.",
@@ -25,7 +25,7 @@ const slides: Slide[] = [
   {
     name: "Score Rush",
     url: "/games/score-rush",
-    img: "one_of_three.png",
+    img: "score_rush.webp",
     tagline: "30 Seconds · Speed & Accuracy",
     description:
       "You against the clock. Answer as many translations as you can in 30 seconds, then push your score onto the leaderboard.",
@@ -34,7 +34,7 @@ const slides: Slide[] = [
   {
     name: "Flip Cards",
     url: "/games/flip-cards",
-    img: "flip_cards.png",
+    img: "flip_cards.webp",
     tagline: "Self-paced flashcards",
     description:
       "A calm, no-timer deck for real study. Tap to flip between your language and the translation, swipe right when you know it or left to keep practicing.",
@@ -43,7 +43,7 @@ const slides: Slide[] = [
   {
     name: "One of Three",
     url: "/games/one-of-three",
-    img: "one_of_three.png",
+    img: "one_of_three.webp",
     tagline: "Quick choice rounds",
     description:
       "Pick the right translation out of three options before time runs out. Simple to learn, tough to master, and built for quick daily reps.",

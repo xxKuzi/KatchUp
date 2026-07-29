@@ -54,7 +54,7 @@ const GATE = {
   name: "One of Three",
   description:
     "Pick the correct word from three options. Reach 70% to complete the lesson automatically.",
-  bgImage: "one_of_three.png",
+  bgImage: "one_of_three.webp",
 };
 
 function hashSeed(value: string): number {

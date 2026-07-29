@@ -35,7 +35,7 @@ const GATE = {
   name: "Word Pairing",
   description:
     "Match each word with its translation before the mistakes pile up. Reach 70% accuracy to complete the lesson.",
-  bgImage: "guess_match.png",
+  bgImage: "guess_match.webp",
 };
 
 function hashSeed(value: string): number {

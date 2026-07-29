@@ -41,7 +41,7 @@ const GATE = {
   name: "Flip Cards",
   description:
     "A calm, self-paced flashcard deck. Tap a card to flip between your language and the translation, then swipe right if you knew it or left to keep practicing it.",
-  bgImage: "flip_cards.png",
+  bgImage: "flip_cards.webp",
 };
 
 interface CardWord {

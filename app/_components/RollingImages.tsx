@@ -2,15 +2,15 @@ import React from "react";
 
 function RollingImages() {
   const images = [
-    { url: "one_of_three.png", alt: "One of Three" },
-    { url: "flip_cards.png", alt: "Flip Cards" },
-    { url: "guess_match.png", alt: "Guess Match" },
-    { url: "one_of_three.png", alt: "One of Three" },
-    { url: "flip_cards.png", alt: "Flip Cards" },
-    { url: "guess_match.png", alt: "Guess Match" },
-    { url: "one_of_three.png", alt: "One of Three" },
-    { url: "flip_cards.png", alt: "Flip Cards" },
-    { url: "guess_match.png", alt: "Guess Match" },
+    { url: "one_of_three.webp", alt: "One of Three" },
+    { url: "flip_cards.webp", alt: "Flip Cards" },
+    { url: "guess_match.webp", alt: "Guess Match" },
+    { url: "one_of_three.webp", alt: "One of Three" },
+    { url: "flip_cards.webp", alt: "Flip Cards" },
+    { url: "guess_match.webp", alt: "Guess Match" },
+    { url: "one_of_three.webp", alt: "One of Three" },
+    { url: "flip_cards.webp", alt: "Flip Cards" },
+    { url: "guess_match.webp", alt: "Guess Match" },
   ];
 
   return (

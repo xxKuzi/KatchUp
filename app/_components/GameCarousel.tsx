@@ -9,7 +9,7 @@ function GameCarousel() {
     {
       name: "One of Three",
       url: "/games/one-of-three",
-      img: "one_of_three.png",
+      img: "one_of_three.webp",
       color: "blue",
       description: "Quick choice rounds",
 
@@ -19,7 +19,7 @@ function GameCarousel() {
     {
       name: "Flip Cards",
       url: "/games/flip-cards",
-      img: "flip_cards.png",
+      img: "flip_cards.webp",
       color: "red",
       description: "Self-paced flashcards",
       feature: "popular",
@@ -28,7 +28,7 @@ function GameCarousel() {
     {
       name: "Speed Spelling",
       url: "/games/quick-guess",
-      img: "flip_cards.png",
+      img: "speed_spelling.webp",
       color: "yellow",
       description: "Type it before time runs out",
 
@@ -38,7 +38,7 @@ function GameCarousel() {
     {
       name: "Word Pairing",
       url: "/games/guess-match",
-      img: "guess_match.png",
+      img: "word_pairing.webp",
       color: "green",
       description: "Connect the synonyms",
       feature: "classic",
@@ -47,7 +47,7 @@ function GameCarousel() {
     {
       name: "Score Rush",
       url: "/games/score-rush",
-      img: "one_of_three.png",
+      img: "score_rush.webp",
       color: "red",
       description: "30 seconds, as many words as you can",
 
@@ -56,7 +56,7 @@ function GameCarousel() {
     {
       name: "Live Duel",
       url: "/games/live-duel",
-      img: "flip_cards.png",
+      img: "live_duel_2.webp",
       color: "blue",
       description: "Duel an online opponent or the bot",
 

@@ -616,12 +616,12 @@ export default function FriendsPage() {
             {/* Mascot duo peeking in from above, bottom half tucked behind the cards below */}
             <div className="pointer-events-none absolute -top-12 left-1/2 z-0 flex -translate-x-1/2 items-end justify-center gap-3 sm:-top-16 sm:gap-6">
               <img
-                src="/katchup_maskot_original.png"
+                src="/katchup_maskot_original.webp"
                 alt="KatchUp Mascot"
                 className="h-32 w-32 select-none object-contain sm:h-48 sm:w-48 md:h-56 md:w-56"
               />
               <img
-                src="/katchup_mascot.png"
+                src="/katchup_mascot.webp"
                 alt="Ketchup buddy"
                 className="h-32 w-32 select-none object-contain sm:h-44 sm:w-44 md:h-52 md:w-52"
               />

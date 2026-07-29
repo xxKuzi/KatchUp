@@ -165,14 +165,14 @@ function Navbar() {
               type="button"
             >
               <Image
-                src={"/katchup_logo_2_transparent.png"}
+                src={"/katchup_logo_2_transparent.webp"}
                 alt="KatchUp logo"
                 width={2101}
                 height={758}
                 className="h-8 w-auto rounded-md object-cover block dark:hidden sm:h-9"
               />
               <Image
-                src={"/katchup_logo_2_transparent.png"}
+                src={"/katchup_logo_2_transparent.webp"}
                 alt="KatchUp logo"
                 width={2101}
                 height={758}

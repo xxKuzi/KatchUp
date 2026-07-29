@@ -85,7 +85,7 @@ export default function Games() {
                 <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white dark:bg-slate-800" />
               </div>
               <img
-                src="/katchup_maskot_original.png"
+                src="/katchup_maskot_original.webp"
                 alt="KatchUp Mascot"
                 className="h-48 w-48 select-none object-contain animate-float-mascot pointer-events-none sm:h-60 sm:w-60 md:h-72 md:w-72"
               />
@@ -99,19 +99,14 @@ export default function Games() {
           aria-hidden={!showBrowseButton}
           tabIndex={showBrowseButton ? 0 : -1}
           className={`fixed right-6 top-1/2 z-40 hidden -translate-y-1/2 items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-opacity duration-300 hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:ring-offset-slate-950 md:inline-flex ${
-            showBrowseButton
-              ? "opacity-100"
-              : "pointer-events-none opacity-0"
+            showBrowseButton ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
           {t("games.browse", "Browse games")}
           <ArrowDown className="h-4 w-4" aria-hidden="true" />
         </button>
 
-        <section
-          id="games-list"
-          className="mt-12 w-full max-w-6xl scroll-mt-8"
-        >
+        <section id="games-list" className="mt-12 w-full max-w-6xl scroll-mt-8">
           <h2 className="mb-8 flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
             <span>Top picks - online</span>
             <Star className="h-7 w-7" />
@@ -121,7 +116,7 @@ export default function Games() {
             <GameBanner
               name="Live Duel "
               url="/games/live-duel"
-              img="flip_cards.png"
+              img="live_duel_2.webp"
               tagline="Live 1v1 · Race to 10"
               description="Go head-to-head with another player in real time. Pick the right translation faster than your rival - first to 10 correct answers wins. No one online? Duel the bot instead."
               gradient="from-blue-900/90 via-blue-900/40"
@@ -129,7 +124,7 @@ export default function Games() {
             <GameBanner
               name="Score Rush"
               url="/games/score-rush"
-              img="one_of_three.png"
+              img="score_rush.webp"
               tagline="30 Seconds · Speed & Accuracy"
               description="You against the clock. Answer as many translations as you can in 30 seconds, then push your score onto the leaderboard."
               gradient="from-red-700/90 via-yellow-900/40"

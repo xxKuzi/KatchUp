@@ -563,7 +563,7 @@ const LiveDuelPage = () => {
       <OutOfEnergy
         name="Live Duel"
         description="Race another player live. First to 10 correct answers wins."
-        bgImage="flip_cards.png"
+        bgImage="live_duel.webp"
       />
     );
   }
@@ -572,7 +572,7 @@ const LiveDuelPage = () => {
     <GamePage
       name="Live Duel"
       description="Race another player live with shared questions in Fair Mode or questions tailored to each player's language and level in Personalized Mode. First to 10 correct answers wins."
-      bgImage="flip_cards.png"
+      bgImage="live_duel.webp"
       heroFirst
     >
       <div className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-800/40">
