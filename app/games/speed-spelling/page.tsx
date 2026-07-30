@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Eye, XCircle } from "lucide-react";
 import GamePage from "../_components/GamePage";
 import DeckMessage from "../_components/DeckMessage";
 import DeckLoading from "../_components/DeckLoading";
@@ -27,7 +27,6 @@ import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useAuthState } from "@/app/_lib/auth";
-import DeckRoundProgress from "../_components/DeckRoundProgress";
 
 interface PracticeWord {
   id: string;
@@ -101,6 +100,7 @@ const SpeedSpellingPage = () => {
     searchParams.get("mode") === "finish" ? "finish" : "practice";
 
   const [attempt, setAttempt] = useState(0);
+  const [restartToken, setRestartToken] = useState(0);
   const [knownWords, setKnownWords] = useState<PracticeWord[]>([]);
 
   // Scopes a topic round to its level's slice of the deck; undefined for a
@@ -208,10 +208,14 @@ const SpeedSpellingPage = () => {
       // Keyed on the words themselves so a set that arrives late — a language
       // switch, an energy round's own fetch — starts the round over rather than
       // dropping new words into a timer that is already running.
+      //
+      // `restartToken` is in the key for the opposite reason: a restart keeps
+      // the same words, so without it nothing about the key would change and
+      // the round would carry on from where it was.
       key={
         deckId
-          ? `deck:${deckId}:${sessionMode}:${words.map((w) => w.id).join(",")}`
-          : `${roundSeed}:${words.map((w) => w.id).join(",")}`
+          ? `deck:${deckId}:${sessionMode}:${words.map((w) => w.id).join(",")}:r${restartToken}`
+          : `${roundSeed}:${words.map((w) => w.id).join(",")}:r${restartToken}`
       }
       words={words}
       deckId={deckId}
@@ -230,17 +234,9 @@ const SpeedSpellingPage = () => {
             ? undefined
             : vocabProgress.record
       }
-      // "I already know this" is the same claim as swiping a flip card right, so
-      // it earns the same two practices rather than mastery on the spot.
-      onKnown={
-        deckId
-          ? (deckWordId: string) =>
-              deckSession.recordResult(deckWordId, true, CONFIDENT_ANSWER_STEPS)
-          : isEnergyReview
-            ? undefined
-            : (conceptId: string) =>
-                vocabProgress.record(conceptId, true, CONFIDENT_ANSWER_STEPS)
-      }
+      // Two different things, which used to be one: "next round" fetches a new
+      // selection — the words you just learned drop out and new ones come in —
+      // while "restart" replays this very round from the top.
       onReplay={() => {
         if (deckId) {
           deckSession.reload();
@@ -248,6 +244,7 @@ const SpeedSpellingPage = () => {
           setAttempt((value) => value + 1);
         }
       }}
+      onRestart={() => setRestartToken((value) => value + 1)}
     />
   );
 };
@@ -260,9 +257,11 @@ interface SpeedSpellingRoundProps {
   safeLevel: number;
   language: Lang;
   isEnergyReview: boolean;
-  onResult?: (deckWordId: string, correct: boolean) => void;
-  onKnown?: (deckWordId: string) => void;
+  onResult?: (deckWordId: string, correct: boolean, steps?: number) => void;
+  /** A fresh selection of words. */
   onReplay: () => void;
+  /** These same words, from the top. */
+  onRestart: () => void;
 }
 
 function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
@@ -275,72 +274,92 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
     language,
     isEnergyReview,
     onResult,
-    onKnown,
     onReplay,
+    onRestart,
   } = props;
 
+  // A word you got wrong comes back once before the round is over: seeing the
+  // answer and then never typing it is how a miss stays a miss. The queue is
+  // what grows, so the words themselves stay the round's scored population.
+  const [queue, setQueue] = useState<PracticeWord[]>(words);
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
+  // Scored once per word, whichever pass earns it, so a word rescued on its
+  // replay still counts — and getting it right twice doesn't count twice.
+  const [correctIds, setCorrectIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [typedValue, setTypedValue] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(QUESTION_SECONDS);
   const [isLocked, setIsLocked] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const [banner, setBanner] = useState<{
     tone: "good" | "bad";
     text: string;
   } | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   const completionSaved = useRef(false);
   const lockedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Seconds still owed on this question, so a pause doesn't spend them. */
+  const remainingRef = useRef(QUESTION_SECONDS);
+  // Ids already sent back for a second go, so a word can be replayed at most
+  // once and the round can't be extended forever by missing the same word.
+  const requeuedRef = useRef<Set<string>>(new Set());
 
-  const currentWord = words[questionIndex] ?? null;
+  const currentWord = queue[questionIndex] ?? null;
   const totalWords = words.length;
+  const correctCount = correctIds.size;
   const progressPercent =
-    totalWords > 0 ? Math.round((questionIndex / totalWords) * 100) : 0;
+    queue.length > 0 ? Math.round((questionIndex / queue.length) * 100) : 0;
   const scorePercent =
     totalWords > 0 ? Math.round((correctCount / totalWords) * 100) : 0;
+  const isReplayQuestion = questionIndex >= totalWords;
 
-  const goToNext = (nextCorrect: number) => {
+  const finish = (finalCorrect: number) => {
+    const finalScore =
+      totalWords > 0 ? Math.round((finalCorrect / totalWords) * 100) : 0;
+    const passed = finalScore >= 70;
+
+    if (isEnergyReview) {
+      void gainEnergy(ENERGY_PRACTICE_REWARD);
+    } else {
+      void spendEnergy(1);
+    }
+    setLessonPassed(passed);
+    setIsFinished(true);
+
+    if (
+      passed &&
+      topicId &&
+      !deckId &&
+      !completionSaved.current &&
+      totalWords > 0
+    ) {
+      const state = loadTopicsState(language);
+      const { nextState } = completeTopicLevel(state, topicId, safeLevel);
+      saveTopicsState(language, nextState);
+      completionSaved.current = true;
+    }
+  };
+
+  const goToNext = (nextCorrect: number, extraQuestions: number) => {
     const nextIndex = questionIndex + 1;
 
-    if (nextIndex >= totalWords) {
-      const finalScore =
-        totalWords > 0 ? Math.round((nextCorrect / totalWords) * 100) : 0;
-      const passed = finalScore >= 70;
-
-      if (isEnergyReview) {
-        void gainEnergy(ENERGY_PRACTICE_REWARD);
-      } else {
-        void spendEnergy(1);
-      }
-      setCorrectCount(nextCorrect);
-      setLessonPassed(passed);
-      setIsFinished(true);
-
-      if (
-        passed &&
-        topicId &&
-        !deckId &&
-        !completionSaved.current &&
-        totalWords > 0
-      ) {
-        const state = loadTopicsState(language);
-        const { nextState } = completeTopicLevel(state, topicId, safeLevel);
-        saveTopicsState(language, nextState);
-        completionSaved.current = true;
-      }
+    if (nextIndex >= queue.length + extraQuestions) {
+      finish(nextCorrect);
       return;
     }
 
-    setCorrectCount(nextCorrect);
     lockedRef.current = false;
     setIsLocked(false);
+    setRevealed(false);
     setQuestionIndex(nextIndex);
   };
 
-  const advance = (wasCorrect: boolean, revealText?: string) => {
+  const advance = (wasCorrect: boolean, reason?: "timeout" | "shown") => {
     if (lockedRef.current) {
       return;
     }
@@ -348,63 +367,89 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
     lockedRef.current = true;
     setIsLocked(true);
 
-    const nextCorrect = correctCount + (wasCorrect ? 1 : 0);
+    const word = currentWord;
+    let nextCorrect = correctCount;
+    let extraQuestions = 0;
 
-    // Both paths record. Off-deck the word id is the concept id, so an answer
-    // here counts toward the word itself just as a deck round would.
-    if (currentWord) {
-      onResult?.(currentWord.id, wasCorrect);
+    if (word) {
+      // Both paths record. Off-deck the word id is the concept id, so an answer
+      // here counts toward the word itself just as a deck round would. Typing a
+      // word out from memory is the hardest thing any of the games ask for, so a
+      // hit here is worth the same two practices as swiping a flip card right.
+      onResult?.(word.id, wasCorrect, wasCorrect ? CONFIDENT_ANSWER_STEPS : 1);
+
+      if (wasCorrect) {
+        if (!correctIds.has(word.id)) {
+          nextCorrect += 1;
+          setCorrectIds((previous) => new Set(previous).add(word.id));
+        }
+      } else if (!requeuedRef.current.has(word.id)) {
+        requeuedRef.current.add(word.id);
+        extraQuestions = 1;
+        setQueue((previous) => [...previous, word]);
+      }
     }
 
+    // A miss ends with the word on screen either way — asked for with Show, or
+    // out of time. Being told only that you were wrong teaches nothing, and the
+    // word still comes back on its replay to be typed properly.
+    if (!wasCorrect) {
+      setRevealed(true);
+    }
+
+    // The banner itself never spells the answer out; that is the reveal's job,
+    // in its own reserved line above.
     setBanner(
       wasCorrect
         ? { tone: "good", text: "Correct!" }
-        : {
-            tone: "bad",
-            text: revealText
-              ? `Time's up - it was "${revealText}"`
-              : "Wrong answer",
-          },
+        : reason === "shown"
+          ? null
+          : { tone: "bad", text: "Time's up" },
     );
 
     window.setTimeout(
-      () => goToNext(nextCorrect),
+      () => goToNext(nextCorrect, extraQuestions),
       wasCorrect ? CORRECT_ADVANCE_DELAY_MS : REVEAL_ADVANCE_DELAY_MS,
     );
   };
 
-  // Deck path only: "I already know this" credits the word two practices and
-  // skips it without counting as a scored attempt.
-  const handleKnowIt = () => {
+  // Giving up on purpose: the translation is shown and the word is treated as
+  // missed, which also books it in for its replay later in the round.
+  const handleShow = () => {
     if (!currentWord || lockedRef.current) {
       return;
     }
-    lockedRef.current = true;
-    setIsLocked(true);
-    onKnown?.(currentWord.id);
-    setBanner({ tone: "good", text: "Counted as practice" });
-    window.setTimeout(() => goToNext(correctCount), CORRECT_ADVANCE_DELAY_MS);
+    advance(false, "shown");
   };
 
+  // A fresh question gets the full clock and an empty box. Separate from the
+  // ticking below so that pausing and resuming restarts the interval without
+  // also handing the player their time back.
   useEffect(() => {
-    if (isFinished || !currentWord) {
-      return;
-    }
-
+    remainingRef.current = QUESTION_SECONDS;
     setSecondsLeft(QUESTION_SECONDS);
     setTypedValue("");
     setBanner(null);
+    setRevealed(false);
+  }, [questionIndex]);
+
+  useEffect(() => {
+    if (isFinished || !currentWord || paused) {
+      return;
+    }
 
     const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 0);
+    const budget = remainingRef.current;
     const startedAt = Date.now();
     const interval = window.setInterval(() => {
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      const remaining = Math.max(0, QUESTION_SECONDS - elapsed);
+      const remaining = Math.max(0, budget - elapsed);
+      remainingRef.current = remaining;
       setSecondsLeft(remaining);
 
       if (remaining <= 0) {
         window.clearInterval(interval);
-        advance(false, currentWord.foreign);
+        advance(false, "timeout");
       }
     }, 200);
 
@@ -413,7 +458,7 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
       window.clearTimeout(focusTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionIndex, isFinished]);
+  }, [questionIndex, isFinished, paused]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTypedValue(event.target.value);
@@ -452,12 +497,18 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
 
   const headerLabel = deckId
     ? sessionMode === "finish"
-      ? "Finish Round"
+      ? "Challenge Round"
       : "Custom Deck"
     : `Lesson ${safeLevel}`;
 
   return (
-    <GamePage {...GATE}>
+    <GamePage
+      {...GATE}
+      playing={!isFinished}
+      exitHref={backHref}
+      onRestart={onRestart}
+      onPauseChange={setPaused}
+    >
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-sky-300 via-cyan-300 to-teal-300 p-5 dark:from-sky-700 dark:via-cyan-700 dark:to-teal-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-sky-100">
@@ -496,10 +547,20 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
                   />
                 </div>
                 <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  Type this word
+                  {isReplayQuestion ? "One more go" : "Type this word"}
                 </p>
                 <p className="mt-2 text-4xl font-black text-slate-900 dark:text-slate-100">
                   {currentWord.native}
+                </p>
+                {/* Always in the layout, empty until Show is pressed. Rendering
+                    it conditionally grew the card by a line at the exact moment
+                    the player is reading it, which shoved the input and the
+                    buttons down the page under their own cursor. */}
+                <p
+                  aria-live="polite"
+                  className="mt-3 h-8 text-2xl font-black text-sky-600 dark:text-sky-400"
+                >
+                  {revealed ? currentWord.foreign : ""}
                 </p>
               </div>
 
@@ -531,32 +592,32 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
                 </button>
               </div>
 
-              {banner && (
-                <p
-                  className={`mt-4 text-center text-sm font-semibold ${
-                    banner.tone === "good"
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-rose-600 dark:text-rose-400"
-                  }`}
-                >
-                  {banner.text}
-                </p>
-              )}
+              {/* Reserved for the same reason as the revealed word above: this
+                  line comes and goes on every answer, and letting it collapse
+                  bounced everything below it. */}
+              <p
+                className={`mt-4 h-5 text-center text-sm font-semibold ${
+                  banner?.tone === "good"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-rose-600 dark:text-rose-400"
+                }`}
+              >
+                {banner?.text ?? ""}
+              </p>
 
               <div className="mt-4 flex items-center justify-between gap-3">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Correct answers: {correctCount}/{totalWords}
                 </p>
-                {onKnown && (
-                  <button
-                    type="button"
-                    onClick={handleKnowIt}
-                    disabled={isLocked}
-                    className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                  >
-                    ✓ I already know this
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleShow}
+                  disabled={isLocked}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Show
+                </button>
               </div>
             </>
           )}
@@ -575,7 +636,6 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
               <p className="mt-3 text-slate-600 dark:text-slate-300">
                 Score: {scorePercent}% ({correctCount}/{totalWords})
               </p>
-              {deckId && <DeckRoundProgress deckId={deckId} className="mt-5" />}
               <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold">
                 {lessonPassed ? (
                   <>
@@ -601,20 +661,23 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
                 >
                   {backLabel}
                 </Link>
-                {deckId && sessionMode !== "finish" && (
-                  <Link
-                    href={`/games/speed-spelling?deck=${deckId}&mode=finish`}
-                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
-                  >
-                    🏁 Finish round
-                  </Link>
-                )}
+                {/* The challenge round is offered on the deck card now, where
+                    it can be found without playing a round first. */}
                 <button
                   type="button"
                   onClick={onReplay}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                >
+                  Next round
+                </button>
+                {/* The quieter of the two: most people want the next words, not
+                    these ones over again. */}
+                <button
+                  type="button"
+                  onClick={onRestart}
                   className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  Play again
+                  Restart
                 </button>
               </div>
             </div>
