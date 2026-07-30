@@ -1,4 +1,4 @@
-export type BlogTopic = "english" | "german" | "spanish";
+export type BlogTopic = "english" | "german" | "spanish" | "katchup";
 
 export interface BlogSection {
   heading: string;
@@ -36,9 +36,115 @@ export const TOPIC_META: Record<
     color:
       "border-rose-200/80 bg-rose-100/80 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-200",
   },
+  // Not a language: how the app itself works, for the questions the UI can only
+  // answer with a badge and a number.
+  katchup: {
+    label: "Using KatchUp",
+    flag: "🍅",
+    color:
+      "border-emerald-200/80 bg-emerald-100/80 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/60 dark:text-emerald-200",
+  },
 };
 
 export const BLOG_ARTICLES: BlogArticle[] = [
+  {
+    slug: "how-katchup-counts-learned-words",
+    topic: "katchup",
+    title: "How KatchUp Decides a Word Is \"Learned\"",
+    excerpt:
+      "Why a word can say \"Learned ×4\" after only two flip cards, and what the number next to every word on your Learned Words page actually counts.",
+    readTime: "4 min read",
+    sections: [
+      {
+        heading: "Words collect mastery points, not rounds",
+        body: [
+          "Every word you practise carries a small score. Answer it right and the score goes up; answer it wrong and it drops by one. Once the score reaches 3, the word is marked Learned and KatchUp stops serving it in normal practice rounds.",
+          "The important part: not every right answer is worth the same. A right answer is worth 1 point in most games — but 2 in the ones where you had to commit before seeing the answer.",
+        ],
+      },
+      {
+        heading: "Flip cards and speed spelling are worth two",
+        body: [
+          "Swiping a flip card to the right is you saying \"I already know this one.\" That claim is worth 2 points, which is why two confident swipes are enough to move a word from new to Learned.",
+          "Speed spelling works the same way: typing a word out correctly is worth 2, because reproducing a word from nothing is much stronger evidence than picking it from four options.",
+          "Multiple-choice and matching games give 1 point per right answer. They are easier, and recognizing a word is not the same as knowing it.",
+        ],
+      },
+      {
+        heading: "So what does ×4 mean?",
+        body: [
+          "On the Learned Words page, a word marked Learned shows its mastery score. \"Learned ×4\" means four points of mastery — which two confident flip cards will give you. It is not four rounds, four days, or four separate practice sessions.",
+          "A word still in practice shows something different: the plain number of times you have answered it correctly. \"In practice ×2\" means you have had it right twice but have not reached mastery yet — usually because a wrong answer in between took a point back off.",
+          "The two numbers are counted on different scales on purpose. Before a word is mastered, what helps you is knowing how much practice it has had. After it is mastered, what matters is how solid that mastery is.",
+        ],
+      },
+      {
+        heading: "Getting it wrong is cheap",
+        body: [
+          "A wrong answer costs one point and un-marks the word as Learned so it comes back into rotation. It does not reset you to zero. Two clean rounds are not thrown away by a single slip, and a word you keep forgetting will simply keep reappearing until it sticks.",
+        ],
+      },
+      {
+        heading: "One word, one score — across every deck",
+        body: [
+          "If the same word appears in two of your decks, it is not tracked twice. KatchUp files progress by the word itself, so answering \"das Fenster\" in a house deck and again in a home-repairs deck feeds the same score.",
+          "Games you start from the games hub, without picking a deck, count too — with one catch. In an open-ended round like Score Rush, the same word can come up over and over, so a word counts once per round no matter how many times it appears. Forty repeats of one word in one round is not forty practices.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "how-to-use-katchup-effectively",
+    topic: "katchup",
+    title: "Getting the Most Out of KatchUp",
+    excerpt:
+      "Short rounds, honest swipes, and knowing which game to open. A practical guide to using KatchUp so the words actually stay.",
+    readTime: "5 min read",
+    sections: [
+      {
+        heading: "Short and daily beats long and occasional",
+        body: [
+          "A practice round is ten words by default — small enough to finish while the kettle boils. That size is deliberate: the thing that makes vocabulary stick is meeting a word again just before you would have forgotten it, and that only works if you come back often.",
+          "One round a day will outrun an hour every Sunday. If you only ever do one thing with this app, make it that.",
+        ],
+      },
+      {
+        heading: "Be honest with the flip cards",
+        body: [
+          "A right swipe is worth double, and nothing checks it. That makes flip cards the fastest way to move words forward — and the fastest way to fool yourself into a page full of words you cannot actually produce.",
+          "The test worth applying: could you have said the word out loud before you flipped the card? If not, swipe left. A word you send back costs you one point and a few seconds. A word you wave through disappears from your practice rounds while you still don't know it.",
+        ],
+      },
+      {
+        heading: "Prove it with typing, not tapping",
+        body: [
+          "Multiple-choice games are good for meeting new words: they give you the answer in front of you and let you build recognition cheaply. But recognition fades fastest, which is why those games are worth 1 point per answer.",
+          "When you think a word is genuinely learned, take it into Speed Spelling. Typing it from memory is the closest thing here to using the word in real life, and it is scored accordingly.",
+        ],
+      },
+      {
+        heading: "Let the app pick the words",
+        body: [
+          "Practice rounds skip words you have already mastered and lead with the ones you have never seen, the ones you get wrong most, and the ones you have not met in a while. You do not need to hunt for your weak spots — starting a round is how you find them.",
+          "When you have worked through a deck, the review round pulls your hardest words back out and tops the round up from the rest of the deck, so the whole pack gets a pass rather than just the sore spots.",
+        ],
+      },
+      {
+        heading: "Build decks small and specific",
+        body: [
+          "A deck of 20 words about one topic beats a deck of 300 covering everything. Small decks reach the satisfying part — a full bar, a finished pack — while a giant deck just feels like a chore that never moves.",
+          "Save words inside the phrase you met them in where you can. \"Take a decision\" versus \"make a decision\" is the kind of thing a single-word deck can never teach you.",
+        ],
+      },
+      {
+        heading: "Check your Learned Words page for the real picture",
+        body: [
+          "The Learned Words page lists everything you have practised, mastered words first. If a word is sitting there at \"In practice\" after many rounds, that is the app telling you it is not going in — and it is usually worth attacking differently: say it out loud, write a sentence with it, or find where you actually met it.",
+          "For what the number next to each word means, see \"How KatchUp Decides a Word Is Learned.\"",
+        ],
+      },
+    ],
+  },
   {
     slug: "english-daily-habits",
     topic: "english",
