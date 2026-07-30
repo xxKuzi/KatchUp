@@ -99,11 +99,15 @@ function GameCarousel() {
           centered on the carousel's actual outer edges. */}
       <div
         ref={scrollContainerRef}
-        className="flex w-full snap-x snap-mandatory gap-6 overflow-x-auto p-6 scrollbar-hide sm:p-8"
+        // `scroll-pl-*` matches the padding so snapping lines a card up with the
+        // panel's inner edge rather than its outer one — without it the mandatory
+        // snap ate the left padding on load and the first card sat flush against
+        // the border.
+        className="flex w-full snap-x snap-mandatory gap-6 overflow-x-auto scroll-pl-6 p-6 scrollbar-hide sm:scroll-pl-8 sm:p-8"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {cards.map((card, index) => (
-          <div key={index} className="snap-center xl:snap-start shrink-0">
+          <div key={index} className="snap-start shrink-0">
             <GameCard
               name={card.name}
               url={card.url}
@@ -112,7 +116,7 @@ function GameCarousel() {
               description={card.description}
               feature={card.feature}
               featureColor={card.featureColor}
-              wide
+              wide={true}
             />
           </div>
         ))}

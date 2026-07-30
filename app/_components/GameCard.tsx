@@ -43,7 +43,7 @@ const GameCard = (props: GameCardProps) => {
     featureColorVariants[featureColor] || "from-gray-500";
   const isClickable = Boolean(url);
   const sizeClasses = wide
-    ? "w-[320px] h-[350px] sm:w-[360px] sm:h-[420px]"
+    ? "w-[320px] h-[350px] sm:w-[340px] sm:h-[420px]"
     : "w-[260px] h-[350px] sm:w-[280px] sm:h-[420px]";
 
   return (
