@@ -555,6 +555,7 @@ export const friendships = pgTable(
     friendUserId: uuid("friend_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => ({
@@ -566,4 +567,34 @@ export const friendships = pgTable(
     friendUserIdx: index("friendships_friend_user_id_idx").on(table.friendUserId),
   }),
 );
+
+export const duoQuests = pgTable(
+  "duo_quests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    weekKey: text("week_key").notNull(),
+    userAId: uuid("user_a_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    userBId: uuid("user_b_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    targetWordCount: integer("target_word_count").notNull(),
+    tasksJson: json("tasks_json").notNull().default([]),
+    claimedA: boolean("claimed_a").notNull().default(false),
+    claimedB: boolean("claimed_b").notNull().default(false),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    weekUsersUnique: uniqueIndex("duo_quests_week_users_key").on(
+      table.weekKey,
+      table.userAId,
+      table.userBId,
+    ),
+    userAIdx: index("duo_quests_user_a_idx").on(table.userAId),
+    userBIdx: index("duo_quests_user_b_idx").on(table.userBId),
+  }),
+);
+
 

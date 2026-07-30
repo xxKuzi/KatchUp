@@ -190,6 +190,20 @@
       "when": 1785441362495,
       "tag": "0026_complex_grey_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1785441730035,
+      "tag": "0027_harsh_shooting_star",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1785448877883,
+      "tag": "0028_bitter_blacklash",
+      "breakpoints": true
     }
   ]
 }
