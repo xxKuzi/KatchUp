@@ -298,7 +298,10 @@ const OneOfThreePage = () => {
     levelAlreadyMastered,
   );
 
-  const { words: allWords, isLoading: wordsLoading } = useFallbackWords();
+  const { words: allWords, isLoading: wordsLoading } = useFallbackWords(60, {
+    speak: deckSession.session?.nativeLang,
+    learning: deckSession.session?.foreignLang,
+  });
   const roundSeed = deckId
     ? `deck:${deckId}:${sessionMode}:${
         deckSession.session?.words.map((w) => w.id).join(",") ?? ""
@@ -374,7 +377,7 @@ const OneOfThreePage = () => {
         />
       );
     }
-    if (deckSession.status === "loading" || deckSession.status === "idle") {
+    if (deckSession.status === "loading" || deckSession.status === "idle" || wordsLoading) {
       return <DeckLoading {...GATE} variant="quiz" />;
     }
     if (deckSession.status === "notfound") {
@@ -400,7 +403,13 @@ const OneOfThreePage = () => {
                 : undefined
             }
             backHref={backHref}
-            backLabel={topicId ? "Back to topic" : undefined}
+            backLabel={
+              topicId
+                ? "Back to topic"
+                : deckId
+                  ? "Back to decks"
+                  : "Back to games"
+            }
             highlightBack={packCompleted}
           />
           {packCompleted && (
@@ -809,7 +818,11 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                         <KeyRound size={16} />
                       </>
                     )}
-                    {topicId ? "Back to topic" : "Back to decks"}
+                    {topicId
+                      ? "Back to topic"
+                      : deckId
+                        ? "Back to decks"
+                        : "Back to games"}
                   </Link>
                   {deckId && topicId && (
                     <NextLevelButton

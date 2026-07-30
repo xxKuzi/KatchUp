@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
         destination: "/games/speed-spelling",
         permanent: true,
       },
+      {
+        // Same story for Word Pairing, which used to live at /games/guess-match.
+        source: "/games/guess-match",
+        destination: "/games/word-pairing",
+        permanent: true,
+      },
     ];
   },
 };

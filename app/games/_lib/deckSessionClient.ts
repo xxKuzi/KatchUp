@@ -35,6 +35,8 @@ export interface DeckProgressSummary {
 export interface DeckSession {
   deckId: string;
   deckName: string;
+  nativeLang?: string;
+  foreignLang?: string;
   mode: "practice" | "finish";
   /** Topic level this session covers, or null for the whole deck. */
   level: number | null;

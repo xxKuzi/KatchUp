@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  await saveAsyncScore({
+  const result = await saveAsyncScore({
     userId,
     language: postLang,
     level: body.level,
@@ -72,5 +72,5 @@ export async function POST(request: NextRequest) {
     nickname: body.nickname.trim().slice(0, 24) || "Player",
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, ...result });
 }

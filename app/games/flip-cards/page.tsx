@@ -441,7 +441,13 @@ const FlipCardsPage = () => {
                 : undefined
             }
             backHref={backHref}
-            backLabel={topicId ? "Back to topic" : undefined}
+            backLabel={
+              topicId
+                ? "Back to topic"
+                : deckId
+                  ? "Back to decks"
+                  : "Back to games"
+            }
             highlightBack={packCompleted}
           />
           {packCompleted && (
@@ -691,26 +697,30 @@ const FlipCardsPage = () => {
                   back out, on to the next level once this one is finished, or
                   round again. */}
               <div className="flex flex-wrap items-center justify-center gap-3">
-                {deckId && (
-                  // Once the pack is done this is the way to its key, so it
-                  // trades the plain dark button for the gold one.
-                  <Link
-                    href={backHref}
-                    className={
-                      packCompleted
-                        ? `${PACK_COMPLETE_BUTTON_CLASS} inline-flex items-center gap-2`
-                        : "rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
-                    }
-                  >
-                    {packCompleted && (
-                      <>
-                        <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md animate-[legendaryShimmer_2.6s_linear_infinite]" />
-                        <KeyRound size={16} />
-                      </>
-                    )}
-                    {topicId ? "Back to topic" : "Back to decks"}
-                  </Link>
-                )}
+                {/* Always rendered: a shuffled round has no deck, and without
+                    this link its results screen had no way out. Once the pack
+                    is done this is also the way to its key, so it trades the
+                    plain dark button for the gold one. */}
+                <Link
+                  href={backHref}
+                  className={
+                    packCompleted
+                      ? `${PACK_COMPLETE_BUTTON_CLASS} inline-flex items-center gap-2`
+                      : "rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  }
+                >
+                  {packCompleted && (
+                    <>
+                      <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md animate-[legendaryShimmer_2.6s_linear_infinite]" />
+                      <KeyRound size={16} />
+                    </>
+                  )}
+                  {topicId
+                    ? "Back to topic"
+                    : deckId
+                      ? "Back to decks"
+                      : "Back to games"}
+                </Link>
                 {deckId && topicId && !isLegendaryRound && (
                   <NextLevelButton
                     deckId={deckId}

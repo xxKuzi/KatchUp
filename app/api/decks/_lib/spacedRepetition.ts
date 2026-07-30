@@ -63,6 +63,8 @@ export interface SessionResult {
   words: SessionWord[];
   /** Progress over the session's scope — the level window when one is given. */
   summary: DeckProgressSummary;
+  nativeLang: string;
+  foreignLang: string;
 }
 
 /**
@@ -237,6 +239,8 @@ export async function selectSessionWords(
     level: options.level ?? null,
     words: chosen.map(presentWord),
     summary,
+    nativeLang: deck.nativeLang,
+    foreignLang: deck.foreignLang,
   };
 }
 

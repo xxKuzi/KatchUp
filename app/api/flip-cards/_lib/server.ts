@@ -852,6 +852,16 @@ export async function submitLiveAnswer(params: {
   };
 }
 
+export interface SaveAsyncScoreResult {
+  /**
+   * The player's best score before this run, or null when this was their first
+   * run at this language and level. Read before the insert, so the run being
+   * saved is never its own thing to beat.
+   */
+  previousBest: number | null;
+  isPersonalBest: boolean;
+}
+
 export async function saveAsyncScore(params: {
   userId: string;
   language: Lang;
@@ -860,7 +870,25 @@ export async function saveAsyncScore(params: {
   correct: number;
   timeMs: number;
   nickname: string;
-}) {
+}): Promise<SaveAsyncScoreResult> {
+  // Scoped to the level, unlike the public board: a level's words are easier or
+  // harder to answer in thirty seconds, so an A1 run beating a B2 one says
+  // nothing worth celebrating.
+  const [best] = await db
+    .select({ score: asyncScores.score })
+    .from(asyncScores)
+    .where(
+      and(
+        eq(asyncScores.userId, params.userId),
+        eq(asyncScores.language, params.language),
+        eq(asyncScores.level, params.level),
+      ),
+    )
+    .orderBy(desc(asyncScores.score))
+    .limit(1);
+
+  const previousBest = best?.score ?? null;
+
   await db.insert(asyncScores).values({
     userId: params.userId,
     language: params.language,
@@ -878,6 +906,12 @@ export async function saveAsyncScore(params: {
       params.nickname,
     )
     .catch(() => undefined);
+
+  return {
+    previousBest,
+    // A tie is not a beat, and a first run has nothing to have beaten.
+    isPersonalBest: previousBest !== null && params.score > previousBest,
+  };
 }
 
 export async function getRecentAsyncScores(

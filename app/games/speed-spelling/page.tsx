@@ -245,6 +245,7 @@ const SpeedSpellingPage = () => {
               : "Nothing left to practice right now."
           }
           backHref="/my-decks"
+          backLabel={deckId ? "Back to decks" : undefined}
         />
       );
     }
