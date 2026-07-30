@@ -85,6 +85,10 @@ function shuffleArray<T>(items: T[]): T[] {
   return cloned;
 }
 
+const isImageUrl = (url?: string) => {
+  return url ? url.startsWith("http") || url.startsWith("/") || url.startsWith("data:") : false;
+};
+
 export default function LiveDuelPlayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -833,18 +837,37 @@ export default function LiveDuelPlayPage() {
               className="absolute left-0 top-0 h-full rounded-full bg-emerald-300/40"
               style={{ width: "100%" }}
             />
-            <img
-              src={playerAvatar}
-              alt={playerName}
-              className="absolute top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border-2 border-emerald-500 object-cover transition-all duration-300"
-              style={{ left: `calc(${playerPercent}% - 20px)` }}
-            />
-            <img
-              src={rivalAvatar}
-              alt={rivalName}
-              className="absolute top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border-2 border-blue-500 object-cover transition-all duration-300"
-              style={{ left: `calc(${opponentPercent}% - 20px)` }}
-            />
+            {isImageUrl(playerAvatar) ? (
+              <img
+                src={playerAvatar}
+                alt={playerName}
+                className="absolute top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border-2 border-emerald-500 object-cover transition-all duration-300"
+                style={{ left: `calc(${playerPercent}% - 20px)` }}
+              />
+            ) : (
+              <div
+                className="absolute top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border-2 border-emerald-500 bg-sky-100 flex items-center justify-center text-xl transition-all duration-300 dark:bg-sky-500/10"
+                style={{ left: `calc(${playerPercent}% - 20px)` }}
+              >
+                {playerAvatar || "👤"}
+              </div>
+            )}
+
+            {isImageUrl(rivalAvatar) ? (
+              <img
+                src={rivalAvatar}
+                alt={rivalName}
+                className="absolute top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border-2 border-blue-500 object-cover transition-all duration-300"
+                style={{ left: `calc(${opponentPercent}% - 20px)` }}
+              />
+            ) : (
+              <div
+                className="absolute top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border-2 border-blue-500 bg-sky-100 flex items-center justify-center text-xl transition-all duration-300 dark:bg-sky-500/10"
+                style={{ left: `calc(${opponentPercent}% - 20px)` }}
+              >
+                {rivalAvatar || "👤"}
+              </div>
+            )}
           </div>
           <div className="mt-8 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-300">
             <p>
