@@ -26,7 +26,7 @@ export interface LanguageStanding {
  * and four separate level lookups to draw one list is four round trips on a
  * driver where the round trip is the whole cost.
  */
-export function useLanguageLevels(): {
+export function useLanguageLevels(enabled = true): {
   languages: LanguageStanding[] | null;
   reload: () => void;
 } {
@@ -37,7 +37,7 @@ export function useLanguageLevels(): {
   const reload = useCallback(() => setToken((value) => value + 1), []);
 
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.id) {
+    if (!enabled || status !== "authenticated" || !session?.user?.id) {
       return;
     }
 
@@ -57,7 +57,7 @@ export function useLanguageLevels(): {
     return () => {
       cancelled = true;
     };
-  }, [status, session?.user?.id, token]);
+  }, [enabled, status, session?.user?.id, token]);
 
   return { languages, reload };
 }

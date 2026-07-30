@@ -41,7 +41,7 @@ export default function StartPlayingModal({
 }) {
   const router = useRouter();
   const { language, setLanguage, setLearningLanguage } = useLanguage();
-  const { languages } = useLanguageLevels();
+  const { languages } = useLanguageLevels(open);
   const [mounted, setMounted] = useState(false);
   const [nativeLanguage, setNativeLanguage] = useState<Lang>(language);
   // Deliberately unset: the learning language is the one real choice here, so
