@@ -139,7 +139,7 @@ const FlipCardsPage = () => {
   // Drag state (kept in refs so pointer handlers stay stable).
   const [dragX, setDragX] = useState(0);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  const dragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const moved = useRef(false);
 
   const resetPiles = () => {
@@ -356,14 +356,14 @@ const FlipCardsPage = () => {
     if (leaving) {
       return;
     }
-    dragging.current = true;
+    setIsDragging(true);
     moved.current = false;
     pointerStart.current = { x: event.clientX, y: event.clientY };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging.current || !pointerStart.current) {
+    if (!isDragging || !pointerStart.current) {
       return;
     }
     const deltaX = event.clientX - pointerStart.current.x;
@@ -375,10 +375,10 @@ const FlipCardsPage = () => {
   };
 
   const handlePointerUp = () => {
-    if (!dragging.current) {
+    if (!isDragging) {
       return;
     }
-    dragging.current = false;
+    setIsDragging(false);
 
     if (!moved.current) {
       // Treated as a tap: flip the card.
@@ -531,7 +531,7 @@ const FlipCardsPage = () => {
               onPointerCancel={handlePointerUp}
               style={{
                 transform: `translateX(${dragX}px) rotate(${rotation}deg)`,
-                transition: dragging.current
+                transition: isDragging
                   ? "none"
                   : "transform 0.26s ease-out",
               }}
