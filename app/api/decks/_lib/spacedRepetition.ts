@@ -439,6 +439,71 @@ async function applyAttempt(
     });
 }
 
+async function applyAttemptsBatch(
+  userId: string,
+  targets: {
+    deckWordId: string | null;
+    identity: AttemptTarget["identity"];
+    correct: boolean;
+    steps?: number;
+  }[],
+): Promise<void> {
+  const validTargets = targets.filter(
+    (t) => t.identity !== null && t.identity !== undefined,
+  );
+  if (validTargets.length === 0) return;
+
+  const now = new Date();
+  const rows = validTargets.map((t) => {
+    const identityValues = identityColumns(t.identity);
+    const steps = t.correct ? clampSteps(t.steps) : 0;
+    return {
+      userId,
+      deckWordId: t.deckWordId,
+      ...identityValues,
+      box: t.correct ? 1 : 0,
+      streak: t.correct ? steps : 0,
+      timesSeen: 1,
+      timesCorrect: t.correct ? 1 : 0,
+      timesWrong: t.correct ? 0 : 1,
+      known: false,
+      lastSeenAt: now,
+      updatedAt: now,
+    };
+  });
+
+  await db
+    .insert(userWordStats)
+    .values(rows)
+    .onConflictDoUpdate({
+      target: [
+        userWordStats.userId,
+        userWordStats.nativeLang,
+        userWordStats.foreignLang,
+        userWordStats.vocabKey,
+      ],
+      set: {
+        streak: sql`CASE 
+          WHEN excluded.box > 0 THEN ${userWordStats.streak} + excluded.streak 
+          ELSE GREATEST(${userWordStats.streak} - 1, 0) 
+        END`,
+        box: sql`CASE 
+          WHEN excluded.box > 0 THEN LEAST(${userWordStats.box} + 1, ${MAX_BOX}) 
+          ELSE GREATEST(${userWordStats.box} - 1, 0) 
+        END`,
+        timesSeen: sql`${userWordStats.timesSeen} + 1`,
+        timesCorrect: sql`${userWordStats.timesCorrect} + excluded.times_correct`,
+        timesWrong: sql`${userWordStats.timesWrong} + excluded.times_wrong`,
+        known: sql`CASE 
+          WHEN excluded.box > 0 THEN ((${userWordStats.streak} + excluded.streak) >= ${KNOWN_STREAK_THRESHOLD}) OR ${userWordStats.known} 
+          ELSE false 
+        END`,
+        lastSeenAt: sql`excluded.last_seen_at`,
+        updatedAt: sql`excluded.updated_at`,
+      },
+    });
+}
+
 /**
  * Records the results of a session. Only attempts for words that actually
  * belong to a deck the user can access are applied. Returns null if the deck
@@ -457,17 +522,14 @@ export async function recordAttempts(
   const wordsById = new Map(deck.words.map((word) => [word.id, word]));
   const valid = attempts.filter((attempt) => wordsById.has(attempt.deckWordId));
 
-  for (const attempt of valid) {
-    await applyAttempt(
-      userId,
-      {
-        deckWordId: attempt.deckWordId,
-        identity: deckWordIdentity(deck, wordsById.get(attempt.deckWordId)!),
-      },
-      attempt.correct,
-      attempt.steps,
-    );
-  }
+  const batchTargets = valid.map((attempt) => ({
+    deckWordId: attempt.deckWordId,
+    identity: deckWordIdentity(deck, wordsById.get(attempt.deckWordId)!),
+    correct: attempt.correct,
+    steps: attempt.steps,
+  }));
+
+  await applyAttemptsBatch(userId, batchTargets);
 
   // Deck-scoped record of what was answered *here*, which is what the topic
   // ladder reads. Only deck rounds reach this, so free play can share a word's
@@ -525,19 +587,14 @@ export async function recordConceptAttempts(
     getTranslationsForConcepts(conceptIds, foreignLang),
   ]);
 
-  let recorded = 0;
-  for (const attempt of attempts) {
-    const nativeText = nativeTexts.get(attempt.conceptId);
-    const foreignText = foreignTexts.get(attempt.conceptId);
-    // A concept the corpus cannot express in both languages is not a word this
-    // pair can teach, so there is nothing to record.
-    if (!nativeText || !foreignText) {
-      continue;
-    }
-
-    await applyAttempt(
-      userId,
-      {
+  const batchTargets = attempts
+    .map((attempt) => {
+      const nativeText = nativeTexts.get(attempt.conceptId);
+      const foreignText = foreignTexts.get(attempt.conceptId);
+      if (!nativeText || !foreignText) {
+        return null;
+      }
+      return {
         deckWordId: null,
         identity: buildVocabIdentity({
           conceptId: attempt.conceptId,
@@ -546,14 +603,15 @@ export async function recordConceptAttempts(
           nativeText,
           foreignText,
         }),
-      },
-      attempt.correct,
-      attempt.steps,
-    );
-    recorded += 1;
-  }
+        correct: attempt.correct,
+        steps: attempt.steps,
+      };
+    })
+    .filter((t): t is NonNullable<typeof t> => t !== null);
 
-  return { recorded };
+  await applyAttemptsBatch(userId, batchTargets);
+
+  return { recorded: batchTargets.length };
 }
 
 /** Manual "I already know this" / "actually, keep testing me" toggle. */
