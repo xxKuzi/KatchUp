@@ -259,18 +259,17 @@ export function queueKeyFor({
   return `${QUEUE_KEY_PREFIX}:${nativeLang}:${language}:${level}:fair`;
 }
 
+const METADATA_HASH_KEY = "flipcards:queue:metadata";
+
 /**
  * Drop every entry belonging to `userId`, whatever name/avatar it was stored
- * with. Matching on the whole object the way `lrem` wants would leave stale
- * copies behind as soon as a player's profile changed.
+ * with. Updates both the Sorted Set queue and the metadata Hash map.
  */
 async function removeFromQueue(queueKey: string, userId: string) {
-  const entries = await redis.lrange<QueueEntry>(queueKey, 0, -1);
-  for (const entry of entries) {
-    if (entry.userId === userId) {
-      await redis.lrem(queueKey, 0, entry);
-    }
-  }
+  await Promise.all([
+    redis.zrem(queueKey, userId),
+    redis.hdel(METADATA_HASH_KEY, userId),
+  ]);
 }
 
 /** Called when a player cancels matchmaking or navigates away from the lobby. */
@@ -288,26 +287,21 @@ export async function touchQueueEntry(
   descriptor: QueueDescriptor & PlayerSession,
 ) {
   const queueKey = queueKeyFor(descriptor);
-  const entries = await redis.lrange<QueueEntry>(queueKey, 0, -1);
-  const mine = entries.find((entry) => entry.userId === descriptor.userId);
 
-  if (!mine) {
+  // Check if player is present in Sorted Set
+  const score = await redis.zscore(queueKey, descriptor.userId);
+  if (score === null || score === undefined) {
     return false;
   }
 
-  await removeFromQueue(queueKey, descriptor.userId);
-  await redis.rpush(queueKey, {
-    userId: descriptor.userId,
-    // Preserve the appearance supplied by the original join. Status polls do
-    // not carry the local friends-profile avatar.
-    name: mine.name,
-    avatar: mine.avatar,
-    language: descriptor.language,
-    nativeLang: descriptor.nativeLang,
-    level: descriptor.level,
-    mode: descriptor.mode,
-    joinedAt: Date.now(),
-  } satisfies QueueEntry);
+  // Update the join time / score in Sorted Set to prevent expiration.
+  // XX means only update existing elements.
+  await redis.zadd(
+    queueKey,
+    { xx: true },
+    { score: Date.now(), member: descriptor.userId }
+  );
+
   return true;
 }
 
@@ -338,40 +332,40 @@ export async function tryMatch(
     joinedAt: Date.now(),
   };
 
-  // Remove existing entries for this user to avoid duplicates in the queue
-  await removeFromQueue(queueKey, user.userId);
-  await redis.rpush(queueKey, playerObj);
-
-  const waitingQueue = await redis.lrange<QueueEntry>(queueKey, 0, -1);
   const cutoff = Date.now() - QUEUE_ENTRY_TTL_MS;
-  const candidates = waitingQueue.filter(
-    (entry) => entry.userId !== user.userId,
-  );
 
-  // Entries without a heartbeat were written by a client that has since gone
-  // away; clear them out rather than pairing someone with a ghost.
-  const stale = candidates.filter((entry) => (entry.joinedAt ?? 0) < cutoff);
-  for (const entry of stale) {
-    await redis.lrem(queueKey, 0, entry);
-  }
+  // 1. Prune expired queue candidates atomically
+  await redis.zremrangebyscore(queueKey, "-inf", cutoff);
 
+  // 2. Add current user/update score and set details in companion Hash Map
+  await redis.zadd(queueKey, { score: Date.now(), member: user.userId });
+  await redis.hset(METADATA_HASH_KEY, {
+    [user.userId]: JSON.stringify(playerObj),
+  });
+
+  // 3. Find candidates (oldest first)
+  const candidateIds = await redis.zrange<string[]>(queueKey, 0, -1);
   let waiting: QueueEntry | null = null;
-  for (const candidate of candidates) {
-    if ((candidate.joinedAt ?? 0) < cutoff) {
+
+  for (const candUserId of candidateIds) {
+    if (candUserId === user.userId) {
       continue;
     }
 
     // A heartbeat that raced with the candidate's own match being created can
     // leave them queued while they're already playing. Pairing with them would
     // strand this player in a duel the other side never opens.
-    const alreadyPlaying = await activeMatchIdsForUser(candidate.userId);
+    const alreadyPlaying = await activeMatchIdsForUser(candUserId);
     if (alreadyPlaying.length > 0) {
-      await removeFromQueue(queueKey, candidate.userId);
+      await removeFromQueue(queueKey, candUserId);
       continue;
     }
 
-    waiting = candidate;
-    break;
+    const rawMeta = await redis.hget<string>(METADATA_HASH_KEY, candUserId);
+    if (rawMeta) {
+      waiting = JSON.parse(rawMeta) as QueueEntry;
+      break;
+    }
   }
 
   if (!waiting) {
