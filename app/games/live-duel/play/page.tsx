@@ -203,6 +203,7 @@ export default function LiveDuelPlayPage() {
   // The answer response can arrive before a sync has populated `livePayload`,
   // so the winner check needs an id that's available as soon as we know it.
   const myUserId = useRef<string | null>(null);
+  const isFinishedRef = useRef(false);
 
   const totalQuestions =
     mode === "live"
@@ -235,6 +236,14 @@ export default function LiveDuelPlayPage() {
 
       setLoadError(null);
       const payload = (await response.json()) as LiveMatchPayload;
+
+      if (payload.match.status === "finished") {
+        isFinishedRef.current = true;
+      }
+      if (isFinishedRef.current && payload.match.status !== "finished") {
+        return;
+      }
+
       myUserId.current = payload.me.id;
       setLivePayload(payload);
       if (payload.questions) {
@@ -306,6 +315,7 @@ export default function LiveDuelPlayPage() {
     botResultRecorded.current = false;
     initialLoaded.current = false;
     myUserId.current = null;
+    isFinishedRef.current = false;
     setLiveQuestions([]);
 
     // A live URL without a match id can never resolve - say so instead of
@@ -572,6 +582,7 @@ export default function LiveDuelPlayPage() {
   const opponentPercent = Math.min((rivalRaceValue / raceTarget) * 100, 100);
 
   const finishMatch = (resolvedWinner: MatchWinner) => {
+    isFinishedRef.current = true;
     setStatus("finished");
     setWinner(resolvedWinner);
   };
