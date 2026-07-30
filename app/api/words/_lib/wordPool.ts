@@ -60,7 +60,7 @@ const MAX_OVERFETCH = 300;
  *
  * German writes both "big" and "large" as `groß`, and anger, fury and rage all
  * as `Wut`. Two such words in one round is not a harder round, it is a broken
- * one: Guess Match would show two identical tiles with no way to tell which
+ * one: Word Pairing would show two identical tiles with no way to tell which
  * English word each belongs to, and a multiple-choice round would offer the
  * same word as two different options, one of them marked wrong.
  *

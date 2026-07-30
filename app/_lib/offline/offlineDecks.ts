@@ -74,6 +74,8 @@ export function withStoredArticle<T extends OfflineDeckWord>(
 export interface OfflineSession {
   deckId: string;
   deckName: string;
+  nativeLang: string;
+  foreignLang: string;
   mode: SessionMode;
   level: number | null;
   words: OfflineSessionWord[];
@@ -224,6 +226,8 @@ export async function readOfflineSession(
   return {
     deckId: record.deckId,
     deckName: record.name,
+    nativeLang: record.nativeLang,
+    foreignLang: record.foreignLang,
     mode: options.mode === "finish" ? "finish" : "practice",
     level: options.level ?? null,
     words: chooseSessionWords(scoped, {

@@ -8,7 +8,7 @@
  * update at all.
  */
 
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const SHELL_CACHE = `katchup-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `katchup-assets-${CACHE_VERSION}`;
 const PAGE_CACHE = `katchup-pages-${CACHE_VERSION}`;
@@ -32,7 +32,7 @@ const OFFLINE_ROUTES = [
   "/my-decks/practice",
   "/games/flip-cards",
   "/games/one-of-three",
-  "/games/guess-match",
+  "/games/word-pairing",
   "/games/speed-spelling",
 ];
 

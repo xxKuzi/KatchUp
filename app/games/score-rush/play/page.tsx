@@ -40,34 +40,29 @@ type RunStatus = "playing" | "finished";
 const RUN_DURATION_MS = 30_000;
 const WRONG_ANSWER_DELAY_MS = 2_000;
 
-interface AsyncLeaderboardRow {
-  userId: string;
-  name: string;
-  avatar: string;
-  score: number;
-  correct: number;
-  timeMs: number;
-  rank: number;
-}
-
-// Score Rush is a recognition drill: it shows the word in the language you're
-// learning and asks what it means in yours.
-const DIRECTION = "recognition" as const;
+// Score Rush is a recall drill: it shows the word in your language
+// and asks what it means in the language you're learning.
+const DIRECTION = "recall" as const;
 
 function buildQuestionQueue(pool: WordPair[], count: number): RushQuestion[] {
   return shuffle(pool)
     .slice(0, Math.min(count, pool.length))
-    .map((pair, index) => ({
-      id: `${pair.conceptId}-${index}`,
-      conceptId: pair.conceptId,
-      // Recognition, so the prompt is the word being learned — the one side an
-      // article belongs on. The options are in the language the player already
-      // speaks and stay bare, which is also what keeps grading untouched: it
-      // compares the answer side, never this.
-      prompt: withArticle(pair.prompt, pair.promptArticle),
-      options: buildOptions(pair, pool),
-      correctOption: pair.answer,
-    }));
+    .map((pair, index) => {
+      const rawOptions = buildOptions(pair, pool);
+      const formattedOptions = rawOptions.map((optionText) => {
+        const match = pool.find((p) => p.answer === optionText);
+        return match ? withArticle(optionText, match.answerArticle) : optionText;
+      });
+
+      return {
+        id: `${pair.conceptId}-${index}`,
+        conceptId: pair.conceptId,
+        // In recall, the prompt is in the speaker's language (no article needed)
+        prompt: withArticle(pair.prompt, pair.promptArticle),
+        options: formattedOptions,
+        correctOption: withArticle(pair.answer, pair.answerArticle),
+      };
+    });
 }
 
 export default function ScoreRushPlayPage() {
@@ -100,15 +95,22 @@ export default function ScoreRushPlayPage() {
   const [answered, setAnswered] = useState(0);
   const [score, setScore] = useState(0);
   const [status, setStatus] = useState<RunStatus>("playing");
-  const [countdown, setCountdown] = useState<number | null>(3);
+  // Starts at 2, not 3: a solo run has nothing to sync with, so the extra
+  // second is only a delay between tapping play and playing.
+  const [countdown, setCountdown] = useState<number | null>(2);
   const [msRemaining, setMsRemaining] = useState(RUN_DURATION_MS);
   const [feedback, setFeedback] = useState<{
     text: string;
     tone: "good" | "bad";
   } | null>(null);
   const [answerLocked, setAnswerLocked] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<AsyncLeaderboardRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Set once the finished run has been saved: the server answers with the best
+  // this player had before it, which is what the result screen compares against.
+  const [runOutcome, setRunOutcome] = useState<{
+    previousBest: number | null;
+    isPersonalBest: boolean;
+  } | null>(null);
   const scoreSubmitted = useRef(false);
   const answerLockedRef = useRef(false);
   const answerTimeout = useRef<number | null>(null);
@@ -116,6 +118,7 @@ export default function ScoreRushPlayPage() {
   const runEndsAt = useRef<number>(0);
   const [paused, setPaused] = useState(false);
   const pausedAt = useRef<number | null>(null);
+  const [roundKey, setRoundKey] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -148,7 +151,7 @@ export default function ScoreRushPlayPage() {
       });
 
     return () => controller.abort();
-  }, [speak, learning, level]);
+  }, [speak, learning, level, roundKey]);
 
   useEffect(() => {
     // Held at the door with no energy: the countdown never starts, so the clock
@@ -216,7 +219,7 @@ export default function ScoreRushPlayPage() {
 
     const submitScore = async () => {
       try {
-        await fetch("/api/flip-cards/async-score", {
+        const response = await fetch("/api/flip-cards/async-score", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -232,33 +235,21 @@ export default function ScoreRushPlayPage() {
           }),
         });
 
-        const leaderboardResponse = await fetch(
-          `/api/flip-cards/async-score?language=${learning}&level=${level}`,
-        );
-
-        if (!leaderboardResponse.ok) {
+        if (!response.ok) {
           return;
         }
 
-        const leaderboardData = (await leaderboardResponse.json()) as {
-          leaderboard: AsyncLeaderboardRow[];
-          currentPlayer: AsyncLeaderboardRow | null;
+        const saved = (await response.json()) as {
+          previousBest?: number | null;
+          isPersonalBest?: boolean;
         };
-
-        const currentPlayer = leaderboardData.currentPlayer ?? null;
-        const topPlayers = leaderboardData.leaderboard ?? [];
-        setLeaderboard(
-          currentPlayer
-            ? [
-                ...topPlayers
-                  .filter((entry) => entry.userId !== currentPlayer.userId)
-                  .slice(0, 4),
-                currentPlayer,
-              ]
-            : topPlayers.slice(0, 5),
-        );
+        setRunOutcome({
+          previousBest: saved.previousBest ?? null,
+          isPersonalBest: saved.isPersonalBest === true,
+        });
       } catch {
-        // Non-blocking: the run already completed.
+        // Non-blocking: the run already completed. Without the response the
+        // result screen simply says nothing about a best, rather than guessing.
       }
     };
 
@@ -331,7 +322,30 @@ export default function ScoreRushPlayPage() {
   };
 
   const restartRun = () => {
-    router.push("/games/score-rush/play?" + searchParams.toString());
+    if (answerTimeout.current !== null) {
+      window.clearTimeout(answerTimeout.current);
+      answerTimeout.current = null;
+    }
+    setQueueIndex(0);
+    setCorrect(0);
+    setAnswered(0);
+    setScore(0);
+    setStatus("playing");
+    setCountdown(2);
+    setMsRemaining(RUN_DURATION_MS);
+    setFeedback(null);
+    setAnswerLocked(false);
+    setLoadError(null);
+    setRunOutcome(null);
+    setPaused(false);
+    
+    scoreSubmitted.current = false;
+    answerLockedRef.current = false;
+    pausedAt.current = null;
+    runEndsAt.current = 0;
+    questionStartedAt.current = Date.now();
+
+    setRoundKey((prev) => prev + 1);
   };
 
   const backToLobby = () => {
@@ -413,44 +427,53 @@ export default function ScoreRushPlayPage() {
         </div>
       </div>
 
-      {status === "playing" && currentQuestion ? (
-        <div className="relative w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-          <h2 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-            {currentQuestion.prompt}
-          </h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Pick the correct translation
-          </p>
+      {status === "playing" ? (
+        currentQuestion ? (
+          <div className="relative w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+              {currentQuestion.prompt}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Pick the correct translation
+            </p>
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {currentQuestion.options.map((option) => (
-              <button
-                key={option}
-                className="rounded-xl border border-zinc-300 px-4 py-3 text-left font-medium text-zinc-800 transition hover:border-blue-500 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                disabled={answerLocked}
-                onClick={() => handleAnswer(option)}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-
-          {feedback && (
-            <div
-              className={`absolute right-6 top-5 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all duration-300 ${
-                feedback.tone === "good"
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
-                  : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
-              }`}
-            >
-              {feedback.text}
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {currentQuestion.options.map((option) => (
+                <button
+                  key={option}
+                  className="rounded-xl border border-zinc-300 px-4 py-3 text-left font-medium text-zinc-800 transition hover:border-blue-500 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  disabled={answerLocked}
+                  onClick={() => handleAnswer(option)}
+                >
+                  {option}
+                </button>
+              ))}
             </div>
-          )}
 
-          {loadError && (
-            <p className="mt-3 text-sm text-red-500">{loadError}</p>
-          )}
-        </div>
+            {feedback && (
+              <div
+                className={`absolute right-6 top-5 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all duration-300 ${
+                  feedback.tone === "good"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                    : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                }`}
+              >
+                {feedback.text}
+              </div>
+            )}
+
+            {loadError && (
+              <p className="mt-3 text-sm text-red-500">{loadError}</p>
+            )}
+          </div>
+        ) : (
+          <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900 flex flex-col justify-center items-center">
+            <p className="text-zinc-500 animate-pulse font-medium">Loading words...</p>
+            {loadError && (
+              <p className="mt-3 text-sm text-red-500">{loadError}</p>
+            )}
+          </div>
+        )
       ) : (
         <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-sm uppercase tracking-wide text-zinc-500">
@@ -463,21 +486,25 @@ export default function ScoreRushPlayPage() {
             {correct}/{answered} correct answers
           </p>
 
-          {leaderboard.length > 0 && (
-            <div className="mx-auto mt-5 max-w-md rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-left dark:border-zinc-700 dark:bg-zinc-800/40">
-              <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
-                Top Score Rush Players
+          {runOutcome?.isPersonalBest ? (
+            <div className="mx-auto mt-4 max-w-sm rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/40">
+              <p className="text-sm font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                New personal best
               </p>
-              {leaderboard.slice(0, 5).map((entry, index) => (
-                <p
-                  key={`${entry.name}-${index}`}
-                  className="text-sm text-zinc-700 dark:text-zinc-200"
-                >
-                  #{entry.rank} {entry.name} - {entry.score} pts
-                </p>
-              ))}
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">
+                Your old best at {level} was {runOutcome.previousBest} pts.
+              </p>
             </div>
-          )}
+          ) : runOutcome && runOutcome.previousBest === score ? (
+            <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
+              You matched your best at {level}.
+            </p>
+          ) : null}
+          {/*
+            A run under the record says nothing at all. Naming the record, or
+            the gap to it, turns every ordinary run into a near miss — the
+            screen should only ever hand out good news.
+          */}
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button

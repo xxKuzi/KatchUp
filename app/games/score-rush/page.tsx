@@ -13,6 +13,7 @@ import {
 } from "../live-duel/_lib/playerProfile";
 import { useDuelNickname } from "../live-duel/_lib/useDuelNickname";
 import { useSession } from "@/lib/auth-client";
+import { buildLeaderboardRows } from "./_lib/leaderboardRows";
 
 const LEADERBOARD_CACHE_PREFIX = "katchup-score-rush-leaderboard-v3";
 const RECENT_RUNS_CACHE_PREFIX = "katchup-score-rush-recent-v2";
@@ -226,14 +227,12 @@ const ScoreRushPage = () => {
     router.push(`/games/score-rush/play?${params.toString()}`);
   };
 
-  const displayedPlayers = currentPlayer
-    ? [
-        ...topPlayers
-          .filter((entry) => entry.userId !== currentPlayer.userId)
-          .slice(0, 4),
-        currentPlayer,
-      ]
-    : topPlayers.slice(0, 5);
+  const displayedPlayers = buildLeaderboardRows(topPlayers, currentPlayer);
+  const currentPlayerIsPinned =
+    currentPlayer !== null &&
+    displayedPlayers.length === 5 &&
+    displayedPlayers[4].userId === currentPlayer.userId &&
+    topPlayers[4]?.userId !== currentPlayer.userId;
 
   return (
     <GamePage
@@ -352,7 +351,7 @@ const ScoreRushPage = () => {
             </div>
           </div>
           <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-            Top 4 + You
+            {currentPlayerIsPinned ? "Top 4 + You" : "Top 5"}
           </span>
         </div>
 

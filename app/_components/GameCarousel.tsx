@@ -37,7 +37,7 @@ function GameCarousel() {
 
     {
       name: "Word Pairing",
-      url: "/games/guess-match",
+      url: "/games/word-pairing",
       img: "word_pairing.webp",
       color: "green",
       description: "Connect the synonyms",

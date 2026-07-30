@@ -34,7 +34,7 @@ const GAME_MODE_IDS = [
     descKey: "games.oneOfThreeDesc",
   },
   {
-    id: "guess-match",
+    id: "word-pairing",
     icon: "🔗",
     tKey: "games.guessMatch",
     descKey: "games.guessMatchDesc",

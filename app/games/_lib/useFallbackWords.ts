@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevelState } from "@/app/_lib/useLearningLevel";
 import { readSelfReportedLevel } from "@/app/_lib/selfReportedLevel";
-import type { CefrLevel } from "@/app/_lib/languages";
+import { normalizeLang, type CefrLevel } from "@/app/_lib/languages";
 import { fetchWordPairs } from "./wordPairs";
 
 export interface FallbackWord {
@@ -37,8 +37,13 @@ export interface FallbackWords {
  * your own language and produce the target — so `native` is the language you
  * speak and `foreign` the one you're learning.
  */
-export function useFallbackWords(count = 60): FallbackWords {
-  const { speak, learning } = useLanguagePair();
+export function useFallbackWords(
+  count = 60,
+  options?: { speak?: string; learning?: string },
+): FallbackWords {
+  const stored = useLanguagePair();
+  const speak = normalizeLang(options?.speak) ?? stored.speak;
+  const learning = normalizeLang(options?.learning) ?? stored.learning;
   const { level: learningLevel, status } = useLearningLevelState(learning);
   // Signed out there are no mastered words to derive a level from, so the words
   // come at whatever difficulty the visitor said they were starting from. That

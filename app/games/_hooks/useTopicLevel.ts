@@ -87,6 +87,14 @@ export function useTopicLevel(deckId: string): TopicLevelContext {
     [isLegendaryRound, language, learningLanguage, topicId],
   );
 
+  const backHref = topicId
+    ? `/topics/${encodeURIComponent(topicId)}`
+    : deckId
+      ? "/my-decks"
+      : "/games";
+
+  console.log("useTopicLevel debug:", { topicId, deckId, backHref });
+
   return {
     topicId,
     level,
@@ -96,11 +104,7 @@ export function useTopicLevel(deckId: string): TopicLevelContext {
     // must keep drawing from the whole deck — and so does the legendary round,
     // which is a review of the pack rather than of one of its levels.
     deckLevel: topicId && !isLegendaryRound ? level : undefined,
-    backHref: topicId
-      ? `/topics/${encodeURIComponent(topicId)}`
-      : deckId
-        ? "/my-decks"
-        : "/topics",
+    backHref,
     markComplete,
   };
 }

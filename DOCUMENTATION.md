@@ -39,7 +39,7 @@ KatchUp/
 │   ├── friends/              # Social pages & profiles
 │   ├── games/                # Mini-games wrapper structure
 │   │   ├── flip-cards/       # Flip Cards game
-│   │   ├── guess-match/      # Guess Match game
+│   │   ├── word-pairing/      # Word Pairing game
 │   │   ├── one-of-three/     # One-of-Three game
 │   │   └── speed-spelling/   # Speed Spelling game
 │   ├── leaderboard/          # Global/League Leaderboards
@@ -66,7 +66,7 @@ Players queue up and are paired using Redis or Drizzle. Once a match is confirme
 ### 4.3 Mini-Games (`app/games/*`)
 - **Flip Cards:** Classic memory game adapted for vocabulary (match native word to foreign word).
 - **One of Three:** Multiple-choice language test mode.
-- **Guess Match & Speed Spelling:** Fast-paced vocabulary association games.
+- **Word Pairing & Speed Spelling:** Fast-paced vocabulary association games.
 These modes pull data from preset databases, or fallback to the local `playerProfile.ts` and `wordDatabase.ts`.
 
 ### 4.4 Custom Deck Management (`app/my-decks`)
