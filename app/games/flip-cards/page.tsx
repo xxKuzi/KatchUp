@@ -472,7 +472,7 @@ const FlipCardsPage = () => {
             {sessionMode === "finish"
               ? isLegendaryRound
                 ? " · Legendary round"
-                : " · Finish round"
+                : " · Challenge round"
               : ""}
           </p>
         )}

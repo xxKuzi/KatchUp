@@ -199,14 +199,15 @@ export const spanishTranslations = {
   },
   practice: {
     choosePracticeMode: "Elige un modo de práctica",
+    chooseChallengeMode: "Elige una ronda de desafío",
     backToDecks: "Volver a los mazos",
     info: "Información",
     deckHasWords: "Este mazo tiene",
     chooseAMode: "palabras. Elige un modo para empezar.",
     deckNotFound: "No se encontró el mazo. Elige uno desde la vista general.",
     gameInfoText: "Elige un modo de práctica",
-    finishRound: "Ronda final",
-    finishRoundDesc: "Practica las palabras que te cuestan para recuperar energía.",
+    finishRound: "Ronda de desafío",
+    finishRoundDesc: "El doble de palabras, las más difíciles primero.",
     startFinishRound: "Empezar la ronda final",
   },
   games: {

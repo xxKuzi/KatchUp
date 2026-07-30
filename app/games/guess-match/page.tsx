@@ -367,7 +367,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
 
   const headerLabel = deckId
     ? sessionMode === "finish"
-      ? "Finish Round"
+      ? "Challenge Round"
       : "Custom Deck"
     : `Lesson ${safeLevel}`;
 

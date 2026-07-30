@@ -227,15 +227,16 @@ export const translations: Record<Language, Translations> = {
     },
     practice: {
       choosePracticeMode: "Choose Practice Mode",
+      chooseChallengeMode: "Choose a Challenge Round",
       backToDecks: "Back to Decks",
       info: "Info",
       deckHasWords: "This deck has",
       chooseAMode: "words. Choose a practice mode to start.",
       deckNotFound: "Deck not found. Please select a deck from the overview.",
       gameInfoText: "Choose a practice mode",
-      finishRound: "Finish Round",
-      finishRoundDesc: "Practise your difficult words to earn energy back.",
-      startFinishRound: "Start Finish Round",
+      finishRound: "Challenge Round",
+      finishRoundDesc: "Twice the words, hardest first.",
+      startFinishRound: "Start Challenge Round",
     },
     games: {
       browse: "Browse games",
@@ -515,14 +516,15 @@ export const translations: Record<Language, Translations> = {
     },
     practice: {
       choosePracticeMode: "Vyberte režim tréninku",
+      chooseChallengeMode: "Vyberte kolo výzvy",
       backToDecks: "Zpět na balíčky",
       info: "Info",
       deckHasWords: "Tento balíček má",
       chooseAMode: "slov. Vyberte si režim tréninku a začněte.",
       deckNotFound: "Balíček nenalezen. Vyberte si prosím balíček z přehledu.",
       gameInfoText: "Vyberte si režim tréninku",
-      finishRound: "Závěrečné kolo",
-      finishRoundDesc: "Procvičte obtížná slova a získejte zpět energii.",
+      finishRound: "Kolo výzvy",
+      finishRoundDesc: "Dvakrát více slov, nejtěžší první.",
       startFinishRound: "Spustit závěrečné kolo",
     },
     games: {
@@ -808,6 +810,7 @@ export const translations: Record<Language, Translations> = {
     },
     practice: {
       choosePracticeMode: "Wählen Sie den Übungsmodus",
+      chooseChallengeMode: "Wählen Sie eine Herausforderungsrunde",
       backToDecks: "Zurück zu Decks",
       info: "Info",
       deckHasWords: "Dieses Deck hat",
@@ -815,8 +818,8 @@ export const translations: Record<Language, Translations> = {
       deckNotFound:
         "Deck nicht gefunden. Bitte wählen Sie ein Deck aus der Übersicht.",
       gameInfoText: "Wählen Sie einen Übungsmodus",
-      finishRound: "Abschlussrunde",
-      finishRoundDesc: "Übe schwierige Wörter, um Energie zurückzugewinnen.",
+      finishRound: "Herausforderungsrunde",
+      finishRoundDesc: "Doppelt so viele Wörter, die schwersten zuerst.",
       startFinishRound: "Abschlussrunde starten",
     },
     games: {

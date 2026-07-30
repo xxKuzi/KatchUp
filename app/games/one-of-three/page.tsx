@@ -525,7 +525,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   const headerLabel = onboarding
     ? "Free round"
     : sessionMode === "finish"
-      ? "Finish Round"
+      ? "Challenge Round"
       : topicId
         ? `Level ${safeLevel}`
         : deckId

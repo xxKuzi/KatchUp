@@ -455,14 +455,22 @@ export default function MyDecksOverview() {
                           >
                             {t("common.practice")}
                           </Link>
-                          {deck.role === "owner" && (
-                            <button
-                              type="button"
-                              onClick={() => setSharingDeck(deck)}
-                              className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-700 transition hover:bg-violet-100 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
+                          {/* The long round, offered up front. It used to be
+                              reachable only from a results screen, so you had
+                              to play a round before you could find the one that
+                              drills what you keep getting wrong.
+
+                              Through the practice selector rather than straight
+                              into a game: the mode belongs to the round, not to
+                              one game, so the player picks which of the four
+                              plays it. */}
+                          {deck.wordCount > 0 && (
+                            <Link
+                              href={`/my-decks/practice?deck=${deck.id}&mode=finish`}
+                              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 transition hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-900"
                             >
-                              {t("share.share", "Share")}
-                            </button>
+                              🏁 {t("practice.finishRound", "Challenge round")}
+                            </Link>
                           )}
                           {deck.role && deck.role !== "owner" && (
                             <button
