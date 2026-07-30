@@ -15,18 +15,32 @@ import {
   readCachedDecks,
   writeCachedDecks,
 } from "../games/_lib/deckCache";
+import { Share2 } from "lucide-react";
 import DeckProgress from "@/app/_components/DeckProgress";
-import OfflineDeckButton from "@/app/_components/OfflineDeckButton";
+import MasteryTip from "@/app/_components/MasteryTip";
+import CardMenu, { MenuItem } from "@/app/_components/CardMenu";
+import { OfflineDeckMenuItems } from "@/app/_components/OfflineDeckButton";
 import SyncStatusBadge from "@/app/_components/SyncStatusBadge";
 import ShareDeckDialog from "./_components/ShareDeckDialog";
 import WordCountSelect from "./_components/WordCountSelect";
 import { leaveDeck } from "./_lib/shareClient";
-import { useOnlineStatus } from "../_lib/offline/useOffline";
+import { useOnlineStatus, useSyncStatus } from "../_lib/offline/useOffline";
+
+/**
+ * Words started but not finished: met at least once, not yet mastered. Clamped
+ * because the two counts are gathered separately and an older cached deck may
+ * carry no `clearedCount` at all.
+ */
+function inPractice(deck: DeckMeta): number {
+  const cleared = Math.min(deck.clearedCount ?? 0, deck.wordCount);
+  return Math.max(0, cleared - deck.knownCount);
+}
 
 export default function MyDecksOverview() {
   const { t, language, learningLanguage } = useLanguage();
   const { isSignedIn, isReady, signIn } = useAuthState();
   const online = useOnlineStatus();
+  const { syncing, pending } = useSyncStatus();
   const [decks, setDecks] = useState<DeckMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
@@ -379,9 +393,32 @@ export default function MyDecksOverview() {
                         key={deck.id}
                         className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900"
                       >
-                        <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                          {deck.name}
-                        </h4>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                            {deck.name}
+                          </h4>
+                          {/* Sharing and downloading live here rather than in
+                              the row below: they are things you do to a deck
+                              once, and every button spent on them was a button
+                              competing with the two you press every day. */}
+                          <CardMenu
+                            label={t("common.deckActions", "Deck actions")}
+                            className="-mr-1 -mt-1"
+                          >
+                            {deck.role === "owner" && (
+                              <MenuItem onClick={() => setSharingDeck(deck)}>
+                                <Share2 className="h-4 w-4 shrink-0" />
+                                {t("share.share", "Share")}
+                              </MenuItem>
+                            )}
+                            {/* Custom decks only: a topic deck is topped up on
+                                the server, so a copy of one here would go
+                                stale. */}
+                            {deck.kind === "custom" && (
+                              <OfflineDeckMenuItems deckId={deck.id} />
+                            )}
+                          </CardMenu>
+                        </div>
                         {/* Decks a friend shared say so, because the actions
                             below differ: no sharing on, no deleting of, and
                             sometimes no editing of someone else's deck. */}
@@ -437,14 +474,6 @@ export default function MyDecksOverview() {
                             </button>
                           )}
                         </div>
-                        {/* Custom decks only: a topic deck is topped up on the
-                            server, so a copy of one here would go stale. */}
-                        {deck.kind === "custom" && (
-                          <OfflineDeckButton
-                            deckId={deck.id}
-                            className="mt-3"
-                          />
-                        )}
                       </article>
                     ))}
                   </div>

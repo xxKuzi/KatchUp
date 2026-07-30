@@ -1,8 +1,10 @@
 "use client";
 
+import { Check, Download, Trash2 } from "lucide-react";
 import { useLanguage } from "../_lib/languageContext";
 import { useOfflineDeck, useOnlineStatus } from "../_lib/offline/useOffline";
 import { isOfflineStorageAvailable } from "../_lib/offline/db";
+import { MenuItem } from "./CardMenu";
 
 /**
  * "Download for offline use" on one deck, and the badge it becomes afterwards.
@@ -81,5 +83,46 @@ export default function OfflineDeckButton({
         <span className="text-xs text-red-600 dark:text-red-400">{error}</span>
       )}
     </span>
+  );
+}
+
+/**
+ * The same download action shaped as rows for a `CardMenu`.
+ *
+ * Shares the hook rather than the markup: a menu row and a standalone button
+ * want different chrome, but "is it downloaded, is it busy, can it be" is one
+ * question with one answer.
+ */
+export function OfflineDeckMenuItems({ deckId }: { deckId: string }) {
+  const { t } = useLanguage();
+  const online = useOnlineStatus();
+  const { available, busy, ready, download, remove } = useOfflineDeck(deckId);
+
+  // A menu can simply not offer what this browser can't do, with no gap left
+  // behind — unlike the inline button, which holds space in a row of buttons.
+  if (!isOfflineStorageAvailable() || !ready) {
+    return null;
+  }
+
+  if (available) {
+    return (
+      <MenuItem onClick={remove} disabled={busy} tone="danger">
+        <Trash2 className="h-4 w-4 shrink-0" />
+        {t("offline.remove", "Remove")}
+        <Check
+          className="ml-auto h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+          aria-label={t("offline.available", "Available offline")}
+        />
+      </MenuItem>
+    );
+  }
+
+  return (
+    <MenuItem onClick={download} disabled={busy || !online}>
+      <Download className="h-4 w-4 shrink-0" />
+      {busy
+        ? t("offline.downloading", "Downloading…")
+        : t("offline.download", "Download for offline use")}
+    </MenuItem>
   );
 }
