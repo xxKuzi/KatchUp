@@ -97,6 +97,7 @@ export async function GET(
       targetCorrect: WINNING_CORRECT_ANSWERS,
       language: meRow.language ?? match.language,
       level: meRow.level ?? match.level,
+      mode: match.mode,
       // Null until both players accept - that is when the shared clock is set.
       startAt: match.startAt?.getTime() ?? null,
     },

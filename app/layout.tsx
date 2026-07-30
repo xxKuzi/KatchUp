@@ -11,6 +11,7 @@ import OfflineDataGuard from "./_components/OfflineDataGuard";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./_lib/languageContext";
 import { StartPlayingModalProvider } from "./_components/StartPlayingModalProvider";
+import DuelInviteListener from "./_components/DuelInviteListener";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/lib/auth-client";
 import SiteTranslationBridge from "./_components/SiteTranslationBridge";
@@ -90,6 +91,7 @@ export default async function RootLayout({
                 <ServiceWorkerManager />
                 <OfflineDataGuard />
                 <EnergySync />
+                <DuelInviteListener />
                 <Navbar />
                 <AppMain>
                   <OnboardingGate>{children}</OnboardingGate>

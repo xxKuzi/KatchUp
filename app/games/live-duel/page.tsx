@@ -48,6 +48,10 @@ interface MatchHistoryEntry {
   winner: "player" | "opponent" | "draw" | null;
 }
 
+const isImageUrl = (url?: string) => {
+  return url ? url.startsWith("http") || url.startsWith("/") || url.startsWith("data:") : false;
+};
+
 const LiveDuelPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -111,6 +115,50 @@ const LiveDuelPage = () => {
     // Only the first load matters here - later changes are the player's own.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const paramMatchId = searchParams.get("matchId");
+    if (!paramMatchId || !profile || !isSignedIn || !isAuthReady) {
+      return;
+    }
+
+    const loadMatchFromUrl = async () => {
+      try {
+        const response = await fetch(`/api/flip-cards/match/${paramMatchId}`);
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        setMatchId(paramMatchId);
+
+        if (data.opponent) {
+          setOpponent({
+            name: data.opponent.name,
+            avatar: data.opponent.avatar,
+          });
+        }
+
+        if (data.me.accepted) {
+          setMatchState("accepted");
+        } else {
+          setMatchState("found");
+        }
+
+        if (data.match.mode === "personal" || data.match.mode === "fair") {
+          setMatchSettings(data.match.mode);
+        }
+
+        if (data.match.status === "active") {
+          goToMatch(paramMatchId, data.match.startAt);
+        }
+      } catch (err) {
+        console.error("Failed to load match from query param:", err);
+      }
+    };
+
+    void loadMatchFromUrl();
+  }, [searchParams, profile, isSignedIn, isAuthReady]);
 
   const chooseMatchSettings = (next: MatchSettings) => {
     setMatchSettings(next);
@@ -699,11 +747,17 @@ const LiveDuelPage = () => {
             </button>
 
             <div className="relative">
-              <img
-                src={opponent.avatar}
-                alt={opponent.name}
-                className="h-16 w-16 rounded-full border-2 border-blue-400 object-cover"
-              />
+              {isImageUrl(opponent.avatar) ? (
+                <img
+                  src={opponent.avatar}
+                  alt={opponent.name}
+                  className="h-16 w-16 rounded-full border-2 border-blue-400 object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-blue-400 bg-sky-100 text-3xl dark:bg-sky-500/10">
+                  {opponent.avatar || "👤"}
+                </div>
+              )}
               <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500" />
             </div>
             <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">

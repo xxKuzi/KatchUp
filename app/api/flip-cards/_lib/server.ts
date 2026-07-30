@@ -157,7 +157,7 @@ function toQuestions(
 // pick its meaning in the language both players speak.
 const MATCH_DIRECTION = "recognition" as const;
 
-async function createPersonalMatchQuestions(
+export async function createPersonalMatchQuestions(
   userId: string,
   { speak, learning, level }: MatchPair,
 ): Promise<MatchQuestionPayload[]> {
@@ -204,7 +204,7 @@ async function createPersonalMatchQuestions(
   return toQuestions(shuffleArray(combined), answerPool, "personal");
 }
 
-async function createMatchQuestions({
+export async function createMatchQuestions({
   speak,
   learning,
   level,
@@ -635,10 +635,7 @@ export async function forfeitMatch(matchId: string, userId: string) {
   }
 
   const opponent = rows.find((row) => row.userId !== userId);
-  // A match neither side ever answered is just closed - handing out a win for
-  // a duel that was never played would show up as a phantom result.
-  const nobodyPlayed = rows.every((row) => row.progress === 0);
-  await closeMatch(matchId, nobodyPlayed ? null : (opponent?.userId ?? null));
+  await closeMatch(matchId, opponent?.userId ?? null);
 }
 
 /** Resolve every live match this player abandoned by walking away. */
