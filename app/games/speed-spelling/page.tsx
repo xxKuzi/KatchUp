@@ -85,7 +85,7 @@ function buildRoundWords(words: PracticeWord[], seed: string): PracticeWord[] {
   return shuffled.slice(0, Math.min(MAX_WORDS, shuffled.length));
 }
 
-const QuickGuessPage = () => {
+const SpeedSpellingPage = () => {
   const searchParams = useSearchParams();
   const { language } = useLanguage();
   const { isSignedIn, isReady, signIn } = useAuthState();
@@ -130,7 +130,7 @@ const QuickGuessPage = () => {
   const energyBlocked = useEnergyBlocked(isEnergyReview);
 
   const { words: allWords, isLoading: wordsLoading } = useFallbackWords();
-  const roundSeed = `${topicId || "default"}:${safeLevel}:quick-guess:${attempt}`;
+  const roundSeed = `${topicId || "default"}:${safeLevel}:speed-spelling:${attempt}`;
 
   const words = useMemo<PracticeWord[]>(() => {
     if (deckId) {
@@ -204,7 +204,7 @@ const QuickGuessPage = () => {
   }
 
   return (
-    <QuickGuessRound
+    <SpeedSpellingRound
       // Keyed on the words themselves so a set that arrives late — a language
       // switch, an energy round's own fetch — starts the round over rather than
       // dropping new words into a timer that is already running.
@@ -252,7 +252,7 @@ const QuickGuessPage = () => {
   );
 };
 
-interface QuickGuessRoundProps {
+interface SpeedSpellingRoundProps {
   words: PracticeWord[];
   deckId: string;
   sessionMode: "practice" | "finish";
@@ -265,7 +265,7 @@ interface QuickGuessRoundProps {
   onReplay: () => void;
 }
 
-function QuickGuessRound(props: QuickGuessRoundProps) {
+function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
   const {
     words,
     deckId,
@@ -603,7 +603,7 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
                 </Link>
                 {deckId && sessionMode !== "finish" && (
                   <Link
-                    href={`/games/quick-guess?deck=${deckId}&mode=finish`}
+                    href={`/games/speed-spelling?deck=${deckId}&mode=finish`}
                     className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
                   >
                     🏁 Finish round
@@ -625,4 +625,4 @@ function QuickGuessRound(props: QuickGuessRoundProps) {
   );
 }
 
-export default QuickGuessPage;
+export default SpeedSpellingPage;

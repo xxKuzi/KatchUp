@@ -17,6 +17,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        // The game is called Speed Spelling now. Bookmarks, a home-screen
+        // shortcut and any already-installed service worker still point at the
+        // old path, so it keeps working rather than 404ing.
+        source: "/games/quick-guess",
+        destination: "/games/speed-spelling",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

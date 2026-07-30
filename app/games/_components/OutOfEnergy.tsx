@@ -32,7 +32,7 @@ export default function OutOfEnergy(props: OutOfEnergyProps) {
       body={`${t("energyGate.body")} ${t("navbar.resetsIn")} ${hours}h ${minutes}m.`}
       action={{
         label: t("navbar.earnEnergy"),
-        onClick: () => router.push("/games/quick-guess?energyReview=1"),
+        onClick: () => router.push("/games/speed-spelling?energyReview=1"),
       }}
       backHref="/games"
       backLabel={t("energyGate.backToGames")}

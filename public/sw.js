@@ -33,7 +33,7 @@ const OFFLINE_ROUTES = [
   "/games/flip-cards",
   "/games/one-of-three",
   "/games/guess-match",
-  "/games/quick-guess",
+  "/games/speed-spelling",
 ];
 
 /**

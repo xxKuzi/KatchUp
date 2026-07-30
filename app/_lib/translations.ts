@@ -245,8 +245,8 @@ export const translations: Record<Language, Translations> = {
       oneOfThreeDesc: "Choose the correct translation from three options",
       guessMatch: "Guess Match",
       guessMatchDesc: "Match native words with their translations",
-      quickGuess: "Quick Guess",
-      quickGuessDesc: "Rapid-fire translation challenges",
+      speedSpelling: "Speed Spelling",
+      speedSpellingDesc: "Rapid-fire translation challenges",
     },
     topics: {
       badge: "Learning Packs",
@@ -533,8 +533,8 @@ export const translations: Record<Language, Translations> = {
       oneOfThreeDesc: "Vyberte správný překlad ze tří možností",
       guessMatch: "Deduktivní shodování",
       guessMatchDesc: "Spárujte nativní slova s jejich překlady",
-      quickGuess: "Rychlý odhad",
-      quickGuessDesc: "Rychlé výzvy překladu",
+      speedSpelling: "Rychlé psaní",
+      speedSpellingDesc: "Rychlé výzvy překladu",
     },
     topics: {
       badge: "Balicky uceni",
@@ -828,8 +828,8 @@ export const translations: Record<Language, Translations> = {
       guessMatch: "Paarspiel",
       guessMatchDesc:
         "Ordnen Sie Wörter in Muttersprache ihren Übersetzungen zu",
-      quickGuess: "Schneller Tipp",
-      quickGuessDesc: "Schnelle Übersetzungsherausforderungen",
+      speedSpelling: "Schnelles Buchstabieren",
+      speedSpellingDesc: "Schnelle Übersetzungsherausforderungen",
     },
     topics: {
       badge: "Lernpakete",

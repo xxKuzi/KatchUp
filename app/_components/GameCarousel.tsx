@@ -27,7 +27,7 @@ function GameCarousel() {
     },
     {
       name: "Speed Spelling",
-      url: "/games/quick-guess",
+      url: "/games/speed-spelling",
       img: "speed_spelling.webp",
       color: "yellow",
       description: "Type it before time runs out",

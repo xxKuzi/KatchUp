@@ -217,8 +217,8 @@ export const spanishTranslations = {
     oneOfThreeDesc: "Elige la traducción correcta entre tres opciones",
     guessMatch: "Emparejar palabras",
     guessMatchDesc: "Une cada palabra con su traducción",
-    quickGuess: "Escritura rápida",
-    quickGuessDesc: "Retos rápidos de traducción",
+    speedSpelling: "Escritura rápida",
+    speedSpellingDesc: "Retos rápidos de traducción",
   },
   topics: {
     badge: "Paquetes de aprendizaje",

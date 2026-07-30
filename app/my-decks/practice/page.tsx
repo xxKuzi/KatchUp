@@ -40,10 +40,10 @@ const GAME_MODE_IDS = [
     descKey: "games.guessMatchDesc",
   },
   {
-    id: "quick-guess",
+    id: "speed-spelling",
     icon: "⚡",
-    tKey: "games.quickGuess",
-    descKey: "games.quickGuessDesc",
+    tKey: "games.speedSpelling",
+    descKey: "games.speedSpellingDesc",
   },
 ];
 

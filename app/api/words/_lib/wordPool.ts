@@ -17,7 +17,7 @@ import type { CefrLevel, Lang } from "@/app/_lib/languages";
  * Which side of the pair is shown as the question.
  *
  * Games differ deliberately: score-rush shows the target word and asks what it
- * means (recognition, the easier task), while flip-cards and quick-guess show
+ * means (recognition, the easier task), while flip-cards and speed-spelling show
  * your own language and ask you to produce the target (recall, harder).
  */
 export type Direction = "recognition" | "recall";

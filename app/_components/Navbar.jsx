@@ -366,7 +366,7 @@ function Navbar() {
                         disabled={!energyReady || energy >= MAX_ENERGY}
                         onClick={() => {
                           setEnergyPopoverOpen(false);
-                          router.push("/games/quick-guess?energyReview=1");
+                          router.push("/games/speed-spelling?energyReview=1");
                         }}
                         className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-amber-400"
                       >
