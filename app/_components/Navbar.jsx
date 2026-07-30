@@ -165,19 +165,25 @@ function Navbar() {
               aria-label="Go home"
               type="button"
             >
+              {/* One image, not one per theme: both branches pointed at the
+                  same file, so the pair only ever cost a second decode.
+
+                  A 500px copy rather than the 1931px original, because the bar
+                  draws it 36px tall and the full-size file is 88KB. `unoptimized`
+                  keeps it off /_next/image, which the service worker refuses to
+                  cache — through the optimizer this was re-fetched on every page
+                  load, which is what made it crawl on mobile data. Served from
+                  /public it is precached at install instead, and `priority`
+                  preloads it in the head rather than waiting for the navbar to
+                  paint. */}
               <Image
-                src={"/katchup_logo_2_transparent.webp"}
+                src={"/katchup_logo_navbar.webp"}
                 alt="KatchUp logo"
-                width={2101}
-                height={758}
-                className="h-8 w-auto rounded-md object-cover block dark:hidden sm:h-9"
-              />
-              <Image
-                src={"/katchup_logo_2_transparent.webp"}
-                alt="KatchUp logo"
-                width={2101}
-                height={758}
-                className="h-8 w-auto rounded-md object-cover hidden dark:block sm:h-9"
+                width={500}
+                height={201}
+                priority
+                unoptimized
+                className="block h-8 w-auto rounded-md object-cover sm:h-9"
               />
             </button>
 

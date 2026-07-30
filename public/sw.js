@@ -8,7 +8,7 @@
  * update at all.
  */
 
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const SHELL_CACHE = `katchup-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `katchup-assets-${CACHE_VERSION}`;
 const PAGE_CACHE = `katchup-pages-${CACHE_VERSION}`;
@@ -49,6 +49,10 @@ const SHELL_ASSETS = [
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
   "/katchup_mascot.webp",
+  // The navbar's logo, which every page draws above the fold. Precached rather
+  // than left to the runtime cache so it is on the device from install and never
+  // costs a round trip on a slow connection.
+  "/katchup_logo_navbar.webp",
 ];
 
 /** How long a cached page may be served before the network is preferred. */
