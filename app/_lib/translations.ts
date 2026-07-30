@@ -83,6 +83,7 @@ export const translations: Record<Language, Translations> = {
     deck: {
       learned: "learned",
       toGo: "to go",
+      inPractice: "in practice",
       allLearned: "All learned 🎉",
       nextBatch: "Play again for the next words",
     },
@@ -207,6 +208,11 @@ export const translations: Record<Language, Translations> = {
       previous: "Previous",
       next: "Next",
       totalWords: "words practiced",
+    },
+    masteryTip: {
+      title: "What “Learned” means",
+      body: "A word needs 3 points to count as learned. Flip cards and speed spelling give 2 points for a right answer. Other games give 1. A wrong answer takes 1 point back and the word comes again later. So “Learned ×4” means 4 points — not 4 games.",
+      readMore: "How KatchUp counts learned words",
     },
     deckEditor: {
       deckEditor: "Deck Editor",
@@ -374,6 +380,7 @@ export const translations: Record<Language, Translations> = {
     deck: {
       learned: "naučeno",
       toGo: "zbývá",
+      inPractice: "v procvičování",
       allLearned: "Vše naučeno 🎉",
       nextBatch: "Hrajte znovu pro další slova",
     },
@@ -496,6 +503,11 @@ export const translations: Record<Language, Translations> = {
       previous: "Předchozí",
       next: "Další",
       totalWords: "procvičených slov",
+    },
+    masteryTip: {
+      title: "Co znamená „Naučeno“",
+      body: "Slovo potřebuje 3 body, aby se počítalo jako naučené. Kartičky a rychlé psaní dávají za správnou odpověď 2 body. Ostatní hry 1 bod. Za špatnou odpověď slovo o 1 bod přijde a vrátí se později. Takže „Naučeno ×4“ znamená 4 body — ne 4 hry.",
+      readMore: "Jak KatchUp počítá naučená slova",
     },
     deckEditor: {
       deckEditor: "Editor balíčku",
@@ -664,6 +676,7 @@ export const translations: Record<Language, Translations> = {
     deck: {
       learned: "gelernt",
       toGo: "übrig",
+      inPractice: "im Üben",
       allLearned: "Alles gelernt 🎉",
       nextBatch: "Nochmal spielen für die nächsten Wörter",
     },
@@ -790,6 +803,11 @@ export const translations: Record<Language, Translations> = {
       previous: "Zurück",
       next: "Weiter",
       totalWords: "geübte Wörter",
+    },
+    masteryTip: {
+      title: "Was „Gelernt“ bedeutet",
+      body: "Ein Wort braucht 3 Punkte, um als gelernt zu zählen. Karteikarten und Schnellschreiben geben 2 Punkte für eine richtige Antwort. Andere Spiele geben 1. Eine falsche Antwort nimmt 1 Punkt weg und das Wort kommt später wieder. „Gelernt ×4“ heißt also 4 Punkte — nicht 4 Spiele.",
+      readMore: "Wie KatchUp gelernte Wörter zählt",
     },
     deckEditor: {
       deckEditor: "Deck-Editor",

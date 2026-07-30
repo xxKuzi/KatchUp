@@ -9,7 +9,19 @@ export interface LearnedWordItem {
   source: "deck";
   sourceLabel: string;
   status: "learned" | "practicing";
-  times: number | null;
+  /**
+   * Mastery progress, not a count of answers. A confident flip-card answer moves
+   * this by two, so the badge reads the same number the "learned" label is
+   * decided from — `times_correct` used to be shown here and told a player who
+   * had just mastered a word in two answers that they had practised it twice.
+   */
+  streak: number | null;
+  /**
+   * Plain count of correct answers, shown while a word is still in practice —
+   * mastery progress means little before it is reached, but "you have had this
+   * one right twice" is something a player can act on.
+   */
+  timesCorrect: number | null;
   updatedAt: string | null;
 }
 
@@ -33,6 +45,7 @@ async function fetchDeckItems(userId: string): Promise<LearnedWordItem[]> {
       // Off the stat row, so a word survives its deck being edited or deleted.
       native: userWordStats.nativeText,
       foreign: userWordStats.foreignText,
+      streak: userWordStats.streak,
       timesCorrect: userWordStats.timesCorrect,
       known: userWordStats.known,
       updatedAt: userWordStats.updatedAt,
@@ -57,7 +70,7 @@ async function fetchDeckItems(userId: string): Promise<LearnedWordItem[]> {
     if (
       !existing ||
       (row.known && !existing.known) ||
-      (row.known === existing.known && row.timesCorrect > existing.timesCorrect)
+      (row.known === existing.known && row.streak > existing.streak)
     ) {
       byIdentity.set(key, row);
     }
@@ -72,7 +85,8 @@ async function fetchDeckItems(userId: string): Promise<LearnedWordItem[]> {
     // Anything short of mastery is still in rotation — it was never a word the
     // user chose to skip, so the label says so.
     status: row.known ? "learned" : "practicing",
-    times: row.timesCorrect,
+    streak: row.streak,
+    timesCorrect: row.timesCorrect,
     updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,
   }));
 }

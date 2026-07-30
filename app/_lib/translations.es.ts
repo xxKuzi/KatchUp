@@ -62,6 +62,7 @@ export const spanishTranslations = {
   deck: {
     learned: "aprendidas",
     toGo: "restantes",
+    inPractice: "en práctica",
     allLearned: "Todo aprendido 🎉",
     nextBatch: "Juega otra vez para ver las siguientes palabras",
   },
@@ -180,6 +181,11 @@ export const spanishTranslations = {
     previous: "Anterior",
     next: "Siguiente",
     totalWords: "palabras practicadas",
+  },
+  masteryTip: {
+    title: "Qué significa «Aprendida»",
+    body: "Una palabra necesita 3 puntos para contar como aprendida. Las tarjetas y la escritura rápida dan 2 puntos por respuesta correcta. Los demás juegos dan 1. Una respuesta incorrecta quita 1 punto y la palabra vuelve más tarde. Así que «Aprendida ×4» significa 4 puntos, no 4 juegos.",
+    readMore: "Cómo cuenta KatchUp las palabras aprendidas",
   },
   deckEditor: {
     deckEditor: "Editor de mazos",

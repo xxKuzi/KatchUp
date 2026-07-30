@@ -62,12 +62,6 @@ export default function DeckProgress({
         } ${className}`}
       >
         {label}
-        {!isComplete && remaining > 0 && (
-          <span className="text-slate-500 dark:text-slate-400">
-            {" — "}
-            {remaining} {t("deck.toGo", "to go")}
-          </span>
-        )}
       </p>
     );
   }
@@ -75,22 +69,15 @@ export default function DeckProgress({
   return (
     <div className={className}>
       {showLabel && (
-        <div className="flex items-baseline justify-between gap-2">
-          <span
-            className={`text-sm font-semibold ${
-              isComplete
-                ? "text-emerald-700 dark:text-emerald-400"
-                : "text-slate-700 dark:text-slate-200"
-            }`}
-          >
-            {label}
-          </span>
-          {!isComplete && (
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              {remaining} {t("deck.toGo", "to go")}
-            </span>
-          )}
-        </div>
+        <span
+          className={`block text-sm font-semibold ${
+            isComplete
+              ? "text-emerald-700 dark:text-emerald-400"
+              : "text-slate-700 dark:text-slate-200"
+          }`}
+        >
+          {label}
+        </span>
       )}
 
       <div

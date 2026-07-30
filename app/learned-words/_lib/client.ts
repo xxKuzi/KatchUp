@@ -5,7 +5,10 @@ export interface LearnedWordItem {
   source: "deck" | "lecture";
   sourceLabel: string;
   status: "learned" | "practicing";
-  times: number | null;
+  /** Mastery progress — see the same field in the route's server module. */
+  streak: number | null;
+  /** Correct answers — see the same field in the route's server module. */
+  timesCorrect: number | null;
   updatedAt: string | null;
 }
 

@@ -53,6 +53,11 @@ export interface DeckRecord {
   wordCount: number;
   /** Words the user has mastered in this deck. 0 when signed out. */
   knownCount: number;
+  /**
+   * Words met — answered right at least once, mastered or not. Always contains
+   * `knownCount`. 0 when signed out.
+   */
+  clearedCount: number;
   /** What this user may do with the deck; null for topic decks. */
   role: DeckRole | null;
   /** Owner's display name, so a shared deck can say who it came from. */
@@ -83,7 +88,7 @@ interface DeckAccess {
 function toDeckRecord(
   row: typeof decks.$inferSelect,
   wordCount = 0,
-  knownCount = 0,
+  progress: DeckProgressCounts = { known: 0, cleared: 0 },
   access: DeckAccess = { role: null, ownerName: null },
 ): DeckRecord {
   return {
@@ -95,7 +100,8 @@ function toDeckRecord(
     nativeLang: row.nativeLang,
     foreignLang: row.foreignLang,
     wordCount,
-    knownCount,
+    knownCount: progress.known,
+    clearedCount: Math.max(progress.known, progress.cleared),
     role: access.role,
     ownerName: access.ownerName,
   };
@@ -106,8 +112,15 @@ function toDeckRole(value: string | null): DeckRole {
   return value === "editor" ? "editor" : "viewer";
 }
 
+/** The two tiers a list page draws: mastered, and merely met. */
+interface DeckProgressCounts {
+  known: number;
+  /** Answered right at least once; contains `known`. */
+  cleared: number;
+}
+
 /**
- * Returns a map of deckId -> mastered word count for one user.
+ * Returns a map of deckId -> mastered and met word counts for one user.
  *
  * Batched on purpose: `getDeckProgress` loads every word and stat for a single
  * deck, which is far too heavy to call once per row on a list page.
@@ -118,10 +131,10 @@ function toDeckRole(value: string | null): DeckRole {
  * it needs the deck's canonical languages, and `decks.foreign_lang` may still
  * hold a legacy name ("german") that only `normalizeLang` can resolve.
  */
-async function countKnownByDeck(
+async function countProgressByDeck(
   userId: string,
   deckIds: string[],
-): Promise<Map<string, number>> {
+): Promise<Map<string, DeckProgressCounts>> {
   if (deckIds.length === 0) {
     return new Map();
   }
@@ -144,20 +157,37 @@ async function countKnownByDeck(
         nativeLang: userWordStats.nativeLang,
         foreignLang: userWordStats.foreignLang,
         vocabKey: userWordStats.vocabKey,
+        known: userWordStats.known,
+        timesCorrect: userWordStats.timesCorrect,
       })
       .from(userWordStats)
       .where(
-        and(eq(userWordStats.userId, userId), eq(userWordStats.known, true)),
+        and(
+          eq(userWordStats.userId, userId),
+          // Words still being practised count too, so the list can show the
+          // paler "met" tier next to the mastered one.
+          or(
+            eq(userWordStats.known, true),
+            sql`${userWordStats.timesCorrect} > 0`,
+          ),
+        ),
       ),
   ]);
 
-  const knownKeys = new Set(
-    stats
-      .filter((stat) => stat.vocabKey)
-      .map((stat) => `${stat.nativeLang}|${stat.foreignLang}|${stat.vocabKey}`),
-  );
+  const knownKeys = new Set<string>();
+  const clearedKeys = new Set<string>();
+  for (const stat of stats) {
+    if (!stat.vocabKey) {
+      continue;
+    }
+    const key = `${stat.nativeLang}|${stat.foreignLang}|${stat.vocabKey}`;
+    clearedKeys.add(key);
+    if (stat.known) {
+      knownKeys.add(key);
+    }
+  }
 
-  const counts = new Map<string, number>();
+  const counts = new Map<string, DeckProgressCounts>();
   for (const word of words) {
     const nativeLang = normalizeLang(word.nativeLang);
     const foreignLang = normalizeLang(word.foreignLang);
@@ -173,9 +203,16 @@ async function countKnownByDeck(
       foreignText: word.foreign,
     });
 
-    if (knownKeys.has(`${nativeLang}|${foreignLang}|${identity.vocabKey}`)) {
-      counts.set(word.deckId, (counts.get(word.deckId) ?? 0) + 1);
+    const key = `${nativeLang}|${foreignLang}|${identity.vocabKey}`;
+    if (!clearedKeys.has(key)) {
+      continue;
     }
+
+    const current = counts.get(word.deckId) ?? { known: 0, cleared: 0 };
+    counts.set(word.deckId, {
+      known: current.known + (knownKeys.has(key) ? 1 : 0),
+      cleared: current.cleared + 1,
+    });
   }
 
   return counts;
@@ -631,12 +668,12 @@ async function decorateDecks(
 ): Promise<DeckRecord[]> {
   const deckIds = rows.map((row) => row.deck.id);
   const counts = await countWordsByDeck(deckIds);
-  const known = await countKnownByDeck(userId, deckIds);
+  const progress = await countProgressByDeck(userId, deckIds);
   return rows.map((row) =>
     toDeckRecord(
       row.deck,
       counts.get(row.deck.id) ?? 0,
-      known.get(row.deck.id) ?? 0,
+      progress.get(row.deck.id) ?? { known: 0, cleared: 0 },
       accessOf(row, userId),
     ),
   );
@@ -804,7 +841,12 @@ export async function getDeckForUser(
 
   const words = await loadWords(row.deck.id);
   return {
-    ...toDeckRecord(row.deck, words.length, 0, accessOf(row, userId)),
+    ...toDeckRecord(
+      row.deck,
+      words.length,
+      { known: 0, cleared: 0 },
+      accessOf(row, userId),
+    ),
     words,
   };
 }

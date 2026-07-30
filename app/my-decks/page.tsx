@@ -323,6 +323,10 @@ export default function MyDecksOverview() {
           </div>
         </section>
 
+        {/* One-time welcome: the deck cards show learned counts, so the rule
+            behind them is worth saying once and never again. */}
+        <MasteryTip storageKey="katchup.tip.myDecks.mastery" />
+
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-8">
           <div className="mb-6 flex items-center justify-between gap-3">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -434,11 +438,24 @@ export default function MyDecksOverview() {
                           {deck.wordCount} {t("common.words")}
                         </p>
                         {deck.wordCount > 0 && (
-                          <DeckProgress
-                            known={deck.knownCount}
-                            total={deck.wordCount}
-                            className="mt-3"
-                          />
+                          <>
+                            <DeckProgress
+                              known={deck.knownCount}
+                              cleared={deck.clearedCount}
+                              total={deck.wordCount}
+                              className="mt-3"
+                            />
+                            {/* Words answered right but not yet mastered. The
+                                bar alone leaves them as a pale segment nobody
+                                can read a number off, and a deck you have
+                                started looked identical to one you had not. */}
+                            {inPractice(deck) > 0 && (
+                              <p className="mt-1 text-xs font-medium text-blue-600/80 dark:text-blue-300/80">
+                                {inPractice(deck)}{" "}
+                                {t("deck.inPractice", "in practice")}
+                              </p>
+                            )}
+                          </>
                         )}
                         <div className="mt-4 flex flex-wrap gap-2">
                           {deck.role !== "viewer" && (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "../_lib/languageContext";
 import { useAuthState } from "../_lib/auth";
+import MasteryTip from "../_components/MasteryTip";
 import {
   ApiError,
   LearnedWordItem,
@@ -68,6 +69,10 @@ export default function LearnedWordsOverview() {
             {t("learnedWords.description")}
           </p>
         </section>
+
+        {/* No storage key: this is the legend for the badges below it, so it
+            stays on every visit rather than being dismissed once. */}
+        <MasteryTip />
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-8">
           <div className="mb-6 flex items-center justify-between gap-3">
@@ -148,6 +153,11 @@ function LearnedWordRow({
   t: (key: string, defaultValue?: string) => string;
 }) {
   const learned = item.status === "learned";
+  // Mastery progress once the word is learned, plain right answers while it is
+  // still in practice. A word only ever seen wrongly shows no number at all
+  // rather than a discouraging ×0.
+  const count = learned ? item.streak : item.timesCorrect;
+  const label = learned ? t("learnedWords.learned") : t("learnedWords.inPractice");
 
   return (
     <li className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
@@ -169,11 +179,7 @@ function LearnedWordRow({
             : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
         }`}
       >
-        {learned
-          ? `${t("learnedWords.learned")}${
-              item.times != null ? ` ×${item.times}` : ""
-            }`
-          : t("learnedWords.inPractice")}
+        {`${label}${count ? ` ×${count}` : ""}`}
       </span>
     </li>
   );

@@ -59,6 +59,12 @@ export interface DeckMeta {
   /** Words mastered in this deck; 0 when signed out. */
   knownCount: number;
   /**
+   * Words met — answered right at least once, mastered or not. Contains
+   * `knownCount`. Missing on decks built offline, where only the words are
+   * known.
+   */
+  clearedCount?: number;
+  /**
    * What this user may do with the deck: "owner" for their own, "editor" or
    * "viewer" for one a friend shared with them, null for topic decks.
    */
