@@ -169,6 +169,13 @@
       "when": 1785424242021,
       "tag": "0023_moaning_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785439862189,
+      "tag": "0024_pale_meggan",
+      "breakpoints": true
     }
   ]
 }

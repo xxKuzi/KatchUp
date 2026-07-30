@@ -503,3 +503,31 @@ export const userLevelProgress = pgTable(
     ).on(table.userId, table.language),
   }),
 );
+
+export const userProfiles = pgTable(
+  "user_profiles",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" })
+      .primaryKey(),
+    profileCode: text("profile_code").notNull(),
+    nickname: text("nickname").notNull(),
+    avatarBackgroundId: text("avatar_background_id").notNull(),
+    avatarIcon: text("avatar_icon").notNull(),
+    currentXp: integer("current_xp").notNull().default(0),
+    leagueName: text("league_name").notNull().default("Bronze"),
+    friendsCount: integer("friends_count").notNull().default(0),
+    matchesPlayed: integer("matches_played").notNull().default(0),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    profileCodeUnique: uniqueIndex("user_profiles_profile_code_key").on(
+      table.profileCode,
+    ),
+    profileCodeIdx: index("user_profiles_profile_code_idx").on(
+      table.profileCode,
+    ),
+    nicknameIdx: index("user_profiles_nickname_idx").on(table.nickname),
+  }),
+);
