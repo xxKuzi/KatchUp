@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "../_lib/languageContext";
 import { useAuthState } from "../_lib/auth";
 import {
@@ -124,6 +124,28 @@ export default function MyDecksOverview() {
       cancelled = true;
     };
   }, [isSignedIn, isReady, online, language, learningLanguage]);
+
+  // Answers from a practice round leave through the outbox, and the drain that
+  // sends them races the deck list on this page: land first and the counts you
+  // just earned are already on screen, land second and the bars show what the
+  // server knew before the round. Re-reading the list the moment a drain
+  // finishes settles that race the right way round, so returning from practice
+  // no longer needs a language switch to show the progress.
+  const wasSyncing = useRef(false);
+
+  useEffect(() => {
+    const finishedSyncing = wasSyncing.current && !syncing;
+    wasSyncing.current = syncing;
+
+    if (!finishedSyncing || pending > 0 || !isSignedIn || !online) {
+      return;
+    }
+
+    void refreshDecks().catch(() => {
+      // The list on screen is still the server's last word; a failed refresh
+      // just means it stays that way.
+    });
+  }, [syncing, pending, isSignedIn, online, refreshDecks]);
 
   // How many AI decks are still allowed today.
   useEffect(() => {
