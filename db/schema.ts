@@ -108,7 +108,11 @@ export const matchPlayers = pgTable("match_players", {
   correctCount: integer("correct_count").notNull().default(0),
   acceptedAt: timestamp("accepted_at", { mode: "date" }),
   finishedAt: timestamp("finished_at", { mode: "date" }),
-});
+}, (table) => ({
+  matchUserIdx: index("match_players_match_user_idx").on(table.matchId, table.userId),
+  matchIdx: index("match_players_match_id_idx").on(table.matchId),
+  userIdx: index("match_players_user_id_idx").on(table.userId),
+}));
 
 export const matchQuestions = pgTable("match_questions", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -127,7 +131,11 @@ export const matchQuestions = pgTable("match_questions", {
   conceptId: uuid("concept_id").references(() => wordConcepts.id, {
     onDelete: "set null",
   }),
-});
+}, (table) => ({
+  matchUserIdx: index("match_questions_match_user_idx").on(table.matchId, table.userId),
+  matchIdx: index("match_questions_match_id_idx").on(table.matchId),
+  userIdx: index("match_questions_user_id_idx").on(table.userId),
+}));
 
 export const matchAnswers = pgTable("match_answers", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -144,7 +152,10 @@ export const matchAnswers = pgTable("match_answers", {
   isCorrect: boolean("is_correct").notNull(),
   responseMs: integer("response_ms").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-});
+}, (table) => ({
+  matchIdx: index("match_answers_match_id_idx").on(table.matchId),
+  userIdx: index("match_answers_user_id_idx").on(table.userId),
+}));
 
 export const asyncScores = pgTable("async_scores", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -157,7 +168,9 @@ export const asyncScores = pgTable("async_scores", {
   correct: integer("correct").notNull(),
   timeMs: integer("time_ms").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdx: index("async_scores_user_id_idx").on(table.userId),
+}));
 
 // Decks unify topic decks (system-owned, one per topicKey + foreignLang) and
 // custom decks (user-owned). Both hold their words in `deck_words`.
@@ -531,3 +544,26 @@ export const userProfiles = pgTable(
     nicknameIdx: index("user_profiles_nickname_idx").on(table.nickname),
   }),
 );
+
+export const friendships = pgTable(
+  "friendships",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    friendUserId: uuid("friend_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userFriendUnique: uniqueIndex("friendships_user_id_friend_user_id_key").on(
+      table.userId,
+      table.friendUserId,
+    ),
+    userIdx: index("friendships_user_id_idx").on(table.userId),
+    friendUserIdx: index("friendships_friend_user_id_idx").on(table.friendUserId),
+  }),
+);
+
