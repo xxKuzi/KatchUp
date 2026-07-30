@@ -35,7 +35,7 @@ export default function FriendProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Loading profile...");
-  const [isAlreadyAdded, setIsAlreadyAdded] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<"none" | "pending_outgoing" | "pending_incoming" | "friends">("none");
   const [profileUrl, setProfileUrl] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
 
@@ -118,22 +118,31 @@ export default function FriendProfilePage() {
       return;
     }
 
-    const storedRaw = window.localStorage.getItem(leagueStorageKey(userKey));
-    const storedState = parseFriendsLeagueState(
-      storedRaw,
-      session?.user?.name ?? "You",
-    );
+    const checkStatus = async () => {
+      const response = await fetch("/api/friends").catch(() => null);
+      if (response && response.ok) {
+        const data = await response.json();
+        const normalizedTarget = profile.profileCode.toLowerCase();
+        
+        const isFriend = (data.friends || []).some(
+          (f: any) => f.profileCode?.toLowerCase() === normalizedTarget
+        );
+        const isOutgoing = (data.outgoingRequests || []).some(
+          (r: any) => r.profileCode?.toLowerCase() === normalizedTarget
+        );
+        const isIncoming = (data.incomingRequests || []).some(
+          (r: any) => r.profileCode?.toLowerCase() === normalizedTarget
+        );
 
-    const currentState =
-      storedState ??
-      createInitialFriendsLeagueState(session?.user?.name ?? "You");
-    const duplicate = currentState.friends.some(
-      (friend) =>
-        friend.profileCode?.toUpperCase() === profile.profileCode.toUpperCase(),
-    );
+        if (isFriend) setConnectionStatus("friends");
+        else if (isOutgoing) setConnectionStatus("pending_outgoing");
+        else if (isIncoming) setConnectionStatus("pending_incoming");
+        else setConnectionStatus("none");
+      }
+    };
 
-    setIsAlreadyAdded(duplicate);
-  }, [isReady, isSignedIn, profile, session?.user?.name, userKey]);
+    void checkStatus();
+  }, [isReady, isSignedIn, profile]);
 
   const avatarBackground = useMemo(
     () => (profile ? getAvatarBackground(profile.avatarBackgroundId) : null),
@@ -152,25 +161,49 @@ export default function FriendProfilePage() {
 
     setIsSaving(true);
 
-    const storedRaw = window.localStorage.getItem(leagueStorageKey(userKey));
-    const storedState = parseFriendsLeagueState(
-      storedRaw,
-      session?.user?.name ?? "You",
-    );
-    const nextState = addFriendToState(
-      storedState ??
-        createInitialFriendsLeagueState(session?.user?.name ?? "You"),
-      friendFromPublicProfile(profile),
-    );
+    if (connectionStatus === "pending_incoming") {
+      // Accept incoming friend request
+      const response = await fetch("/api/friends/accept", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profileCode: profile.profileCode }),
+      }).catch(() => null);
 
-    window.localStorage.setItem(
-      leagueStorageKey(userKey),
-      JSON.stringify(nextState),
-    );
-    setIsAlreadyAdded(true);
-    setStatusMessage(`${profile.nickname} was added to your friends.`);
-    setIsSaving(false);
-    router.push("/friends");
+      if (response && response.ok) {
+        setConnectionStatus("friends");
+        setStatusMessage(`You are now friends with ${profile.nickname}!`);
+      } else {
+        const errData = await response?.json().catch(() => null);
+        setStatusMessage(errData?.error ?? "Failed to accept friend request.");
+      }
+      setIsSaving(false);
+    } else {
+      // Send a pending friend request
+      const response = await fetch("/api/friends", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profileCode: profile.profileCode }),
+      }).catch(() => null);
+
+      if (response && response.ok) {
+        const data = await response.json();
+        if (data.status === "accepted") {
+          setConnectionStatus("friends");
+          setStatusMessage(`You are now friends with ${profile.nickname}!`);
+        } else {
+          setConnectionStatus("pending_outgoing");
+          setStatusMessage(`Friend request sent to ${profile.nickname}.`);
+        }
+      } else {
+        const errData = await response?.json().catch(() => null);
+        setStatusMessage(errData?.error ?? "Failed to send request.");
+      }
+      setIsSaving(false);
+    }
   };
 
   if (isLoading) {
@@ -269,10 +302,16 @@ export default function FriendProfilePage() {
                   <button
                     type="button"
                     onClick={handleAddFriend}
-                    disabled={isSaving || isAlreadyAdded}
+                    disabled={isSaving || connectionStatus === "friends" || connectionStatus === "pending_outgoing"}
                     className="inline-flex items-center justify-center rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 dark:bg-sky-500 dark:hover:bg-sky-400 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
                   >
-                    {isAlreadyAdded ? "Already added" : "Add as friend"}
+                    {connectionStatus === "friends"
+                      ? "Friends ✓"
+                      : connectionStatus === "pending_outgoing"
+                        ? "Request Pending"
+                        : connectionStatus === "pending_incoming"
+                          ? "Accept Request"
+                          : "Add as friend"}
                   </button>
                   <button
                     type="button"

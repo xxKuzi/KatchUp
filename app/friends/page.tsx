@@ -5,14 +5,19 @@ import { useAuthState } from "@/app/_lib/auth";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useLearningLevelState } from "@/app/_lib/useLearningLevel";
 import QRCode from "qrcode";
-import { Pencil } from "lucide-react";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Pencil, UserMinus, Swords } from "lucide-react";
+import { useLanguagePair } from "@/app/_lib/useLanguagePair";
+import { useLearningLevel } from "@/app/_lib/useLearningLevel";
+import { LANGS, LANG_LABELS, LANG_FLAGS, CEFR_LEVELS, type Lang, type CefrLevel } from "@/app/_lib/languages";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { pusherClient } from "@/lib/realtime/pusher-client";
 import { useRouter } from "next/navigation";
 import {
   addFriendToState,
   areAllDuoTasksDone,
   claimDuoReward,
   clearDuoPartner,
+  createEmptyFriendTaskState,
   createInitialFriendsLeagueState,
   formatTimestamp,
   getWeeklyTimeRemaining,
@@ -86,6 +91,9 @@ export default function FriendsPage() {
   const router = useRouter();
   const { isSignedIn, isReady, session } = useAuthState();
   const { t, learningLanguage } = useLanguage();
+  const { speak, learning } = useLanguagePair();
+  const learningLevelDetail = useLearningLevel(learning);
+  const level = learningLevelDetail?.wordDifficulty ?? "A1";
   const {
     level: learningLevel,
     knownWords: learningKnownWords,
@@ -119,6 +127,14 @@ export default function FriendsPage() {
   const [profileUrl, setProfileUrl] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [friendToRemove, setFriendToRemove] = useState<FriendPlayer | null>(null);
+  const [friendToChallenge, setFriendToChallenge] = useState<FriendPlayer | null>(null);
+  const [selectedChallengeMode, setSelectedChallengeMode] = useState<"fair" | "personal">("personal");
+  const [challengeLearning, setChallengeLearning] = useState<Lang>("de");
+  const [challengeSpeak, setChallengeSpeak] = useState<Lang>("en");
+  const [challengeLevel, setChallengeLevel] = useState<CefrLevel>("A1");
+  const [incomingRequests, setIncomingRequests] = useState<FriendPlayer[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendPlayer[]>([]);
   const [codeDraft, setCodeDraft] = useState("");
   const [codeCheckStatus, setCodeCheckStatus] = useState<
     "idle" | "checking" | "available" | "taken" | "too-short" | "error"
@@ -258,8 +274,11 @@ export default function FriendsPage() {
   const duoPartner = duoTasks.partnerId
     ? (state.friends.find((friend) => friend.id === duoTasks.partnerId) ?? null)
     : null;
-  const completedTaskCount = duoTasks.tasks.filter((task) => task.done).length;
-  const allTasksDone = areAllDuoTasksDone(duoTasks);
+  const wordTask = duoTasks.tasks.find((t) => t.id === "words-task") as any;
+  const currentWords = wordTask?.current ?? 0;
+  const targetWords = wordTask?.target ?? 1;
+  const wordPercentage = Math.min(100, Math.round((currentWords / targetWords) * 100));
+  const isQuestDone = currentWords >= targetWords;
   const avatarBackground = getAvatarBackground(
     profileIdentity.avatarBackgroundId,
   );
@@ -425,32 +444,260 @@ export default function FriendsPage() {
     setState((previous) => syncWeeklyDuoTasks(previous, weekKey));
   }, [isHydrated, weekKey]);
 
-  const handleAddFriendFromProfile = (profile: PublicFriendProfile) => {
-    setState((previous) =>
-      addFriendToState(previous, friendFromPublicProfile(profile)),
-    );
-    setStatusMessage(`${profile.nickname} was added to your friends.`);
+  const fetchFriends = useCallback(async () => {
+    if (!isHydrated || !isSignedIn) {
+      return;
+    }
+    const response = await fetch("/api/friends").catch(() => null);
+    if (response && response.ok) {
+      const data = await response.json();
+      setState((previous) => ({
+        ...previous,
+        friends: data.friends || [],
+        friendTasks: data.duoQuest || createEmptyFriendTaskState(weekKey),
+      }));
+      setIncomingRequests(data.incomingRequests || []);
+      setOutgoingRequests(data.outgoingRequests || []);
+    }
+  }, [isHydrated, isSignedIn, weekKey]);
+
+  useEffect(() => {
+    void fetchFriends();
+  }, [fetchFriends]);
+
+  useEffect(() => {
+    if (!profileIdentity.profileCode || !pusherClient) {
+      return;
+    }
+
+    const channelName = `user-profile-${profileIdentity.profileCode}`;
+    const channel = pusherClient.subscribe(channelName);
+    
+    channel.bind("friend-updated", () => {
+      void fetchFriends();
+    });
+
+    return () => {
+      pusherClient?.unsubscribe(channelName);
+    };
+  }, [profileIdentity.profileCode, fetchFriends]);
+
+  const handleAddFriendFromProfile = async (profile: PublicFriendProfile) => {
+    setStatusMessage(`Sending friend request to ${profile.nickname}...`);
+    const response = await fetch("/api/friends", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ profileCode: profile.profileCode }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      const data = (await response.json()) as { status: "pending" | "accepted"; friend: FriendPlayer };
+      if (data.status === "accepted") {
+        setState((previous) => addFriendToState(previous, data.friend));
+        setIncomingRequests((previous) => previous.filter((r) => r.profileCode !== profile.profileCode));
+        setStatusMessage(`You are now friends with ${profile.nickname}!`);
+      } else {
+        setOutgoingRequests((previous) => [...previous, data.friend]);
+        setStatusMessage(`Friend request sent to ${profile.nickname}.`);
+      }
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to send request.");
+    }
   };
 
-  const handleSelectPartner = (friend: FriendPlayer) => {
-    setState((previous) => selectDuoPartner(previous, friend, weekKey));
-    setStatusMessage(`You teamed up with ${friend.name} for this week.`);
+  const handleAcceptRequest = async (req: FriendPlayer) => {
+    setStatusMessage(`Accepting ${req.name}'s friend request...`);
+    const response = await fetch("/api/friends/accept", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ profileCode: req.profileCode }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      const friendData = (await response.json()) as FriendPlayer;
+      setState((previous) => addFriendToState(previous, friendData));
+      setIncomingRequests((previous) => previous.filter((r) => r.profileCode !== req.profileCode));
+      setStatusMessage(`You are now friends with ${req.name}!`);
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to accept friend request.");
+    }
   };
 
-  const handleClearPartner = () => {
-    setState((previous) => clearDuoPartner(previous, weekKey));
-    setStatusMessage("Duo partner cleared. Pick a friend to start again.");
+  const handleDeclineRequest = async (req: FriendPlayer) => {
+    setStatusMessage(`Declining ${req.name}'s friend request...`);
+    const response = await fetch("/api/friends", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ profileCode: req.profileCode }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      setIncomingRequests((previous) => previous.filter((r) => r.profileCode !== req.profileCode));
+      setStatusMessage(`Friend request from ${req.name} was declined.`);
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to decline friend request.");
+    }
   };
 
-  const handleToggleTask = (taskId: string) => {
-    setState((previous) => toggleDuoTask(previous, taskId));
+  const handleRemoveFriend = (friend: FriendPlayer) => {
+    setFriendToRemove(friend);
   };
 
-  const handleClaimReward = () => {
-    setState((previous) => claimDuoReward(previous));
-    setStatusMessage(
-      `Nice teamwork! You both earned ${formatXp(WEEKLY_DUO_XP)} XP.`,
-    );
+  const confirmRemoveFriend = async () => {
+    if (!friendToRemove) {
+      return;
+    }
+    const friend = friendToRemove;
+    setFriendToRemove(null);
+
+    setStatusMessage(`Removing ${friend.name} from your friends...`);
+    const response = await fetch("/api/friends", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ profileCode: friend.profileCode }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      setState((previous) => ({
+        ...previous,
+        friends: previous.friends.filter((f) => f.profileCode !== friend.profileCode),
+      }));
+      setStatusMessage(`${friend.name} was removed from your friends.`);
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to remove friend.");
+    }
+  };
+
+  const handleChallengeFriend = (friend: FriendPlayer) => {
+    setFriendToChallenge(friend);
+    setSelectedChallengeMode("personal");
+    setChallengeLearning(learning);
+    setChallengeSpeak(speak);
+    setChallengeLevel(level as CefrLevel);
+  };
+
+  const confirmChallengeFriend = async () => {
+    if (!friendToChallenge) {
+      return;
+    }
+    const friend = friendToChallenge;
+    setFriendToChallenge(null);
+
+    const speakVal = selectedChallengeMode === "fair" ? challengeSpeak : speak;
+    const learningVal = selectedChallengeMode === "fair" ? challengeLearning : learning;
+    const levelVal = selectedChallengeMode === "fair" ? challengeLevel : level;
+
+    setStatusMessage(`Challenging ${friend.name} to a Live Duel (${selectedChallengeMode} mode)...`);
+    const response = await fetch("/api/friends/duel/invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        partnerProfileCode: friend.profileCode,
+        language: learningVal,
+        nativeLang: speakVal,
+        level: levelVal,
+        mode: selectedChallengeMode,
+      }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      const data = await response.json();
+      router.push(`/games/live-duel?matchId=${data.matchId}`);
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to send duel invite.");
+    }
+  };
+
+  const handleSelectPartner = async (friend: FriendPlayer) => {
+    setStatusMessage(`Teaming up with ${friend.name}...`);
+    const response = await fetch("/api/friends/duo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ partnerProfileCode: friend.profileCode }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      setStatusMessage(`You teamed up with ${friend.name} for this week.`);
+      void fetchFriends();
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to start duo quest.");
+    }
+  };
+
+  const handleClearPartner = async () => {
+    if (!window.confirm("Are you sure you want to cancel your weekly partnership?")) {
+      return;
+    }
+    setStatusMessage("Clearing partner...");
+    const response = await fetch("/api/friends/duo", {
+      method: "DELETE",
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      setStatusMessage("Duo partner cleared. Pick a friend to start again.");
+      void fetchFriends();
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to clear partner.");
+    }
+  };
+
+  const handleToggleTask = async (taskId: string) => {
+    if (taskId === "words-task") {
+      return;
+    }
+
+    const response = await fetch("/api/friends/duo", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ taskId }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      void fetchFriends();
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to toggle task.");
+    }
+  };
+
+  const handleClaimReward = async () => {
+    setStatusMessage("Claiming reward...");
+    const response = await fetch("/api/friends/duo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "claim" }),
+    }).catch(() => null);
+
+    if (response && response.ok) {
+      setStatusMessage(`Nice teamwork! You both earned ${formatXp(WEEKLY_DUO_XP)} XP.`);
+      void fetchFriends();
+    } else {
+      const errData = await response?.json().catch(() => null);
+      setStatusMessage(errData?.error ?? "Failed to claim reward.");
+    }
   };
 
   const handleOpenProfileEditor = () => {
@@ -485,6 +732,20 @@ export default function FriendsPage() {
     state.friends.some(
       (friend) =>
         normalizeStoredProfileCode(friend.profileCode ?? "") ===
+        normalizeStoredProfileCode(profileCode),
+    );
+
+  const isPendingOutgoing = (profileCode: string) =>
+    outgoingRequests.some(
+      (req) =>
+        normalizeStoredProfileCode(req.profileCode ?? "") ===
+        normalizeStoredProfileCode(profileCode),
+    );
+
+  const isPendingIncoming = (profileCode: string) =>
+    incomingRequests.some(
+      (req) =>
+        normalizeStoredProfileCode(req.profileCode ?? "") ===
         normalizeStoredProfileCode(profileCode),
     );
 
@@ -627,7 +888,50 @@ export default function FriendsPage() {
               />
             </div>
 
-            <section className="relative z-10 mt-24 rounded-[2.25rem] border border-white/70 bg-white/80 p-6 shadow-[0_20px_50px_-24px_rgba(56,189,248,0.35)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03] sm:p-8 sm:mt-34">
+            {incomingRequests.length > 0 && (
+              <section className="relative z-10 mt-24 rounded-[2.25rem] border border-white/70 bg-white/80 p-6 shadow-[0_20px_50px_-24px_rgba(251,146,120,0.4)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03] sm:p-8 sm:mt-34 mb-6">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
+                    🔔 Friend Requests ({incomingRequests.length})
+                  </h3>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {incomingRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/60 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-800 dark:text-slate-100">
+                          {req.name}
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          wants to be friends
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDeclineRequest(req)}
+                          className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 hover:bg-rose-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-rose-950/20 hover:text-rose-500 transition"
+                        >
+                          Decline
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptRequest(req)}
+                          className="rounded-full bg-linear-to-r from-emerald-500 to-teal-600 px-4 py-1.5 text-xs font-bold text-white hover:from-emerald-600 hover:to-teal-700 shadow-md transition"
+                        >
+                          Accept
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className={`relative z-10 rounded-[2.25rem] border border-white/70 bg-white/80 p-6 shadow-[0_20px_50px_-24px_rgba(56,189,248,0.35)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-white/[0.03] sm:p-8 ${incomingRequests.length > 0 ? "mt-6" : "mt-24 sm:mt-34"}`}>
               <div className="flex items-center justify-between gap-3">
                 <h3 className="inline-flex items-center gap-2 text-4xl font-bold text-slate-900 dark:text-white">
                   My friends
@@ -660,6 +964,8 @@ export default function FriendsPage() {
               <div className="mt-4 space-y-2">
                 {friendSearchResults.map((profile) => {
                   const alreadyAdded = isAlreadyFriend(profile.profileCode);
+                  const pendingOutgoing = isPendingOutgoing(profile.profileCode);
+                  const pendingIncoming = isPendingIncoming(profile.profileCode);
 
                   return (
                     <div
@@ -687,11 +993,32 @@ export default function FriendsPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleAddFriendFromProfile(profile)}
-                          disabled={alreadyAdded}
-                          className="rounded-full bg-sky-500 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-white/10 dark:disabled:text-slate-500"
+                          disabled={alreadyAdded || pendingOutgoing}
+                          onClick={() => {
+                            if (pendingIncoming) {
+                              const req = incomingRequests.find(r => normalizeStoredProfileCode(r.profileCode ?? "") === normalizeStoredProfileCode(profile.profileCode));
+                              if (req) handleAcceptRequest(req);
+                            } else {
+                              handleAddFriendFromProfile(profile);
+                            }
+                          }}
+                          className={`rounded-full px-4 py-1.5 text-xs font-bold transition shadow-sm ${
+                            alreadyAdded
+                              ? "bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-500"
+                              : pendingOutgoing
+                                ? "bg-amber-50 text-amber-500 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20"
+                                : pendingIncoming
+                                  ? "bg-linear-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
+                                  : "bg-linear-to-r from-sky-400 to-cyan-500 text-white hover:from-sky-500 hover:to-cyan-600"
+                          }`}
                         >
-                          {alreadyAdded ? "Added ✓" : "Add friend"}
+                          {alreadyAdded
+                            ? "Friends ✓"
+                            : pendingOutgoing
+                              ? "Requested"
+                              : pendingIncoming
+                                ? "Accept Request"
+                                : "Add friend"}
                         </button>
                       </div>
                     </div>
@@ -724,9 +1051,26 @@ export default function FriendsPage() {
                           </p>
                         </div>
                       </div>
-                      <p className="rounded-full bg-amber-100/70 px-3 py-1 text-sm font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
-                        {formatXp(friend.xp)} XP
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <p className="rounded-full bg-amber-100/70 px-3 py-1 text-sm font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
+                          {formatXp(friend.xp)} XP
+                        </p>
+                        <button
+                          onClick={() => handleChallengeFriend(friend)}
+                          className="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition duration-150"
+                          title="Challenge to Duel"
+                        >
+                          <Swords className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveFriend(friend)}
+                          className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition duration-150"
+                          title="Remove Friend"
+                        >
+                          <UserMinus className="h-4 w-4" />
+                        </button>
+                      </div>
+
                     </div>
                   ))
                 )}
@@ -752,7 +1096,7 @@ export default function FriendsPage() {
                     {duoTasks.claimed
                       ? `🎉 ${formatXp(WEEKLY_DUO_XP)} XP earned`
                       : duoPartner
-                        ? `${completedTaskCount}/${duoTasks.tasks.length} done`
+                        ? `${currentWords}/${targetWords} words`
                         : "Pick a partner"}
                   </span>
                   {/* Clock-derived, and the week boundary is computed in the
@@ -816,68 +1160,52 @@ export default function FriendsPage() {
                     </button>
                   </div>
 
-                  <div className="space-y-2">
-                    {duoTasks.tasks.map((task) => (
-                      <button
-                        key={task.id}
-                        type="button"
-                        onClick={() => handleToggleTask(task.id)}
-                        disabled={duoTasks.claimed}
-                        className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition disabled:cursor-not-allowed ${
-                          task.done
-                            ? "border-emerald-200 bg-emerald-50/80 dark:border-emerald-500/20 dark:bg-emerald-500/[0.08]"
-                            : "border-rose-100 bg-rose-50/40 hover:border-rose-200 hover:bg-rose-50/70 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
+                  <div className="rounded-3xl border border-rose-100 bg-white/60 p-5 shadow-xs dark:border-white/10 dark:bg-white/[0.03]">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-base font-bold text-slate-800 dark:text-slate-100">
+                          Learn {targetWords} words together
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Weekly progress: {currentWords} of {targetWords} words learned
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex shrink-0 w-fit px-3 py-1 items-center justify-center rounded-full text-xs font-bold transition ${
+                          isQuestDone
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                            : "bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300"
                         }`}
                       >
-                        <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition ${
-                            task.done
-                              ? "border-emerald-400 bg-emerald-400 text-white"
-                              : "border-rose-200 text-transparent dark:border-white/20"
-                          }`}
-                        >
-                          ✓
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${
-                            task.done
-                              ? "text-emerald-600 line-through dark:text-emerald-300"
-                              : "text-slate-700 dark:text-slate-100"
-                          }`}
-                        >
-                          {task.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                        {isQuestDone ? "Completed! 🎉" : "In Progress"}
+                      </span>
+                    </div>
 
-                  <div className="h-2.5 overflow-hidden rounded-full bg-rose-100 dark:bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-linear-to-r from-rose-400 via-amber-400 to-emerald-400 transition-all"
-                      style={{
-                        width: `${
-                          duoTasks.tasks.length === 0
-                            ? 0
-                            : Math.round(
-                                (completedTaskCount / duoTasks.tasks.length) *
-                                  100,
-                              )
-                        }%`,
-                      }}
-                    />
+                    <div className="mt-5">
+                      <div className="flex justify-between text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5">
+                        <span>Progress</span>
+                        <span>{wordPercentage}%</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-rose-100 dark:bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-linear-to-r from-rose-400 via-amber-400 to-emerald-400 transition-all"
+                          style={{ width: `${wordPercentage}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleClaimReward}
-                    disabled={!allTasksDone || duoTasks.claimed}
+                    disabled={!isQuestDone || duoTasks.claimed}
                     className="w-full rounded-2xl bg-linear-to-r from-rose-400 to-amber-400 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-rose-500/25 transition hover:brightness-105 disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:shadow-none dark:disabled:from-white/10 dark:disabled:to-white/10 dark:disabled:text-slate-500"
                   >
                     {duoTasks.claimed
                       ? `🎉 Claimed ${formatXp(WEEKLY_DUO_XP)} XP`
-                      : allTasksDone
+                      : isQuestDone
                         ? `Claim ${formatXp(WEEKLY_DUO_XP)} XP together 💞`
-                        : `Finish all tasks to claim ${formatXp(WEEKLY_DUO_XP)} XP`}
+                        : `Learn ${targetWords} words to claim ${formatXp(WEEKLY_DUO_XP)} XP`}
                   </button>
                 </div>
               )}
@@ -893,6 +1221,171 @@ export default function FriendsPage() {
           </div>
         </div>
       </FeatureGate>
+
+      {friendToRemove ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[2.25rem] border border-white/70 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#1c141a] sm:p-8">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white text-center">
+              Are you sure?
+            </h3>
+            <p className="mt-3 text-center text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+              Removing <span className="font-bold text-slate-800 dark:text-slate-100">{friendToRemove.name}</span> will dissolve your mutual friendship. You won&apos;t see each other on your leaderboards or be able to start duo quests until you add each other back.
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setFriendToRemove(null)}
+                className="w-full sm:w-auto rounded-full border border-slate-200 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoveFriend}
+                className="w-full sm:w-auto rounded-full bg-linear-to-r from-rose-500 to-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-rose-600 hover:to-red-700 shadow-md transition"
+              >
+                Yes, Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {friendToChallenge ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[2.25rem] border border-white/70 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#1c141a] sm:p-8">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white text-center">
+              Challenge {friendToChallenge.name}
+            </h3>
+            <p className="mt-3 text-center text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+              Select the mode for this Friendly Battle:
+            </p>
+
+            <div className="mt-6 space-y-3">
+              <button
+                type="button"
+                onClick={() => setSelectedChallengeMode("personal")}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
+                  selectedChallengeMode === "personal"
+                    ? "border-sky-500 bg-sky-50/50 dark:border-sky-500/50 dark:bg-sky-500/10"
+                    : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
+                }`}
+              >
+                <span className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                  selectedChallengeMode === "personal" ? "border-sky-500" : "border-slate-300 dark:border-slate-700"
+                }`}>
+                  {selectedChallengeMode === "personal" && <span className="h-2 w-2 rounded-full bg-sky-500" />}
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Personalized Mode</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Each player answers customized words based on their own learning history.</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedChallengeMode("fair")}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
+                  selectedChallengeMode === "fair"
+                    ? "border-sky-500 bg-sky-50/50 dark:border-sky-500/50 dark:bg-sky-500/10"
+                    : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
+                }`}
+              >
+                <span className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                  selectedChallengeMode === "fair" ? "border-sky-500" : "border-slate-300 dark:border-slate-700"
+                }`}>
+                  {selectedChallengeMode === "fair" && <span className="h-2 w-2 rounded-full bg-sky-500" />}
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Fair Mode</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Both players answer the exact same words from a generic pool ({LANG_LABELS[challengeSpeak] || challengeSpeak} to {LANG_LABELS[challengeLearning] || challengeLearning}).</p>
+                </div>
+              </button>
+
+              {selectedChallengeMode === "fair" && (
+                <div className="p-4 rounded-2xl border border-slate-150 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
+                        I Speak
+                      </label>
+                      <select
+                        value={challengeSpeak}
+                        onChange={(e) => setChallengeSpeak(e.target.value as Lang)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                      >
+                        {LANGS.map((lang) => (
+                          <option key={lang} value={lang}>
+                            {LANG_FLAGS[lang]} {LANG_LABELS[lang]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
+                        Learning
+                      </label>
+                      <select
+                        value={challengeLearning}
+                        onChange={(e) => setChallengeLearning(e.target.value as Lang)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                      >
+                        {LANGS.map((lang) => (
+                          <option key={lang} value={lang}>
+                            {LANG_FLAGS[lang]} {LANG_LABELS[lang]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
+                        Difficulty Level
+                      </label>
+                      <select
+                        value={challengeLevel}
+                        onChange={(e) => setChallengeLevel(e.target.value as CefrLevel)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                      >
+                        {CEFR_LEVELS.map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            {lvl}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {challengeSpeak === challengeLearning && (
+                    <p className="text-[11px] font-semibold text-rose-500">
+                      ⚠️ Speak and learning languages must be different!
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setFriendToChallenge(null)}
+                className="w-full sm:w-auto rounded-full border border-slate-200 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmChallengeFriend}
+                disabled={selectedChallengeMode === "fair" && challengeSpeak === challengeLearning}
+                className="w-full sm:w-auto rounded-full bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-sky-500 shadow-md transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+              >
+                Challenge ⚔️
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isProfileEditorOpen ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/60 px-4 pt-24 pb-8 backdrop-blur-sm">
