@@ -23,6 +23,7 @@ import { useLanguage } from "../_lib/languageContext";
 import { useEnergyState, useResetCountdown, MAX_ENERGY, ENERGY_PRACTICE_REWARD } from "../_lib/energy";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useStartPlayingModal } from "./StartPlayingModalProvider";
+import { useIsPlaying } from "../_lib/playingMode";
 
 function getInitials(value) {
   const trimmed = (value || "").trim();
@@ -48,6 +49,7 @@ function Navbar() {
   const reset = useResetCountdown();
   const { data: session, status } = useSession();
   const { openModal } = useStartPlayingModal();
+  const isPlaying = useIsPlaying();
   const [menuOpen, setMenuOpen] = useState(false);
   const [energyPopoverOpen, setEnergyPopoverOpen] = useState(false);
   const [langModalOpen, setLangModalOpen] = useState(false);
@@ -144,9 +146,25 @@ function Navbar() {
     };
   }, []);
 
+  // A round in progress owns the screen. Both bars are fixed and both sit right
+  // where you tap during a game, so they get out of the way — the round's own
+  // pause button takes over as the way out. The top spacer goes with them, and
+  // GamePage puts an equivalent gap back so the round still clears the notch.
+  //
+  // Hidden rather than unmounted. Unmounting threw away the decoded logo, so
+  // coming out of a round re-fetched it and left a blank gap for a second on a
+  // slow connection; `hidden` keeps the bar out of layout, paint and the
+  // accessibility tree while the image it already holds stays ready.
+  // Swapped for `flex` rather than added alongside it: two display utilities on
+  // one element are settled by the order of the generated stylesheet, not by the
+  // order they are written here, so only one of them may ever be present.
+  const topBarDisplay = isPlaying ? "hidden" : "flex";
+
   return (
     <>
-      <div className="app-safe-top-gap relative flex w-full items-center justify-center px-3">
+      <div
+        className={`app-safe-top-gap relative ${topBarDisplay} w-full items-center justify-center px-3`}
+      >
         <div
           className={`app-safe-top fixed top-3 z-50 flex w-full max-w-5xl items-center justify-between rounded-xl p-2 backdrop-blur-md transition-all duration-300 sm:top-2 sm:px-3 ${
             isHomePage
@@ -551,7 +569,9 @@ function Navbar() {
 
       {/* Mobile & tablet bottom navigation */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden dark:border-slate-800 dark:bg-slate-950/90"
+        className={`fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden dark:border-slate-800 dark:bg-slate-950/90 ${
+          isPlaying ? "hidden" : ""
+        }`}
         aria-label="Primary"
       >
         <div className="mx-auto flex max-w-lg items-stretch justify-around">

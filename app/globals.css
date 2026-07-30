@@ -348,6 +348,20 @@ body {
   }
 }
 
+/* While a round is playing the navbar unmounts, and its spacer goes with it, so
+ * the round has to reserve the same room itself. Kept next to the spacer above
+ * and to the same numbers on purpose: any difference between the two shows up
+ * as the page jumping the instant a round starts or ends. */
+.app-playing-top-gap {
+  padding-top: calc(5rem + env(safe-area-inset-top));
+}
+
+@media (min-width: 1024px) {
+  .app-playing-top-gap {
+    padding-top: calc(8rem + env(safe-area-inset-top));
+  }
+}
+
 @media (display-mode: standalone), (display-mode: fullscreen) {
   /* No browser chrome to pull against, so an accidental drag must not bounce
    * the whole app up and down; individual scroll containers still scroll. */

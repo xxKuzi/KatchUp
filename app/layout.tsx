@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./_components/Navbar";
+import AppMain from "./_components/AppMain";
 import EnergySync from "./_components/EnergySync";
 import OnboardingGate from "./_components/OnboardingGate";
 import ScrollToTop from "./_components/ScrollToTop";
@@ -90,9 +91,9 @@ export default async function RootLayout({
                 <OfflineDataGuard />
                 <EnergySync />
                 <Navbar />
-                <main className="pb-20 lg:pb-0">
+                <AppMain>
                   <OnboardingGate>{children}</OnboardingGate>
-                </main>
+                </AppMain>
               </StartPlayingModalProvider>
             </LanguageProvider>
           </SessionProvider>

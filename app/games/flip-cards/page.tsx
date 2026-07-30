@@ -454,7 +454,15 @@ const FlipCardsPage = () => {
     dragX > 40 ? "known" : dragX < -40 ? "practice" : null;
 
   return (
-    <GamePage {...GATE}>
+    <GamePage
+      {...GATE}
+      playing={!finished}
+      exitHref={backHref}
+      // These same cards from the top, which `resetPiles` already is — the
+      // reload and the reshuffle next to it both fetch a *different* set, which
+      // is a next round rather than a restart.
+      onRestart={resetPiles}
+    >
       {/* Deck name + progress bar */}
       <div className="w-full max-w-xl">
         {deckId && deckSession.session && (

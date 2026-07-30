@@ -791,6 +791,8 @@ export default function LiveDuelPlayPage() {
           : "Race the bot to 10 correct answers. Only right answers move you forward, so answer quickly but get them right."
       }
       bgImage="live_duel.webp"
+      playing={status === "playing"}
+      exitHref="/games/live-duel"
     >
       <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600 dark:text-zinc-300">

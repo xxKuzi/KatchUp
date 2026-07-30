@@ -109,6 +109,8 @@ export default function ScoreRushPlayPage() {
   const answerTimeout = useRef<number | null>(null);
   const questionStartedAt = useRef<number>(Date.now());
   const runEndsAt = useRef<number>(0);
+  const [paused, setPaused] = useState(false);
+  const pausedAt = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
@@ -166,7 +168,7 @@ export default function ScoreRushPlayPage() {
   }, [countdown, energyBlocked]);
 
   useEffect(() => {
-    if (countdown !== null || status !== "playing") {
+    if (countdown !== null || status !== "playing" || paused) {
       return;
     }
 
@@ -181,7 +183,20 @@ export default function ScoreRushPlayPage() {
     }, 100);
 
     return () => window.clearInterval(tickId);
-  }, [countdown, status]);
+  }, [countdown, status, paused]);
+
+  // Pausing has to move the finish line, not just stop the display: the run's
+  // clock is a deadline, so time spent in the pause menu would otherwise be time
+  // spent running out.
+  const handlePauseChange = (next: boolean) => {
+    if (next) {
+      pausedAt.current = Date.now();
+    } else if (pausedAt.current !== null) {
+      runEndsAt.current += Date.now() - pausedAt.current;
+      pausedAt.current = null;
+    }
+    setPaused(next);
+  };
 
   useEffect(() => {
     if (status !== "finished" || scoreSubmitted.current) {
@@ -354,6 +369,9 @@ export default function ScoreRushPlayPage() {
       name="Score Rush"
       description="Answer as many translations as you can before the clock runs out."
       bgImage="score_rush.webp"
+      playing={status === "playing"}
+      exitHref="/games/score-rush"
+      onPauseChange={handlePauseChange}
     >
       <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600 dark:text-zinc-300">

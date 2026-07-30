@@ -90,6 +90,7 @@ const GuessMatchPage = () => {
     searchParams.get("mode") === "finish" ? "finish" : "practice";
 
   const [attempt, setAttempt] = useState(0);
+  const [restartToken, setRestartToken] = useState(0);
 
   // Scopes a topic round to its level's slice of the deck; undefined for a
   // custom deck, which has no level ladder and draws from the whole thing.
@@ -174,7 +175,9 @@ const GuessMatchPage = () => {
     <GuessMatchRound
       // Keyed on the pairs so a set arriving late starts a fresh board rather
       // than swapping tiles under a clock that is already counting.
-      key={`${roundSeed}:${pairs.map((pair) => pair.id).join(",")}`}
+      // `restartToken` moves it for a restart, which keeps the same pairs and so
+      // would otherwise leave the key — and the board — unchanged.
+      key={`${roundSeed}:${pairs.map((pair) => pair.id).join(",")}:r${restartToken}`}
       pairs={pairs}
       leftTiles={leftTiles}
       rightTiles={rightTiles}
@@ -195,6 +198,7 @@ const GuessMatchPage = () => {
           setAttempt((value) => value + 1);
         }
       }}
+      onRestart={() => setRestartToken((value) => value + 1)}
     />
   );
 };
@@ -210,7 +214,10 @@ interface GuessMatchRoundProps {
   language: Lang;
   isEnergyReview: boolean;
   onResult?: (deckWordId: string, correct: boolean) => void;
+  /** A fresh selection of pairs. */
   onReplay: () => void;
+  /** These same pairs, from the top. */
+  onRestart: () => void;
 }
 
 function GuessMatchRound(props: GuessMatchRoundProps) {
@@ -226,6 +233,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     isEnergyReview,
     onResult,
     onReplay,
+    onRestart,
   } = props;
   const totalPairs = pairs.length;
 
@@ -240,11 +248,12 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   const completionSaved = useRef(false);
 
   useEffect(() => {
-    if (isFinished || totalPairs === 0) {
+    if (isFinished || totalPairs === 0 || paused) {
       return;
     }
 
@@ -253,7 +262,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [isFinished, totalPairs]);
+  }, [isFinished, totalPairs, paused]);
 
   const finishGame = (finalMistakes: number) => {
     const scorePercent = Math.round(
@@ -378,7 +387,13 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     }`;
 
   return (
-    <GamePage {...GATE}>
+    <GamePage
+      {...GATE}
+      playing={!isFinished}
+      exitHref={backHref}
+      onRestart={onRestart}
+      onPauseChange={setPaused}
+    >
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-emerald-300 via-teal-300 to-cyan-300 p-5 dark:from-emerald-700 dark:via-teal-700 dark:to-cyan-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-emerald-100">
@@ -491,20 +506,23 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
                 >
                   {backLabel}
                 </Link>
-                {deckId && sessionMode !== "finish" && (
-                  <Link
-                    href={`/games/guess-match?deck=${deckId}&mode=finish`}
-                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
-                  >
-                    🏁 Finish round
-                  </Link>
-                )}
+                {/* The challenge round is offered on the deck card now, where
+                    it can be found without playing a round first. */}
                 <button
                   type="button"
                   onClick={onReplay}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                >
+                  Next round
+                </button>
+                {/* The quieter of the two: most people want the next words, not
+                    these ones over again. */}
+                <button
+                  type="button"
+                  onClick={onRestart}
                   className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  Play again
+                  Restart
                 </button>
               </div>
             </div>

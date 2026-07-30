@@ -151,6 +151,7 @@ const OneOfThreePage = () => {
   } = useTopicLevel(deckId);
 
   const [attempt, setAttempt] = useState(0);
+  const [restartToken, setRestartToken] = useState(0);
 
   // The free round is what a visitor is being taught with, so the meter never
   // stands in its way — and a signed-out visitor is not metered anyway.
@@ -308,7 +309,9 @@ const OneOfThreePage = () => {
       // The round copies its questions into state, so its key has to move when
       // the questions do: a round mounted before the words arrived would sit on
       // the empty queue it started with, which is what left the board blank.
-      key={`${roundSeed}:${questions.map((question) => question.id).join(",")}`}
+      // `restartToken` moves it for a restart, which keeps the same questions
+      // and so would otherwise leave the key — and the round — unchanged.
+      key={`${roundSeed}:${questions.map((question) => question.id).join(",")}:r${restartToken}`}
       questions={questions}
       deckId={deckId}
       sessionMode={sessionMode}
@@ -331,6 +334,7 @@ const OneOfThreePage = () => {
           setAttempt((value) => value + 1);
         }
       }}
+      onRestart={() => setRestartToken((value) => value + 1)}
     />
   );
 };
@@ -350,7 +354,10 @@ interface OneOfThreeRoundProps {
   onResult?: (deckWordId: string, correct: boolean) => void;
   /** Whether the round's answers finish the level. Deck path only. */
   checkLevelCleared?: (correctWordIds: Set<string>) => boolean;
+  /** A fresh selection of questions. */
   onReplay: () => void;
+  /** These same questions, from the top. */
+  onRestart: () => void;
 }
 
 function OneOfThreeRound(props: OneOfThreeRoundProps) {
@@ -366,6 +373,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     onResult,
     checkLevelCleared,
     onReplay,
+    onRestart,
   } = props;
 
   // A missed word comes back at the end of the round rather than being gone for
@@ -525,7 +533,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
           : `Lesson ${safeLevel}`;
 
   return (
-    <GamePage {...GATE}>
+    <GamePage {...GATE} playing={!isFinished} exitHref={backHref} onRestart={onRestart}>
       <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
         <div className="bg-linear-to-r from-amber-300 via-orange-300 to-rose-300 p-5 dark:from-amber-700 dark:via-orange-700 dark:to-rose-700">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-amber-100">
