@@ -322,8 +322,12 @@ function Navbar() {
                     </p>
                     <span className="flex items-center gap-1 text-sm font-bold text-amber-600 dark:text-amber-400">
                       <Zap className="h-4 w-4 fill-current" />
+                      {/* Same honesty as the pip above: until the server has
+                          answered, the cached number is a placeholder, so show
+                          a dash and an empty bar rather than a confident
+                          20/20. */}
                       <span className="tabular-nums">
-                        {energy}/{MAX_ENERGY}
+                        {energyReady ? energy : "–"}/{MAX_ENERGY}
                       </span>
                     </span>
                   </div>
@@ -331,7 +335,9 @@ function Navbar() {
                     <div
                       className="h-full rounded-full bg-amber-500 transition-all duration-300 dark:bg-amber-400"
                       style={{
-                        width: `${(Math.max(0, Math.min(energy, MAX_ENERGY)) / MAX_ENERGY) * 100}%`,
+                        width: energyReady
+                          ? `${(Math.max(0, Math.min(energy, MAX_ENERGY)) / MAX_ENERGY) * 100}%`
+                          : "0%",
                       }}
                     ></div>
                   </div>
@@ -347,7 +353,7 @@ function Navbar() {
                       {/* Repetition drill over your known words — always available. */}
                       <button
                         type="button"
-                        disabled={energy >= MAX_ENERGY}
+                        disabled={!energyReady || energy >= MAX_ENERGY}
                         onClick={() => {
                           setEnergyPopoverOpen(false);
                           router.push("/games/quick-guess?energyReview=1");
@@ -363,9 +369,11 @@ function Navbar() {
 
                       {/* Second way back: a rewarded video. The popover stays
                           open afterwards so the player watches the bar fill. */}
-                      <WatchAdButton disabled={energy >= MAX_ENERGY} />
+                      <WatchAdButton
+                        disabled={!energyReady || energy >= MAX_ENERGY}
+                      />
 
-                      {energy >= MAX_ENERGY && (
+                      {energyReady && energy >= MAX_ENERGY && (
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                           {t("navbar.energyFull")}
                         </p>

@@ -41,6 +41,15 @@ let snapshot: EnergySnapshot = INITIAL;
 let userId: string | null = null;
 let identityKnown = false;
 
+/**
+ * Whether the server has answered for the current player at least once.
+ *
+ * This is what `ready` means for a signed-in bar, and the distinction matters:
+ * `snapshot.value` starts at a full bar so the navbar has something to lay out,
+ * and until a fetch lands that number is a placeholder rather than a reading.
+ */
+let remoteLoaded = false;
+
 const listeners = new Set<() => void>();
 
 function publish(value: number, ready: boolean) {
@@ -113,7 +122,54 @@ async function callEnergyApi(
   }
 }
 
+/**
+ * Record a number the server just told us. Any answer counts as the first
+ * load — a spend or an ad payout is as authoritative as a read.
+ */
+function publishServerValue(energy: number) {
+  remoteLoaded = true;
+  cancelFirstLoadRetry();
+  publish(energy, true);
+}
+
 let refreshInFlight: Promise<void> | null = null;
+
+/**
+ * How long to wait before each retry of a *first* load that failed. Enough
+ * attempts to outlast a deploy swapping the server out from under an open tab,
+ * then we stop and leave it to the focus and visibility watchers below.
+ */
+const FIRST_LOAD_RETRY_DELAYS = [1000, 2000, 5000, 10000];
+
+let firstLoadAttempt = 0;
+let firstLoadTimer = 0;
+
+function cancelFirstLoadRetry() {
+  if (firstLoadTimer) {
+    window.clearTimeout(firstLoadTimer);
+    firstLoadTimer = 0;
+  }
+  firstLoadAttempt = 0;
+}
+
+/**
+ * Try again for a player whose bar has never loaded. Doing nothing here is what
+ * used to leave a full placeholder on screen, so keep asking for a while.
+ */
+function scheduleFirstLoadRetry() {
+  if (typeof window === "undefined") return;
+  if (firstLoadTimer) return;
+
+  const delay = FIRST_LOAD_RETRY_DELAYS[firstLoadAttempt];
+  if (delay === undefined) return; // out of attempts; the watchers take over
+
+  firstLoadAttempt += 1;
+  firstLoadTimer = window.setTimeout(() => {
+    firstLoadTimer = 0;
+    if (!userId || remoteLoaded) return; // signed out or answered meanwhile
+    void refreshRemote();
+  }, delay);
+}
 
 /** Pull the authoritative number for the signed-in player. */
 function refreshRemote(): Promise<void> {
@@ -123,11 +179,20 @@ function refreshRemote(): Promise<void> {
     .then((energy) => {
       if (!userId) return; // signed out while the request was in the air
       if (energy === null) {
-        // Keep whatever we had, but stop blocking on a load that won't come.
-        publish(snapshot.value, true);
+        if (remoteLoaded) {
+          // We have had a real reading today; a round trip that fails now
+          // (offline, a deploy mid-flight) doesn't invalidate it.
+          publish(snapshot.value, true);
+        } else {
+          // Nothing has ever come back, so `snapshot.value` is the full-bar
+          // placeholder — not a reading. Marking it ready here is what made a
+          // failed fetch look exactly like a fresh 20/20. Keep it unready and
+          // ask again.
+          scheduleFirstLoadRetry();
+        }
         return;
       }
-      publish(energy, true);
+      publishServerValue(energy);
     })
     .finally(() => {
       refreshInFlight = null;
@@ -159,10 +224,16 @@ export function setEnergyIdentity(nextUserId: string | null) {
 
   if (!changed) return;
 
+  cancelFirstLoadRetry();
+
   if (nextUserId) {
+    remoteLoaded = false;
     publish(snapshot.value, false);
     void refreshRemote();
   } else {
+    // A signed-out bar lives in this browser's storage, so a local read is a
+    // real reading and there is nothing to wait for.
+    remoteLoaded = true;
     publish(readLocal(), true);
   }
 }
@@ -196,7 +267,9 @@ export async function spendEnergy(amount = 1): Promise<number> {
     return value;
   }
 
-  publish(snapshot.value - amount, true);
+  // Optimistic, and deliberately not `ready`: if the bar has never loaded, this
+  // is a guess against a placeholder and must not pass for a reading.
+  publish(snapshot.value - amount, snapshot.ready);
 
   const energy = await callEnergyApi("/api/energy/spend", {
     method: "POST",
@@ -204,7 +277,7 @@ export async function spendEnergy(amount = 1): Promise<number> {
     body: JSON.stringify({ amount }),
   });
 
-  if (energy !== null) publish(energy, true);
+  if (energy !== null) publishServerValue(energy);
   return snapshot.value;
 }
 
@@ -223,7 +296,8 @@ export async function gainEnergy(amount = 1): Promise<number> {
     return value;
   }
 
-  publish(snapshot.value + amount, true);
+  // Optimistic, and not `ready` — see the note in `spendEnergy`.
+  publish(snapshot.value + amount, snapshot.ready);
 
   const energy = await callEnergyApi("/api/energy/gain", {
     method: "POST",
@@ -231,7 +305,7 @@ export async function gainEnergy(amount = 1): Promise<number> {
     body: JSON.stringify({ amount }),
   });
 
-  if (energy !== null) publish(energy, true);
+  if (energy !== null) publishServerValue(energy);
   return snapshot.value;
 }
 
@@ -309,7 +383,7 @@ export async function watchAdForEnergy(
     return "error";
   }
 
-  publish(energy, true);
+  publishServerValue(energy);
   return "rewarded";
 }
 
