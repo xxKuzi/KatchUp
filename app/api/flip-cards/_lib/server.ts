@@ -340,7 +340,7 @@ export async function tryMatch(
   // 2. Add current user/update score and set details in companion Hash Map
   await redis.zadd(queueKey, { score: Date.now(), member: user.userId });
   await redis.hset(METADATA_HASH_KEY, {
-    [user.userId]: JSON.stringify(playerObj),
+    [user.userId]: playerObj,
   });
 
   // 3. Find candidates (oldest first)
@@ -361,9 +361,9 @@ export async function tryMatch(
       continue;
     }
 
-    const rawMeta = await redis.hget<string>(METADATA_HASH_KEY, candUserId);
+    const rawMeta = await redis.hget<QueueEntry>(METADATA_HASH_KEY, candUserId);
     if (rawMeta) {
-      waiting = JSON.parse(rawMeta) as QueueEntry;
+      waiting = typeof rawMeta === "string" ? JSON.parse(rawMeta) as QueueEntry : rawMeta;
       break;
     }
   }
