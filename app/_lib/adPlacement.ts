@@ -90,9 +90,17 @@ function push(command: AdBreakConfig | AdConfig) {
   window.adsbygoogle.push(command);
 }
 
-/** Dev-only tracing. The ad path is all callbacks, so silence is unreadable. */
+/**
+ * Tracing. The ad path is all callbacks, so silence is unreadable.
+ *
+ * On in development, and on wherever TEST_MODE is — including a production
+ * deploy. Test mode means nobody is being served a real ad, so there is no
+ * player whose console this pollutes, and it is the only state in which the
+ * callback order can be watched on the live site. A production build serving
+ * real ads stays silent.
+ */
 const debug = (...args: unknown[]) => {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" || TEST_MODE) {
     console.info("[ads]", ...args);
   }
 };

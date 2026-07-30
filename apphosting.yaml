@@ -28,8 +28,11 @@ env:
     secret: auth-discord-secret
 
   # Redis
+  # Shared with local development — the same database backs both, so keys
+  # written while testing land in the live keyspace. Energy, ad tickets and
+  # idempotency keys are all scoped per user, which keeps that survivable.
   - variable: UPSTASH_REDIS_REST_URL
-    value: "https://equipped-gator-89101.upstash.io"
+    value: "https://star-burro-188578.upstash.io"
   - variable: UPSTASH_REDIS_REST_TOKEN
     secret: redis-token
 
@@ -50,3 +53,20 @@ env:
     value: "0b5660d31dd1251c80df"
   - variable: NEXT_PUBLIC_PUSHER_CLUSTER
     value: "eu"
+
+  # Google Ad Placement API (AdSense H5 Games Ads)
+  # The publisher id is public by design: it identifies the site, not the
+  # player. Both land in the client bundle at build time, so a change needs a
+  # redeploy, not a restart. Leave the client empty and the "watch an ad"
+  # button isn't offered at all.
+  #
+  # TEST is deliberately "on" and the client id is deliberately a placeholder:
+  # AdSense approval and H5 Games Ads allowlisting haven't come back yet, so
+  # there are no real ads to serve. Test mode fakes the callbacks in the
+  # browser, which means energy is paid out for a video nobody watched — an
+  # acceptable trade while the only player is us. Both values change together
+  # once the real publisher id arrives.
+  - variable: NEXT_PUBLIC_ADSENSE_CLIENT
+    value: "ca-pub-0000000000000000"
+  - variable: NEXT_PUBLIC_ADSENSE_TEST
+    value: "on"
