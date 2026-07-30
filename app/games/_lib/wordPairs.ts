@@ -2,11 +2,17 @@
 
 import type { CefrLevel, Lang } from "@/app/_lib/languages";
 
-/** Mirrors the payload of GET /api/words. */
+/**
+ * Mirrors the payload of GET /api/words — keep in step with `WordPair` in
+ * app/api/words/_lib/wordPool.ts.
+ */
 export interface WordPair {
   conceptId: string;
   prompt: string;
   answer: string;
+  /** Definite article of each side, null where there is none. */
+  promptArticle: string | null;
+  answerArticle: string | null;
   level: CefrLevel;
 }
 

@@ -26,6 +26,14 @@ export interface WordPair {
   conceptId: string;
   prompt: string;
   answer: string;
+  /**
+   * Definite articles of each side, null where the language or the word has
+   * none. Both sides are carried rather than just the learned one because
+   * `resolveDirection` moves the learned language between prompt and answer;
+   * one field would force every render site to re-derive which side it owns.
+   */
+  promptArticle: string | null;
+  answerArticle: string | null;
   /** CEFR level in the language being learned. */
   level: CefrLevel;
 }
@@ -58,11 +66,17 @@ const MAX_OVERFETCH = 300;
  *
  * Both words stay in the corpus and both can still be taught — just never in
  * the same round. Rows arrive shuffled, so which one survives is random.
+ *
+ * The article is part of the key because it is now on screen: `der See` and
+ * `die See` read as two distinct tiles, so collapsing them would drop a word
+ * the round could safely have taught.
  */
-export function dedupeByAnswer<T extends { answer: string }>(rows: T[]): T[] {
+export function dedupeByAnswer<
+  T extends { answer: string; answerArticle?: string | null },
+>(rows: T[]): T[] {
   const seen = new Set<string>();
   return rows.filter((row) => {
-    const key = row.answer.trim().toLowerCase();
+    const key = `${row.answerArticle ?? ""}|${row.answer.trim().toLowerCase()}`;
     if (seen.has(key)) {
       return false;
     }
@@ -119,6 +133,8 @@ export async function getWordPairs({
       conceptId: learnSide.conceptId,
       prompt: promptSide.text,
       answer: answerSide.text,
+      promptArticle: promptSide.article,
+      answerArticle: answerSide.article,
       level: learnSide.level,
     })
     .from(learnSide)
@@ -142,10 +158,12 @@ export async function getWordPairs({
       count: limit,
     });
     const seen = new Set(pairs.map((pair) => pair.conceptId));
-    const seenAnswers = new Set(pairs.map((pair) => pair.answer.toLowerCase()));
+    const answerKey = (pair: WordPair) =>
+      `${pair.answerArticle ?? ""}|${pair.answer.toLowerCase()}`;
+    const seenAnswers = new Set(pairs.map(answerKey));
     for (const pair of topUp) {
       if (pairs.length >= limit) break;
-      const answer = pair.answer.toLowerCase();
+      const answer = answerKey(pair);
       if (!seen.has(pair.conceptId) && !seenAnswers.has(answer)) {
         seen.add(pair.conceptId);
         seenAnswers.add(answer);

@@ -27,11 +27,15 @@ import { useDeckSession } from "../_hooks/useDeckSession";
 import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useAuthState } from "@/app/_lib/auth";
+import { withArticle, withOptionalArticle } from "@/app/_lib/articles";
+import { normalizeVocabText } from "@/app/api/decks/_lib/vocabIdentity";
 
 interface PracticeWord {
   id: string;
   native: string;
   foreign: string;
+  /** Article of `foreign`; null for words and languages that take none. */
+  article: string | null;
 }
 
 // Shared by the round and its status screens so the hero copy never changes
@@ -42,6 +46,50 @@ const GATE = {
     "Type the correct word before the timer runs out. Reach 70% to complete the lesson.",
   bgImage: "speed_spelling.webp",
 };
+
+/**
+ * Whether the round requires the article to be typed.
+ *
+ * Remembered across rounds because it is a choice about how hard the player
+ * wants the game to be, not a per-round setting. Default off: a player who has
+ * never seen an article in this app should not suddenly be marked wrong for
+ * leaving one out.
+ */
+const ARTICLE_MODE_KEY = "katchup-speed-spelling-articles-v1";
+
+/**
+ * Grades one typed answer.
+ *
+ * Compared on `normalizeVocabText`, the same rule the corpus uses to decide two
+ * words are the same one — so what counts as a match here and what counts as a
+ * match there cannot drift apart.
+ *
+ * A word with no article is graded exactly as it always was, in both modes.
+ * With the toggle off the article is *permitted* but not required: the toggle
+ * governs what is demanded, never what is accepted. With it on, a bare answer
+ * comes back as `missingArticle` rather than plain wrong — being told which
+ * half you missed is the whole reason the toggle is worth having.
+ */
+export function matchesTyped(
+  typed: string,
+  word: { foreign: string; article: string | null },
+  requireArticle: boolean,
+): { correct: boolean; missingArticle: boolean } {
+  const answer = normalizeVocabText(typed);
+  const bare = normalizeVocabText(word.foreign);
+
+  if (!word.article) {
+    return { correct: answer === bare, missingArticle: false };
+  }
+
+  const full = normalizeVocabText(`${word.article} ${word.foreign}`);
+
+  if (!requireArticle) {
+    return { correct: answer === bare || answer === full, missingArticle: false };
+  }
+
+  return { correct: answer === full, missingArticle: answer === bare };
+}
 
 const QUESTION_SECONDS = 12;
 const MAX_WORDS = 10;
@@ -115,9 +163,11 @@ const SpeedSpellingPage = () => {
     let cancelled = false;
     fetch("/api/decks/energy-practice")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { words: PracticeWord[] } | null) => {
+      .then((data: { words: Array<Omit<PracticeWord, "article"> & { article?: string | null }> } | null) => {
         if (!cancelled && data?.words) {
-          setKnownWords(data.words);
+          setKnownWords(
+            data.words.map((word) => ({ ...word, article: word.article ?? null })),
+          );
         }
       })
       .catch(() => {});
@@ -138,6 +188,7 @@ const SpeedSpellingPage = () => {
         id: word.id,
         native: word.native,
         foreign: word.foreign,
+        article: word.article,
       }));
     }
     // Energy review: use the user's known words from DB.
@@ -281,6 +332,7 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
   // A word you got wrong comes back once before the round is over: seeing the
   // answer and then never typing it is how a miss stays a miss. The queue is
   // what grows, so the words themselves stay the round's scored population.
+  const { t } = useLanguage();
   const [queue, setQueue] = useState<PracticeWord[]>(words);
   const [questionIndex, setQuestionIndex] = useState(0);
   // Scored once per word, whichever pass earns it, so a word rescued on its
@@ -289,6 +341,10 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
     () => new Set(),
   );
   const [typedValue, setTypedValue] = useState("");
+  // Read in an effect rather than a useState initializer: the initializer runs
+  // during the server render too, where there is no localStorage, and the
+  // markup it produces would not match the client's.
+  const [requireArticle, setRequireArticle] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(QUESTION_SECONDS);
   const [isLocked, setIsLocked] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -460,6 +516,29 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionIndex, isFinished, paused]);
 
+  useEffect(() => {
+    try {
+      setRequireArticle(
+        window.localStorage.getItem(ARTICLE_MODE_KEY) === "on",
+      );
+    } catch {
+      // A blocked localStorage just means the choice isn't remembered.
+    }
+  }, []);
+
+  // Dead chrome otherwise: a Czech deck, or a round of nothing but verbs, has
+  // no article to ask for and should look exactly as it did before.
+  const roundHasArticles = words.some((word) => Boolean(word.article));
+
+  const chooseArticleMode = (next: boolean) => {
+    setRequireArticle(next);
+    try {
+      window.localStorage.setItem(ARTICLE_MODE_KEY, next ? "on" : "off");
+    } catch {
+      // As above — the round still plays, the choice just isn't kept.
+    }
+  };
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTypedValue(event.target.value);
     if (banner) {
@@ -472,16 +551,25 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
       return;
     }
 
-    const isCorrect =
-      typedValue.trim().toLowerCase() ===
-      currentWord.foreign.trim().toLowerCase();
+    const { correct, missingArticle } = matchesTyped(
+      typedValue,
+      currentWord,
+      requireArticle,
+    );
 
-    if (isCorrect) {
+    if (correct) {
       advance(true);
       return;
     }
 
-    setBanner({ tone: "bad", text: "Not quite, keep trying" });
+    // Naming the missing half is what makes the toggle teach something rather
+    // than just being harder.
+    setBanner({
+      tone: "bad",
+      text: missingArticle
+        ? t("games.speedSpellingNeedArticle", "Don't forget the article")
+        : t("games.speedSpellingNotQuite", "Not quite, keep trying"),
+    });
   };
 
   const backHref = deckId
@@ -546,9 +634,34 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
                     }}
                   />
                 </div>
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  {isReplayQuestion ? "One more go" : "Type this word"}
-                </p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    {isReplayQuestion ? "One more go" : "Type this word"}
+                  </p>
+                  {/* Only when the round actually holds an article to ask for,
+                      so a Czech or verb-heavy round has no dead chrome. */}
+                  {roundHasArticles && (
+                    <div className="flex shrink-0 items-center gap-1 rounded-full border border-slate-200 p-0.5 dark:border-slate-700">
+                      {([false, true] as const).map((mode) => (
+                        <button
+                          key={String(mode)}
+                          type="button"
+                          onClick={() => chooseArticleMode(mode)}
+                          aria-pressed={requireArticle === mode}
+                          className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition ${
+                            requireArticle === mode
+                              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                              : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                          }`}
+                        >
+                          {mode
+                            ? t("games.speedSpellingArticlesOn", "With article")
+                            : t("games.speedSpellingArticlesOff", "Word only")}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <p className="mt-2 text-4xl font-black text-slate-900 dark:text-slate-100">
                   {currentWord.native}
                 </p>
@@ -560,7 +673,14 @@ function SpeedSpellingRound(props: SpeedSpellingRoundProps) {
                   aria-live="polite"
                   className="mt-3 h-8 text-2xl font-black text-sky-600 dark:text-sky-400"
                 >
-                  {revealed ? currentWord.foreign : ""}
+                  {revealed
+                    ? requireArticle
+                      ? withArticle(currentWord.foreign, currentWord.article)
+                      : withOptionalArticle(
+                          currentWord.foreign,
+                          currentWord.article,
+                        )
+                    : ""}
                 </p>
               </div>
 

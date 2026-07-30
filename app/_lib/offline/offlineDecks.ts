@@ -54,8 +54,21 @@ interface DeckSnapshot {
   generatedAt: string;
 }
 
-export interface OfflineSessionWord extends OfflineDeckWord {
+export interface OfflineSessionWord
+  extends Omit<OfflineDeckWord, "article"> {
+  article: string | null;
   stat: WordStatSummary | null;
+}
+
+/**
+ * Fills in the article a snapshot downloaded before articles existed has no
+ * field for. Stored optional so those records stay valid without a store
+ * version bump; every consumer wants a definite null.
+ */
+export function withStoredArticle<T extends OfflineDeckWord>(
+  word: T,
+): Omit<T, "article"> & { article: string | null } {
+  return { ...word, article: word.article ?? null };
 }
 
 export interface OfflineSession {
@@ -123,13 +136,16 @@ export async function downloadDeckForOffline(
     name: snapshot.deckName,
     nativeLang: snapshot.nativeLang,
     foreignLang: snapshot.foreignLang,
-    words: snapshot.words.map(({ id, conceptId, native, foreign, orderIndex }) => ({
-      id,
-      conceptId,
-      native,
-      foreign,
-      orderIndex,
-    })),
+    words: snapshot.words.map(
+      ({ id, conceptId, native, foreign, article, orderIndex }) => ({
+        id,
+        conceptId,
+        native,
+        foreign,
+        article,
+        orderIndex,
+      }),
+    ),
     stats,
     downloadedAt: now,
     lastSyncedAt: now,
@@ -198,7 +214,10 @@ export async function readOfflineSession(
 
   const entries: OfflineSessionWord[] = [...record.words]
     .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map((word) => ({ ...word, stat: record.stats[word.id] ?? null }));
+    .map((word) => ({
+      ...withStoredArticle(word),
+      stat: record.stats[word.id] ?? null,
+    }));
 
   const scoped = levelWindow(entries, options.level);
 

@@ -27,6 +27,12 @@ export interface OfflineDeckWord {
   conceptId: string | null;
   native: string;
   foreign: string;
+  /**
+   * Optional so snapshots written before articles existed stay valid and the
+   * store version does not have to move — an old record simply has no article
+   * and renders bare.
+   */
+  article?: string | null;
   orderIndex: number;
 }
 

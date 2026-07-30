@@ -16,6 +16,7 @@ import {
   TOPIC_SEEDS,
 } from "./topicSeedData";
 import { normalizeLang } from "@/app/_lib/languages";
+import { normalizeArticle } from "@/app/_lib/articles";
 import {
   buildVocabIdentity,
   normalizeVocabText,
@@ -39,6 +40,8 @@ export interface DeckWordRecord {
   conceptId: string | null;
   native: string;
   foreign: string;
+  /** Article of `foreign` in the deck's foreignLang; null where there is none. */
+  article: string | null;
   orderIndex: number;
 }
 
@@ -78,6 +81,11 @@ export interface WordInput {
   conceptId?: string | null;
   native: string;
   foreign: string;
+  /**
+   * Article of `foreign`. Absent means "the caller has no opinion", which lets
+   * `prepareWords` adopt the corpus's; an explicit null means "no article".
+   */
+  article?: string | null;
 }
 
 interface DeckAccess {
@@ -264,6 +272,7 @@ export async function prepareWords(
       conceptId: conceptTranslations.conceptId,
       lang: conceptTranslations.lang,
       text: conceptTranslations.text,
+      article: conceptTranslations.article,
     })
     .from(conceptTranslations)
     .where(
@@ -274,6 +283,9 @@ export async function prepareWords(
     );
 
   const byLang = new Map<string, Map<string, Set<string>>>();
+  // Article of each foreign-side concept, so a word that resolves to the corpus
+  // inherits its article without the user typing one.
+  const articleByConcept = new Map<string, string | null>();
   for (const row of rows) {
     const lang = byLang.get(row.lang) ?? new Map<string, Set<string>>();
     const key = normalizeVocabText(row.text);
@@ -281,6 +293,9 @@ export async function prepareWords(
     ids.add(row.conceptId);
     lang.set(key, ids);
     byLang.set(row.lang, lang);
+    if (row.lang === foreignLang) {
+      articleByConcept.set(row.conceptId, row.article ?? null);
+    }
   }
 
   const seen = new Set<string>();
@@ -300,6 +315,16 @@ export async function prepareWords(
     // different words' progress, which nothing can undo later.
     const conceptId = both.length === 1 ? both[0] : (word.conceptId ?? null);
 
+    // Caller-supplied always wins; the corpus fills the gap. This is what makes
+    // existing German decks light up on their next save with no manual work.
+    // Deliberately no `splitInlineArticle` here — rewriting `foreign`
+    // server-side would change the word's vocabKey and orphan its stat rows.
+    const article =
+      normalizeArticle(word.article, foreignLang) ??
+      (word.article === undefined && conceptId
+        ? normalizeArticle(articleByConcept.get(conceptId), foreignLang)
+        : null);
+
     const identity = buildVocabIdentity({
       conceptId,
       nativeLang,
@@ -313,7 +338,7 @@ export async function prepareWords(
       continue;
     }
     seen.add(identity.vocabKey);
-    prepared.push({ ...word, conceptId });
+    prepared.push({ ...word, conceptId, article });
   }
 
   return { words: prepared, duplicatesRemoved };
@@ -406,6 +431,7 @@ export async function seedTopicDecks(): Promise<{
           conceptId: word.conceptId,
           native: word.native,
           foreign: word.foreign,
+          article: word.article,
           orderIndex: index,
         })),
       );
@@ -426,7 +452,14 @@ async function resolveTopicWords(
   english: string[],
   nativeLang: string,
   foreignLang: string,
-): Promise<Array<{ conceptId: string; native: string; foreign: string }>> {
+): Promise<
+  Array<{
+    conceptId: string;
+    native: string;
+    foreign: string;
+    article: string | null;
+  }>
+> {
   const keys = english.map((word) => slugifyConceptKey(word));
   if (keys.length === 0) {
     return [];
@@ -441,6 +474,7 @@ async function resolveTopicWords(
       conceptKey: wordConcepts.conceptKey,
       native: nativeSide.text,
       foreign: foreignSide.text,
+      article: foreignSide.article,
     })
     .from(wordConcepts)
     .innerJoin(
@@ -467,6 +501,7 @@ async function resolveTopicWords(
       conceptId: row.conceptId,
       native: row.native,
       foreign: row.foreign,
+      article: row.article,
     }));
 }
 
@@ -540,6 +575,7 @@ export async function topUpTopicDeckWords(): Promise<{
           conceptId: word.conceptId,
           native: word.native,
           foreign: word.foreign,
+          article: word.article,
           orderIndex: nextIndex + index,
         })),
       );
@@ -594,6 +630,7 @@ export async function refreshTopicDeckWords(): Promise<{
           conceptId: word.conceptId,
           native: word.native,
           foreign: word.foreign,
+          article: word.article,
           orderIndex: index,
         })),
       );
@@ -613,6 +650,7 @@ async function loadWords(deckId: string): Promise<DeckWordRecord[]> {
       conceptId: deckWords.conceptId,
       native: deckWords.native,
       foreign: deckWords.foreign,
+      article: deckWords.article,
       orderIndex: deckWords.orderIndex,
     })
     .from(deckWords)
@@ -781,7 +819,14 @@ export async function ensureDefaultDeck(
 async function starterWords(
   nativeLang: string,
   foreignLang: string,
-): Promise<Array<{ conceptId: string; native: string; foreign: string }>> {
+): Promise<
+  Array<{
+    conceptId: string;
+    native: string;
+    foreign: string;
+    article: string | null;
+  }>
+> {
   const nativeSide = alias(conceptTranslations, "starter_native_side");
   const foreignSide = alias(conceptTranslations, "starter_foreign_side");
 
@@ -790,6 +835,7 @@ async function starterWords(
       conceptId: wordConcepts.id,
       native: nativeSide.text,
       foreign: foreignSide.text,
+      article: foreignSide.article,
     })
     .from(wordConcepts)
     .innerJoin(
@@ -917,6 +963,7 @@ export async function createCustomDeck(
         conceptId: word.conceptId ?? null,
         native: word.native,
         foreign: word.foreign,
+        article: word.article ?? null,
         orderIndex: index,
       })),
     );
@@ -1056,6 +1103,7 @@ export async function syncDeckWords(
       conceptId: deckWords.conceptId,
       native: deckWords.native,
       foreign: deckWords.foreign,
+      article: deckWords.article,
     })
     .from(deckWords)
     .where(eq(deckWords.deckId, deckId));
@@ -1067,18 +1115,21 @@ export async function syncDeckWords(
     id: string;
     orderIndex: number;
     conceptId?: string | null;
+    article?: string | null;
   }[] = [];
   const toInsert: {
     deckId: string;
     conceptId: string | null;
     native: string;
     foreign: string;
+    article: string | null;
     orderIndex: number;
   }[] = [];
 
   prepared.forEach((word, index) => {
     const native = word.native;
     const foreign = word.foreign;
+    const article = word.article ?? null;
     const match = word.id ? existingById.get(word.id) : undefined;
 
     if (match && match.native === native && match.foreign === foreign) {
@@ -1091,6 +1142,11 @@ export async function syncDeckWords(
         ...(match.conceptId !== (word.conceptId ?? null)
           ? { conceptId: word.conceptId ?? null }
           : {}),
+        // Likewise an in-place update, never a delete-and-reinsert. Assigning an
+        // article to a word you have already been practising must not read as a
+        // changed word: that branch deletes the row, and the delete cascades to
+        // every stat filed against it.
+        ...(match.article !== article ? { article } : {}),
       });
     } else {
       toInsert.push({
@@ -1098,6 +1154,7 @@ export async function syncDeckWords(
         conceptId: word.conceptId ?? null,
         native,
         foreign,
+        article,
         orderIndex: index,
       });
     }
@@ -1126,6 +1183,7 @@ export async function syncDeckWords(
         ...(update.conceptId !== undefined
           ? { conceptId: update.conceptId }
           : {}),
+        ...(update.article !== undefined ? { article: update.article } : {}),
       })
       .where(eq(deckWords.id, update.id));
   }

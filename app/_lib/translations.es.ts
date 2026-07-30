@@ -226,6 +226,12 @@ export const spanishTranslations = {
     guessMatchDesc: "Une cada palabra con su traducción",
     speedSpelling: "Escritura rápida",
     speedSpellingDesc: "Retos rápidos de traducción",
+    oneOfThreeWhichMeaning: "¿Qué corresponde a esta palabra?",
+    oneOfThreeWhichArticle: "¿Qué artículo?",
+    speedSpellingNotQuite: "Casi, sigue intentándolo",
+    speedSpellingNeedArticle: "No olvides el artículo",
+    speedSpellingArticlesOn: "Con artículo",
+    speedSpellingArticlesOff: "Solo la palabra",
   },
   topics: {
     badge: "Paquetes de aprendizaje",

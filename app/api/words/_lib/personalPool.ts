@@ -104,6 +104,8 @@ export async function getPersonalWordPairs({
     concept_id: string;
     prompt: string;
     answer: string;
+    prompt_article: string | null;
+    answer_article: string | null;
     level: CefrLevel;
     bucket: string;
   }
@@ -114,6 +116,8 @@ export async function getPersonalWordPairs({
         learn_side.concept_id,
         prompt_side.text as prompt,
         answer_side.text as answer,
+        prompt_side.article as prompt_article,
+        answer_side.article as answer_article,
         learn_side.level as level
       from concept_translations learn_side
       join concept_translations prompt_side
@@ -190,6 +194,8 @@ export async function getPersonalWordPairs({
         conceptId: row.concept_id,
         prompt: row.prompt,
         answer: row.answer,
+        promptArticle: row.prompt_article ?? null,
+        answerArticle: row.answer_article ?? null,
         level: row.level,
       }));
 

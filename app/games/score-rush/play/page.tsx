@@ -20,6 +20,7 @@ import {
   type WordPair,
 } from "../../_lib/wordPairs";
 import { useVocabProgress } from "../../_lib/useVocabProgress";
+import { withArticle } from "@/app/_lib/articles";
 
 interface RushQuestion {
   /** Unique per slot in the queue — the same word recurs as the pool recycles. */
@@ -59,7 +60,11 @@ function buildQuestionQueue(pool: WordPair[], count: number): RushQuestion[] {
     .map((pair, index) => ({
       id: `${pair.conceptId}-${index}`,
       conceptId: pair.conceptId,
-      prompt: pair.prompt,
+      // Recognition, so the prompt is the word being learned — the one side an
+      // article belongs on. The options are in the language the player already
+      // speaks and stay bare, which is also what keeps grading untouched: it
+      // compares the answer side, never this.
+      prompt: withArticle(pair.prompt, pair.promptArticle),
       options: buildOptions(pair, pool),
       correctOption: pair.answer,
     }));

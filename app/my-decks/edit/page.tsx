@@ -5,8 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../_lib/languageContext";
 import { useAuthState } from "../../_lib/auth";
-import { LANG_LABELS } from "../../_lib/languages";
+import { LANG_LABELS, normalizeLang } from "../../_lib/languages";
+import { hasArticles, splitInlineArticle } from "../../_lib/articles";
 import ShareDeckDialog from "../_components/ShareDeckDialog";
+import ArticleSelect from "../_components/ArticleSelect";
 import WordCountSelect from "../_components/WordCountSelect";
 import { leaveDeck } from "../_lib/shareClient";
 import {
@@ -20,6 +22,33 @@ import {
   updateDeck,
 } from "../../games/_lib/deckSessionClient";
 import { useOnlineStatus } from "../../_lib/offline/useOffline";
+
+/**
+ * Lifts an article a user typed into the foreign field out into its own column.
+ *
+ * Applied to a freshly loaded deck as a *draft* change: the row visibly shows
+ * "Hund" + "der" and the user can undo it or save it. Deliberately never done
+ * server-side — rewriting `foreign` changes the word's vocabKey and orphans
+ * every stat row filed under the old one.
+ */
+function reconcileInlineArticles(deck: DeckWithWords): DeckWithWords {
+  const lang = normalizeLang(deck.foreignLang);
+  if (!hasArticles(lang)) {
+    return deck;
+  }
+  return {
+    ...deck,
+    words: deck.words.map((word) => {
+      if (word.article) {
+        return word;
+      }
+      const split = splitInlineArticle(word.foreign, lang);
+      return split.article
+        ? { ...word, foreign: split.text, article: split.article }
+        : word;
+    }),
+  };
+}
 
 function tempId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -51,6 +80,7 @@ function DeckEditorPage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [newNativeWord, setNewNativeWord] = useState("");
   const [newForeignWord, setNewForeignWord] = useState("");
+  const [newArticle, setNewArticle] = useState<string | null>(null);
 
   // AI deck generation state.
   const [aiTopic, setAiTopic] = useState("");
@@ -58,6 +88,12 @@ function DeckEditorPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
   const [aiRemaining, setAiRemaining] = useState<number | null>(null);
+
+  // The foreign-language field is free text, so this is null for Czech, for a
+  // deck that has not named one, and for anything `normalizeLang` cannot
+  // resolve. Those decks get exactly today's layout.
+  const foreignLang = normalizeLang(draft?.foreignLang ?? null);
+  const showArticles = hasArticles(foreignLang);
 
   const refreshDecks = useCallback(async (): Promise<DeckMeta[]> => {
     const data = await listDecks({
@@ -105,7 +141,7 @@ function DeckEditorPage() {
     getDeck(selectedDeckId)
       .then((data) => {
         if (!cancelled) {
-          setDraft(data.deck);
+          setDraft(reconcileInlineArticles(data.deck));
           setDirty(false);
         }
       })
@@ -207,10 +243,17 @@ function DeckEditorPage() {
 
       const words = Array.isArray(data?.words)
         ? data.words
-            .map((word: { native?: string; foreign?: string }) => ({
-              native: (word.native ?? "").trim(),
-              foreign: (word.foreign ?? "").trim(),
-            }))
+            .map(
+              (word: {
+                native?: string;
+                foreign?: string;
+                article?: string | null;
+              }) => ({
+                native: (word.native ?? "").trim(),
+                foreign: (word.foreign ?? "").trim(),
+                article: word.article ?? null,
+              }),
+            )
             .filter(
               (word: { native: string; foreign: string }) =>
                 word.native && word.foreign,
@@ -246,10 +289,11 @@ function DeckEditorPage() {
           id: word.id,
           native: word.native,
           foreign: word.foreign,
+          article: word.article,
         })),
       });
       const refreshed = await getDeck(draft.id);
-      setDraft(refreshed.deck);
+      setDraft(reconcileInlineArticles(refreshed.deck));
       setDirty(false);
       await refreshDecks();
     } finally {
@@ -297,15 +341,21 @@ function DeckEditorPage() {
     if (!draft || !newNativeWord.trim() || !newForeignWord.trim()) {
       return;
     }
+    // Someone typing "der Hund" into the foreign field means the article, they
+    // just put it in the wrong box. Split it out so it is stored structurally —
+    // visibly, in the row they can still edit, never silently on the server.
+    const inline = splitInlineArticle(newForeignWord.trim(), foreignLang);
     const word: DeckWordRecord = {
       id: tempId(),
       native: newNativeWord.trim(),
-      foreign: newForeignWord.trim(),
+      foreign: newArticle ? newForeignWord.trim() : inline.text,
+      article: newArticle ?? inline.article,
       orderIndex: draft.words.length,
     };
     mutateDraft((deck) => ({ ...deck, words: [...deck.words, word] }));
     setNewNativeWord("");
     setNewForeignWord("");
+    setNewArticle(null);
   };
 
   const updateWord = (
@@ -651,7 +701,11 @@ function DeckEditorPage() {
 
               <form
                 onSubmit={handleAddWord}
-                className="grid gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800 sm:grid-cols-[1fr_1fr_auto]"
+                className={`grid gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800 ${
+                  showArticles
+                    ? "sm:grid-cols-[1fr_auto_1fr_auto]"
+                    : "sm:grid-cols-[1fr_1fr_auto]"
+                }`}
               >
                 <input
                   type="text"
@@ -659,6 +713,14 @@ function DeckEditorPage() {
                   onChange={(event) => setNewNativeWord(event.target.value)}
                   placeholder={`Native (${draft.nativeLang})`}
                   className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+                {/* Before the foreign field, so the form reads in the order the
+                    word will be rendered in: "der" then "Hund". */}
+                <ArticleSelect
+                  lang={foreignLang}
+                  value={newArticle}
+                  onChange={setNewArticle}
+                  ariaLabel="Article for the new word"
                 />
                 <input
                   type="text"
@@ -682,6 +744,11 @@ function DeckEditorPage() {
                       <th className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
                         Native
                       </th>
+                      {showArticles && (
+                        <th className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                          Article
+                        </th>
+                      )}
                       <th className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
                         Foreign
                       </th>
@@ -706,6 +773,21 @@ function DeckEditorPage() {
                             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                           />
                         </td>
+                        {showArticles && (
+                          <td className="w-28 px-4 py-3">
+                            <ArticleSelect
+                              lang={foreignLang}
+                              value={word.article}
+                              onChange={(article) =>
+                                updateWord(word.id, (currentWord) => ({
+                                  ...currentWord,
+                                  article,
+                                }))
+                              }
+                              ariaLabel={`Article for ${word.foreign}`}
+                            />
+                          </td>
+                        )}
                         <td className="px-4 py-3">
                           <input
                             type="text"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isLang } from "@/app/_lib/languages";
+import { normalizeArticle } from "@/app/_lib/articles";
 import {
   WordInput,
   createCustomDeck,
@@ -20,6 +21,12 @@ function sanitizeWords(value: unknown): WordInput[] {
       return {
         native: typeof word.native === "string" ? word.native.trim() : "",
         foreign: typeof word.foreign === "string" ? word.foreign.trim() : "",
+        // Left undefined when the client sent no opinion, so `prepareWords` may
+        // adopt the corpus's article; an explicit value is validated there
+        // again, against the deck's own foreign language.
+        ...("article" in word
+          ? { article: normalizeArticle(word.article) }
+          : {}),
       };
     })
     .filter((word) => word.native.length > 0 && word.foreign.length > 0);

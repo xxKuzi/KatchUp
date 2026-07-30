@@ -38,7 +38,11 @@ export interface SharePreview {
   ownerName: string | null;
   role: ShareRole;
   /** A short taste of the deck, so the page is not just a name and a button. */
-  sampleWords: Array<{ native: string; foreign: string }>;
+  sampleWords: Array<{
+    native: string;
+    foreign: string;
+    article: string | null;
+  }>;
 }
 
 /** Words shown on the preview page before joining. */
@@ -155,7 +159,11 @@ export async function getSharePreview(
   }
 
   const words = await db
-    .select({ native: deckWords.native, foreign: deckWords.foreign })
+    .select({
+      native: deckWords.native,
+      foreign: deckWords.foreign,
+      article: deckWords.article,
+    })
     .from(deckWords)
     .where(eq(deckWords.deckId, row.deckId));
 

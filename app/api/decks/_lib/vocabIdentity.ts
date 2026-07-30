@@ -28,7 +28,13 @@ export function normalizeVocabText(value: string): string {
     .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
 }
 
-/** Articles worth ignoring when hunting for a concept. Czech has none. */
+/**
+ * Articles worth ignoring when hunting for a concept. Czech has none.
+ *
+ * Deliberately wider than ARTICLES in app/_lib/articles.ts, and separate from
+ * it: that list is the closed set of values a word may be *stored* with, this
+ * one is everything a lookup should forgive.
+ */
 const LEADING_ARTICLES: Record<Lang, string[]> = {
   en: ["the", "a", "an", "to"],
   de: ["der", "die", "das", "ein", "eine"],

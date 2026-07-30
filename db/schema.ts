@@ -203,6 +203,14 @@ export const deckWords = pgTable(
       .references(() => decks.id, { onDelete: "cascade" }),
     native: text("native").notNull(),
     foreign: text("foreign").notNull(),
+    /**
+     * Definite article of `foreign` in the deck's foreignLang ("der", "la",
+     * "the"). Null for words that take none — verbs, adjectives, all of Czech —
+     * and for every row written before articles existed. Stored as the surface
+     * word rather than a gender code because Spanish needs number as well as
+     * gender ("las gafas"), and every consumer wants the word, not the gender.
+     */
+    article: text("article"),
     // The corpus entry this word was copied from, when there is one. A deck word
     // used to be text and nothing else, so the same word in two decks was two
     // unrelated learnings; this is what lets progress key on the word itself.
@@ -412,6 +420,10 @@ export const conceptTranslations = pgTable(
       .references(() => wordConcepts.id, { onDelete: "cascade" }),
     lang: text("lang").notNull(), // "en" | "de" | "es" | "cs"
     text: text("text").notNull(),
+    // Definite article of `text` in `lang`, or null where the language or the
+    // part of speech has none. See deckWords.article for why the surface word
+    // is stored rather than a gender code.
+    article: text("article"),
     level: text("level").notNull(), // "A1" | "A2" | "B1" | "B2" | "C1"
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },

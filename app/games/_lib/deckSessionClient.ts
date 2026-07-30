@@ -17,6 +17,8 @@ export interface SessionWord {
   id: string;
   native: string;
   foreign: string;
+  /** Article of `foreign`; null where the language or word has none. */
+  article: string | null;
   orderIndex: number;
   stat: WordStatSummary | null;
 }
@@ -44,6 +46,7 @@ export interface DeckWordRecord {
   id: string;
   native: string;
   foreign: string;
+  article: string | null;
   orderIndex: number;
 }
 
@@ -81,6 +84,7 @@ export interface WordInput {
   id?: string;
   native: string;
   foreign: string;
+  article?: string | null;
 }
 
 export interface AttemptInput {

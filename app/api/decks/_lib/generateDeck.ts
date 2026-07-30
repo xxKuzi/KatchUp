@@ -1,5 +1,6 @@
 import { redis } from "@/lib/redis";
 import { isLang, LANG_ENGLISH_NAMES, type Lang } from "@/app/_lib/languages";
+import { ARTICLES, hasArticles, normalizeArticle } from "@/app/_lib/articles";
 
 export const DAILY_DECK_LIMIT = 2;
 
@@ -9,6 +10,8 @@ export type DeckLanguage = Lang;
 export interface GeneratedWord {
   native: string;
   foreign: string;
+  /** Definite article of `foreign`, or null for a word that takes none. */
+  article: string | null;
 }
 
 export function isDeckLanguage(value: unknown): value is DeckLanguage {
@@ -101,6 +104,12 @@ export async function generateDeckWords(params: {
     `Produce exactly ${count} vocabulary pairs useful for this topic.`,
     `Each pair has "native" (the word/phrase in ${nativeName}) and "foreign" (its translation in ${foreignName}).`,
     `Use natural, commonly used words. Do not repeat pairs. Keep entries short (1-4 words).`,
+    ...(hasArticles(params.foreignLang)
+      ? [
+          `For nouns, put the definite article of the ${foreignName} word in "article" — exactly one of: ${ARTICLES[params.foreignLang].join(", ")}.`,
+          `Leave "article" as an empty string for anything that is not a noun. Do not repeat the article inside "foreign".`,
+        ]
+      : []),
   ].join(" ");
 
   const response = await fetch(
@@ -126,6 +135,7 @@ export async function generateDeckWords(params: {
                   properties: {
                     native: { type: "string" },
                     foreign: { type: "string" },
+                    article: { type: "string" },
                   },
                   required: ["native", "foreign"],
                 },
@@ -171,6 +181,9 @@ export async function generateDeckWords(params: {
         native: typeof record.native === "string" ? record.native.trim() : "",
         foreign:
           typeof record.foreign === "string" ? record.foreign.trim() : "",
+        // Validated against the deck's own language, so a model that answers
+        // "la" for a German deck is simply treated as having answered nothing.
+        article: normalizeArticle(record.article, params.foreignLang),
       };
     })
     .filter((word) => word.native && word.foreign)

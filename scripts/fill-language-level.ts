@@ -130,7 +130,12 @@ ${avoid ? `\nDo NOT include any of these, which already exist:\n${avoid}` : ""}`
       // German nouns come back as "die Sehnsucht" however the prompt is worded,
       // but the corpus stores them bare — an article here would show up in the
       // game and have to be typed to score a correct answer.
-      const word = row.word?.trim().replace(/^(der|die|das)\s+/i, "");
+      const raw = row.word?.trim() ?? "";
+      const inlineArticle =
+        lang === "de"
+          ? (raw.match(/^(der|die|das)\s+/i)?.[1].toLowerCase() ?? null)
+          : null;
+      const word = raw.replace(/^(der|die|das)\s+/i, "");
       // The spine stores verbs bare ("run", not "to run"), so an infinitive
       // marker here would slugify to a second key for a word already present.
       const english = row.english?.trim().toLowerCase().replace(/^to\s+/, "");
@@ -149,7 +154,14 @@ ${avoid ? `\nDo NOT include any of these, which already exist:\n${avoid}` : ""}`
           // The English level is a guess the translate pass never revisits, so
           // it is set to the band asked for; what matters is the pinned target.
           en: { text: english, level },
-          [lang]: { text: word, level },
+          // The stripped article is kept rather than discarded: it is the one
+          // piece of gender information the model volunteered, and `article`
+          // is where it belongs.
+          [lang]: {
+            text: word,
+            level,
+            ...(inlineArticle ? { article: inlineArticle } : {}),
+          },
         },
       });
       fresh += 1;

@@ -4,6 +4,7 @@ import { inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { conceptTranslations, wordConcepts } from "@/db/schema";
 import { isCefrLevel, isLang, type CefrLevel, type Lang } from "@/app/_lib/languages";
+import { normalizeArticle } from "@/app/_lib/articles";
 
 // Neon's HTTP driver sends each statement as one request, so keep payloads
 // modest rather than inserting all ~4000 rows in a single call.
@@ -12,7 +13,9 @@ const BATCH_SIZE = 100;
 export interface ConceptSeedRow {
   conceptKey: string;
   category: string;
-  translations: Partial<Record<Lang, { text: string; level: string }>>;
+  translations: Partial<
+    Record<Lang, { text: string; level: string; article?: string }>
+  >;
 }
 
 export interface SeedConceptsResult {
@@ -97,6 +100,7 @@ export async function seedConcepts(
     conceptId: string;
     lang: Lang;
     text: string;
+    article: string | null;
     level: CefrLevel;
   }> = [];
 
@@ -118,7 +122,15 @@ export async function seedConcepts(
         skipped.push(`${row.conceptKey}.${lang}: bad level "${translation.level}"`);
         continue;
       }
-      translationValues.push({ conceptId, lang, text, level: translation.level });
+      translationValues.push({
+        conceptId,
+        lang,
+        text,
+        // `""` is the corpus's marker for "asked, and it takes none"; the
+        // column's own way of saying that is null.
+        article: normalizeArticle(translation.article, lang),
+        level: translation.level,
+      });
     }
   }
 
@@ -131,6 +143,7 @@ export async function seedConcepts(
         target: [conceptTranslations.conceptId, conceptTranslations.lang],
         set: {
           text: sqlExcluded("text"),
+          article: sqlExcluded("article"),
           level: sqlExcluded("level"),
         },
       });

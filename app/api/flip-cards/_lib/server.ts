@@ -14,6 +14,7 @@ import {
 import { eq, and, or, isNull, asc, desc, ne, inArray, sql } from "drizzle-orm";
 import { listDecksForUser, getDeckForUser } from "@/app/api/decks/_lib/deckStore";
 import { recordConceptAttempts } from "@/app/api/decks/_lib/spacedRepetition";
+import { withArticle } from "@/app/_lib/articles";
 
 export interface MatchQuestionPayload {
   id: string;
@@ -79,7 +80,7 @@ async function getWordsFromRecentDecks(
   userId: string,
   nativeLang: Lang,
   learning: Lang,
-): Promise<{ native: string; foreign: string }[]> {
+): Promise<{ native: string; foreign: string; article: string | null }[]> {
   try {
     const userDecks = await listDecksForUser(userId);
     // Deck languages may still be stored as legacy names ("german"), so both
@@ -90,7 +91,8 @@ async function getWordsFromRecentDecks(
         normalizeLang(d.foreignLang) === learning,
     );
 
-    const pool: { native: string; foreign: string }[] = [];
+    const pool: { native: string; foreign: string; article: string | null }[] =
+      [];
     for (const d of matchingDecks.slice(0, 3)) {
       const fullDeck = await getDeckForUser(d.id, userId);
       if (fullDeck && fullDeck.words) {
@@ -98,6 +100,7 @@ async function getWordsFromRecentDecks(
           ...fullDeck.words.map((w) => ({
             native: w.native,
             foreign: w.foreign,
+            article: w.article,
           }))
         );
       }
@@ -116,7 +119,12 @@ interface MatchPair {
 
 /** Turn prompt/answer pairs into multiple-choice questions. */
 function toQuestions(
-  pairs: Array<{ conceptId?: string; prompt: string; answer: string }>,
+  pairs: Array<{
+    conceptId?: string;
+    prompt: string;
+    answer: string;
+    promptArticle?: string | null;
+  }>,
   answerPool: string[],
   idPrefix: string,
 ): MatchQuestionPayload[] {
@@ -130,7 +138,15 @@ function toQuestions(
     return {
       id: pair.conceptId ?? `${idPrefix}-${idx}-${Math.random()}`,
       conceptId: pair.conceptId ?? null,
-      prompt: pair.prompt,
+      // Baked into the stored prompt rather than given a column of its own: the
+      // row is display-only, and the article is fixed the moment the question is
+      // written. `withArticle` is guarded against doubling, so a prompt that
+      // already carries one is left alone.
+      //
+      // Duels are recognition, so this is the learned word. `correctOption` and
+      // `options` are the language the player already speaks and stay bare —
+      // which is what keeps the server's string grading below untouched.
+      prompt: withArticle(pair.prompt, pair.promptArticle),
       correctOption: pair.answer,
       options: shuffleArray([...wrong, pair.answer]),
     };
@@ -155,7 +171,12 @@ async function createPersonalMatchQuestions(
   });
 
   const seen = new Set<string>();
-  const combined: Array<{ conceptId?: string; prompt: string; answer: string }> = [];
+  const combined: Array<{
+    conceptId?: string;
+    prompt: string;
+    answer: string;
+    promptArticle?: string | null;
+  }> = [];
 
   // Deck words are stored native/foreign; in recognition the foreign side is
   // the prompt and the native side the answer.
@@ -163,7 +184,11 @@ async function createPersonalMatchQuestions(
     const key = `${word.foreign.toLowerCase()}|||${word.native.toLowerCase()}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    combined.push({ prompt: word.foreign, answer: word.native });
+    combined.push({
+      prompt: word.foreign,
+      answer: word.native,
+      promptArticle: word.article,
+    });
   }
 
   for (const pair of levelPairs) {

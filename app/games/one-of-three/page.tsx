@@ -32,22 +32,48 @@ import { useDeckSession } from "../_hooks/useDeckSession";
 import { useVocabProgress } from "../_lib/useVocabProgress";
 import { predictLevelCleared } from "../_lib/levelCompletion";
 import { useAuthState } from "@/app/_lib/auth";
+import { useLanguage } from "@/app/_lib/languageContext";
+import { siblingArticles, withArticle } from "@/app/_lib/articles";
 
 /** How many times one missed word can come back inside a single round. */
 const MAX_RETRIES_PER_WORD = 2;
 
+/**
+ * What a question is asking.
+ *
+ * "meaning" is the original: a native word, three foreign candidates. "article"
+ * shows the noun and asks which article it takes — the one thing the app taught
+ * nowhere, and the thing Czech grammar gives a learner no way to guess.
+ */
+type QuestionKind = "meaning" | "article";
+
+/**
+ * One button.
+ *
+ * An object rather than the bare string it used to be, because the label is no
+ * longer unique: an article question offers "der Hund" / "die Hund" /
+ * "das Hund", which differ by three characters and once collided as React keys.
+ * `correct` travels with the option, so grading never compares rendered text.
+ */
+interface QuestionOption {
+  key: string;
+  label: string;
+  correct: boolean;
+}
+
 interface Question {
   id: string;
   wordId: string;
+  kind: QuestionKind;
   prompt: string;
-  options: string[];
-  correctOption: string;
+  options: QuestionOption[];
 }
 
 interface SimpleWord {
   id: string;
   native: string;
   foreign: string;
+  article: string | null;
 }
 
 const GATE = {
@@ -93,28 +119,120 @@ function buildLessonWords(words: SimpleWord[], seed: string): SimpleWord[] {
   return shuffled.slice(0, Math.min(10, shuffled.length));
 }
 
+/**
+ * Keys a shuffled set of options by position.
+ *
+ * `correct` is decided before the shuffle and carried on the object, so nothing
+ * here ever grades by comparing rendered text — which is the rule that lets an
+ * article question offer three labels that differ by three characters.
+ */
+function keyOptions(options: Array<{ label: string; correct: boolean }>) {
+  return options.map((option, index) => ({
+    ...option,
+    key: `${index}:${option.label}`,
+  }));
+}
+
+/** At most this many of a round's questions ask for an article. */
+const MAX_ARTICLE_QUESTIONS = 3;
+
+/**
+ * Which words this round asks the article of.
+ *
+ * Deliberately not an independent roll per word: a round of ten German nouns
+ * would then come out nearly all article questions, and the game would stop
+ * being the one it says it is. Scoring every eligible word and taking the top
+ * few keeps the proportion fixed, and keeps it seeded — a replayed round is
+ * byte-identical to the first.
+ *
+ * Never the first word: opening on the odd task reads as the wrong game.
+ */
+function pickArticleWordIds(
+  lessonWords: SimpleWord[],
+  seed: string,
+): Set<string> {
+  const quota = Math.min(
+    MAX_ARTICLE_QUESTIONS,
+    Math.floor(lessonWords.length / 3),
+  );
+  if (quota <= 0) {
+    return new Set();
+  }
+
+  const eligible = lessonWords
+    .map((word, index) => ({ word, index }))
+    .filter(
+      ({ word, index }) =>
+        index > 0 && Boolean(word.article) && siblingArticles(word.article!).length > 0,
+    )
+    .map(({ word }) => ({
+      id: word.id,
+      score: createSeededRandom(`${seed}:${word.id}:kind`)(),
+    }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, quota);
+
+  return new Set(eligible.map((entry) => entry.id));
+}
+
 function buildQuestions(
   lessonWords: SimpleWord[],
-  distractorPool: string[],
+  distractorPool: Array<{ text: string; article: string | null }>,
   seed: string,
 ): Question[] {
+  const articleWordIds = pickArticleWordIds(lessonWords, seed);
+
   return lessonWords.map((word, index) => {
+    const id = `${word.id}-${index}`;
+
+    if (articleWordIds.has(word.id)) {
+      // The same noun three times over, differing only in the article. Options
+      // stay capped at three, so Spanish "los" offers el/la alongside it.
+      const candidates = [word.article!, ...siblingArticles(word.article!)].slice(
+        0,
+        3,
+      );
+      return {
+        id,
+        wordId: word.id,
+        kind: "article" as const,
+        prompt: word.foreign,
+        options: keyOptions(
+          shuffleWithSeed(
+            candidates.map((article) => ({
+              label: withArticle(word.foreign, article),
+              correct: article === word.article,
+            })),
+            `${seed}:${word.id}:articleOptions`,
+          ),
+        ),
+      };
+    }
+
     const distractors = shuffleWithSeed(
-      distractorPool.filter((candidate) => candidate !== word.foreign),
+      // Compared on the bare text: an article on the answer must not turn a
+      // word that is genuinely the same into a usable distractor.
+      distractorPool.filter((candidate) => candidate.text !== word.foreign),
       `${seed}:${word.id}:distractors`,
     ).slice(0, 2);
 
-    const options = shuffleWithSeed(
-      [word.foreign, ...distractors],
-      `${seed}:${word.id}:options`,
-    );
-
     return {
-      id: `${word.id}-${index}`,
+      id,
       wordId: word.id,
+      kind: "meaning" as const,
       prompt: word.native,
-      options,
-      correctOption: word.foreign,
+      options: keyOptions(
+        shuffleWithSeed(
+          [
+            { label: withArticle(word.foreign, word.article), correct: true },
+            ...distractors.map((candidate) => ({
+              label: withArticle(candidate.text, candidate.article),
+              correct: false,
+            })),
+          ],
+          `${seed}:${word.id}:options`,
+        ),
+      ),
     };
   });
 }
@@ -193,18 +311,25 @@ const OneOfThreePage = () => {
         id: word.id,
         native: word.native,
         foreign: word.foreign,
+        article: word.article,
       }));
       // Distractors from the deck itself, padded with the base DB if tiny.
       const pool = [
-        ...deckWords.map((word) => word.foreign),
-        ...allWords.map((word) => word.foreign),
+        ...deckWords.map((word) => ({
+          text: word.foreign,
+          article: word.article,
+        })),
+        ...allWords.map((word) => ({
+          text: word.foreign,
+          article: word.article,
+        })),
       ];
       return buildQuestions(deckWords, pool, roundSeed);
     }
     const lessonWords = buildLessonWords(allWords, roundSeed);
     return buildQuestions(
       lessonWords,
-      allWords.map((word) => word.foreign),
+      allWords.map((word) => ({ text: word.foreign, article: word.article })),
       roundSeed,
     );
   }, [deckId, deckSession.session, allWords, roundSeed]);
@@ -379,10 +504,11 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
   // A missed word comes back at the end of the round rather than being gone for
   // good: a level is finished by getting every word right once, so a round that
   // ended on words you never got right would leave it stuck one short.
+  const { t } = useLanguage();
   const [queue, setQueue] = useState<Question[]>(questions);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [correctIds, setCorrectIds] = useState<Set<string>>(new Set());
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [lessonPassed, setLessonPassed] = useState(false);
   const [levelCleared, setLevelCleared] = useState(false);
@@ -449,7 +575,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     }
 
     setQuestionIndex(nextIndex);
-    setSelectedOption(null);
+    setSelectedKey(null);
   };
 
   /** Puts a missed question back at the end of the round, up to twice. */
@@ -474,13 +600,13 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
     return next;
   };
 
-  const handleAnswer = (option: string) => {
-    if (!currentQuestion || selectedOption) {
+  const handleAnswer = (option: QuestionOption) => {
+    if (!currentQuestion || selectedKey) {
       return;
     }
 
-    const isCorrect = option === currentQuestion.correctOption;
-    setSelectedOption(option);
+    const isCorrect = option.correct;
+    setSelectedKey(option.key);
 
     if (!firstAttempts.current.has(currentQuestion.wordId)) {
       firstAttempts.current.set(currentQuestion.wordId, isCorrect);
@@ -558,7 +684,12 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
             <>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center dark:border-slate-800 dark:bg-slate-900/70">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  What matches this word?
+                  {currentQuestion.kind === "article"
+                    ? t("games.oneOfThreeWhichArticle", "Which article?")
+                    : t(
+                        "games.oneOfThreeWhichMeaning",
+                        "What matches this word?",
+                      )}
                 </p>
                 <p className="mt-2 text-4xl font-black text-slate-900 dark:text-slate-100">
                   {currentQuestion.prompt}
@@ -567,18 +698,17 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
 
               <div className="mt-5 grid gap-3">
                 {currentQuestion.options.map((option) => {
-                  const isCorrect = option === currentQuestion.correctOption;
-                  const isSelected = option === selectedOption;
-                  const showCorrect = Boolean(selectedOption) && isCorrect;
+                  const isSelected = option.key === selectedKey;
+                  const showCorrect = Boolean(selectedKey) && option.correct;
                   const showWrong =
-                    Boolean(selectedOption) && isSelected && !isCorrect;
+                    Boolean(selectedKey) && isSelected && !option.correct;
 
                   return (
                     <button
-                      key={option}
+                      key={option.key}
                       type="button"
                       onClick={() => handleAnswer(option)}
-                      disabled={Boolean(selectedOption)}
+                      disabled={Boolean(selectedKey)}
                       className={`w-full rounded-2xl border px-4 py-3 text-left text-base font-semibold transition ${
                         showCorrect
                           ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
@@ -587,7 +717,7 @@ function OneOfThreeRound(props: OneOfThreeRoundProps) {
                             : "border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                       }`}
                     >
-                      {option}
+                      {option.label}
                     </button>
                   );
                 })}

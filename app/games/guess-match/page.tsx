@@ -23,11 +23,17 @@ import { useTopicLevel } from "../_hooks/useTopicLevel";
 import { useVocabProgress } from "../_lib/useVocabProgress";
 import { useAuthState } from "@/app/_lib/auth";
 import DeckRoundProgress from "../_components/DeckRoundProgress";
+import { withArticle } from "@/app/_lib/articles";
 
 interface PracticeWord {
   id: string;
   native: string;
   foreign: string;
+  /**
+   * Shown on the foreign tile, never graded — matching is `leftId === rightId`,
+   * so what a tile reads has no bearing on whether a pairing is right.
+   */
+  article: string | null;
 }
 
 const MAX_PAIRS = 6;
@@ -114,6 +120,7 @@ const GuessMatchPage = () => {
         id: word.id,
         native: word.native,
         foreign: word.foreign,
+        article: word.article,
       }));
       return words.slice(0, MAX_PAIRS);
     }
@@ -376,7 +383,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
     isSelected: boolean,
     isWrong: boolean,
   ) =>
-    `w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition sm:text-base ${
+    `w-full break-words rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition sm:text-base ${
       isMatched
         ? "border-emerald-300 bg-emerald-50 text-emerald-700 opacity-60 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
         : isWrong
@@ -455,7 +462,7 @@ function GuessMatchRound(props: GuessMatchRoundProps) {
                         wrongPair?.right === word.id,
                       )}
                     >
-                      {word.foreign}
+                      {withArticle(word.foreign, word.article)}
                     </button>
                   ))}
                 </div>

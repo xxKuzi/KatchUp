@@ -17,6 +17,7 @@ import { useAccountKey } from "@/app/_lib/offline/useOffline";
 import {
   getOfflineDeckRecord,
   readOfflineProgress,
+  withStoredArticle,
 } from "@/app/_lib/offline/offlineDecks";
 
 const GAME_MODE_IDS = [
@@ -251,7 +252,7 @@ function PracticeModeSelector() {
             foreignLang: local.foreignLang,
             wordCount: local.words.length,
             knownCount: 0,
-            words: local.words,
+            words: local.words.map(withStoredArticle),
           });
           setStatus("ready");
 

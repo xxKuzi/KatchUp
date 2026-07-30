@@ -1,6 +1,11 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { userDeckWordClears, userWordStats } from "@/db/schema";
+import {
+  conceptTranslations,
+  deckWords,
+  userDeckWordClears,
+  userWordStats,
+} from "@/db/schema";
 import { normalizeLang, type Lang } from "@/app/_lib/languages";
 import { getTranslationsForConcepts } from "@/app/api/words/_lib/wordPool";
 import {
@@ -107,6 +112,7 @@ function presentWord(entry: EnrichedWord): SessionWord {
     conceptId: entry.word.conceptId,
     native: entry.word.native,
     foreign: entry.word.foreign,
+    article: entry.word.article,
     orderIndex: entry.word.orderIndex,
     stat: entry.stat,
   };
@@ -726,6 +732,13 @@ export async function selectKnownWordsForReview(
       vocabKey: userWordStats.vocabKey,
       native: userWordStats.nativeText,
       foreign: userWordStats.foreignText,
+      // A stat row stores the two texts and nothing else, so the article has to
+      // come back from somewhere. The deck word is preferred where the stat
+      // still points at one — it is the only place a user's own choice on a
+      // free-text word is recorded — and the corpus is the fallback that covers
+      // rows whose deck word has since been deleted.
+      deckArticle: deckWords.article,
+      conceptArticle: conceptTranslations.article,
       box: userWordStats.box,
       streak: userWordStats.streak,
       timesSeen: userWordStats.timesSeen,
@@ -735,6 +748,17 @@ export async function selectKnownWordsForReview(
       lastSeenAt: userWordStats.lastSeenAt,
     })
     .from(userWordStats)
+    .leftJoin(deckWords, eq(deckWords.id, userWordStats.deckWordId))
+    // Scoped by language as well as by concept: a concept carries a translation
+    // per language, and an unscoped join would hand a German round the Spanish
+    // article — or three rows where one was wanted.
+    .leftJoin(
+      conceptTranslations,
+      and(
+        eq(conceptTranslations.conceptId, userWordStats.conceptId),
+        eq(conceptTranslations.lang, userWordStats.foreignLang),
+      ),
+    )
     .where(and(eq(userWordStats.userId, userId), eq(userWordStats.known, true)));
 
   const seen = new Set<string>();
@@ -758,6 +782,7 @@ export async function selectKnownWordsForReview(
       conceptId: row.conceptId,
       native: row.native,
       foreign: row.foreign,
+      article: row.deckArticle ?? row.conceptArticle ?? null,
       orderIndex: 0,
       stat: {
         box: row.box,

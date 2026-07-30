@@ -38,6 +38,14 @@ export const OUTPUT_PATH = path.resolve(process.cwd(), "data", "concepts.json");
 export interface Translation {
   text: string;
   level: CefrLevel;
+  /**
+   * Definite article of `text` in this language.
+   *
+   * Three states, and the difference matters to `fill-articles`: absent means
+   * nobody has decided yet, `""` means asked and answered "not a noun", and a
+   * word means the article. `""` becomes null at seed time.
+   */
+  article?: string;
 }
 
 export interface Concept {

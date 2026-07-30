@@ -12,6 +12,7 @@ import {
   type Lang,
 } from "@/app/_lib/languages";
 import { buildOptions, fetchWordPairs } from "../../_lib/wordPairs";
+import { withArticle } from "@/app/_lib/articles";
 import { useVocabProgress } from "../../_lib/useVocabProgress";
 import { pusherClient } from "@/lib/realtime/pusher-client";
 import { spendEnergy } from "@/app/_lib/energy";
@@ -330,7 +331,10 @@ export default function LiveDuelPlayPage() {
               .slice(0, BOT_QUESTION_COUNT)
               .map((pair) => ({
                 id: pair.conceptId,
-                prompt: pair.prompt,
+                // Display only. The options are in the language the player
+                // already speaks, and grading compares those — so the article
+                // shown here can never reach it.
+                prompt: withArticle(pair.prompt, pair.promptArticle),
                 options: buildOptions(pair, pairs),
                 correctOption: pair.answer,
               })),

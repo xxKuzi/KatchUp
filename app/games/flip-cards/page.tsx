@@ -12,6 +12,7 @@ import PackKeyCelebration, {
 } from "../_components/PackKeyCelebration";
 import { predictLevelCleared } from "../_lib/levelCompletion";
 import { LANG_LABELS, type CefrLevel } from "@/app/_lib/languages";
+import { withArticle } from "@/app/_lib/articles";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevelState } from "@/app/_lib/useLearningLevel";
 import { fetchWordPairs } from "../_lib/wordPairs";
@@ -51,6 +52,12 @@ interface CardWord {
   id: string;
   native: string;
   foreign: string;
+  /**
+   * Shown on the answer face, never graded. This game is self-graded — you
+   * swipe on whether you knew it — so the article is here to be learned
+   * alongside the word rather than tested.
+   */
+  article: string | null;
 }
 
 function shuffleArray<T>(items: T[]): T[] {
@@ -173,6 +180,7 @@ const FlipCardsPage = () => {
               id: pair.conceptId,
               native: pair.prompt,
               foreign: pair.answer,
+              article: pair.answerArticle,
             })),
           ).slice(0, DECK_SIZE),
         );
@@ -209,6 +217,7 @@ const FlipCardsPage = () => {
         id: word.id,
         native: word.native,
         foreign: word.foreign,
+        article: word.article,
       })),
     );
     setMetWordIds(new Set());
@@ -559,7 +568,7 @@ const FlipCardsPage = () => {
                     {deckId ? "Translation" : LANG_LABELS[learning]}
                   </span>
                   <p className="text-4xl font-black text-blue-700 dark:text-blue-300">
-                    {currentCard.foreign}
+                    {withArticle(currentCard.foreign, currentCard.article)}
                   </p>
                   <span className="absolute bottom-4 inline-flex items-center gap-1.5 text-xs text-blue-400">
                     <RefreshCw className="h-3.5 w-3.5" />

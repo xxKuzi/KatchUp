@@ -254,6 +254,14 @@ export const translations: Record<Language, Translations> = {
       guessMatchDesc: "Match native words with their translations",
       speedSpelling: "Speed Spelling",
       speedSpellingDesc: "Rapid-fire translation challenges",
+      // Round copy. Flat keys because "games.oneOfThree" is already the game's
+      // name — nesting under it would shadow a string with an object.
+      oneOfThreeWhichMeaning: "What matches this word?",
+      oneOfThreeWhichArticle: "Which article?",
+      speedSpellingNotQuite: "Not quite, keep trying",
+      speedSpellingNeedArticle: "Don't forget the article",
+      speedSpellingArticlesOn: "With article",
+      speedSpellingArticlesOff: "Word only",
     },
     topics: {
       badge: "Learning Packs",
@@ -549,6 +557,12 @@ export const translations: Record<Language, Translations> = {
       guessMatchDesc: "Spárujte nativní slova s jejich překlady",
       speedSpelling: "Rychlé psaní",
       speedSpellingDesc: "Rychlé výzvy překladu",
+      oneOfThreeWhichMeaning: "Co odpovídá tomuto slovu?",
+      oneOfThreeWhichArticle: "Který člen?",
+      speedSpellingNotQuite: "Skoro, zkoušejte dál",
+      speedSpellingNeedArticle: "Nezapomeňte na člen",
+      speedSpellingArticlesOn: "Se členem",
+      speedSpellingArticlesOff: "Jen slovo",
     },
     topics: {
       badge: "Balicky uceni",
@@ -851,6 +865,12 @@ export const translations: Record<Language, Translations> = {
         "Ordnen Sie Wörter in Muttersprache ihren Übersetzungen zu",
       speedSpelling: "Schnelles Buchstabieren",
       speedSpellingDesc: "Schnelle Übersetzungsherausforderungen",
+      oneOfThreeWhichMeaning: "Was passt zu diesem Wort?",
+      oneOfThreeWhichArticle: "Welcher Artikel?",
+      speedSpellingNotQuite: "Fast, versuchen Sie es weiter",
+      speedSpellingNeedArticle: "Vergessen Sie den Artikel nicht",
+      speedSpellingArticlesOn: "Mit Artikel",
+      speedSpellingArticlesOff: "Nur das Wort",
     },
     topics: {
       badge: "Lernpakete",

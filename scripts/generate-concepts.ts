@@ -22,6 +22,7 @@ import {
   type CefrLevel,
   type Lang,
 } from "../app/_lib/languages";
+import { ARTICLES, hasArticles, normalizeArticle } from "../app/_lib/articles";
 
 // Dependency-free .env loader (same approach as scripts/generate-words.ts).
 function loadEnv() {
@@ -69,6 +70,11 @@ const MAX_ATTEMPTS = 3;
 
 /** Languages to translate into — everything except the English spine itself. */
 const TARGET_LANGS = LANGS.filter((lang): lang is Exclude<Lang, "en"> => lang !== "en");
+
+/** The articles each target language allows, spelled out for the prompt. */
+const ARTICLE_HINT = TARGET_LANGS.filter(hasArticles)
+  .map((lang) => `${LANG_ENGLISH_NAMES[lang]}: ${ARTICLES[lang].join(", ")}`)
+  .join("; ");
 
 const OUTPUT_PATH = path.resolve(process.cwd(), "data", "concepts.json");
 
@@ -266,7 +272,13 @@ function buildTranslateSchema(): GeminiSchema {
   for (const lang of TARGET_LANGS) {
     perLang[lang] = {
       type: "object",
-      properties: { text: { type: "string" }, level: { type: "string" } },
+      properties: {
+        text: { type: "string" },
+        level: { type: "string" },
+        // Optional in the schema on purpose: Czech has no articles, and asking
+        // for a required field there would only invite an invented one.
+        ...(hasArticles(lang) ? { article: { type: "string" } } : {}),
+      },
       required: ["text", "level"],
     };
   }
@@ -283,7 +295,7 @@ function buildTranslateSchema(): GeminiSchema {
 
 type TranslateRow = { english: string } & Record<
   string,
-  { text: string; level: string } | string
+  { text: string; level: string; article?: string } | string
 >;
 
 async function translateBatch(batch: Concept[]): Promise<void> {
@@ -298,6 +310,7 @@ async function translateBatch(batch: Concept[]): Promise<void> {
 For every translation give:
 - "text": the translation in correct dictionary form, with proper casing and accents (German nouns capitalised e.g. "Brot"; Spanish accents kept e.g. "habitación"; Czech diacritics kept e.g. "město").
 - "level": the CEFR level (one of A1, A2, B1, B2, C1) at which a learner OF THAT LANGUAGE would typically meet this word.
+- "article": for languages that have them, the definite article of "text" — ${ARTICLE_HINT}. Use "" for anything that is not a noun, and never repeat the article inside "text" ("Brot", not "das Brot").
 
 Important: judge the level per language, not per concept. Take cognates into account — a word nearly identical to its English form is much easier and deserves a lower level than an unrelated word for the same concept. For example "hospital" is trivial in Spanish but harder in German ("Krankenhaus") and Czech ("nemocnice").
 
@@ -328,9 +341,13 @@ ${words}`;
       const text = value.text?.trim();
       if (!text) continue;
 
+      const article = normalizeArticle(value.article, lang);
       concept.translations[lang] = {
         text,
         level: coerceLevel(value.level, concept.translations.en!.level),
+        // "" rather than omitted: the key's presence is what tells
+        // `fill-articles` this word has already been decided.
+        ...(hasArticles(lang) ? { article: article ?? "" } : {}),
       };
       filled += 1;
     }

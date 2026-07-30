@@ -11,6 +11,11 @@ export interface FallbackWord {
   id: string;
   native: string;
   foreign: string;
+  /**
+   * Article of `foreign`. These games all fetch in the recall direction, so the
+   * learned language is always the answer side.
+   */
+  article: string | null;
 }
 
 export interface FallbackWords {
@@ -90,6 +95,7 @@ export function useFallbackWords(count = 60): FallbackWords {
             id: pair.conceptId,
             native: pair.prompt,
             foreign: pair.answer,
+            article: pair.answerArticle,
           })),
         });
       })
