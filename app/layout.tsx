@@ -83,7 +83,7 @@ export default async function RootLayout({
           enableSystem
           enableColorScheme
         >
-          <SessionProvider session={session}>
+          <SessionProvider session={session} refetchOnWindowFocus={false}>
             <LanguageProvider>
               <SiteTranslationBridge />
               <StartPlayingModalProvider>
