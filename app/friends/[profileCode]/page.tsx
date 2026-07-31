@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { useAuthState } from "@/app/_lib/auth";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import OpenInAppBanner from "../_components/OpenInAppBanner";
 import {
   buildProfileUrl,
   friendFromPublicProfile,
@@ -232,7 +233,8 @@ export default function FriendProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_28%),linear-gradient(to_bottom,rgba(248,250,252,1),rgba(241,245,249,1))] px-4 py-8 text-foreground sm:px-6">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_28%),linear-gradient(to_bottom,rgba(248,250,252,1),rgba(241,245,249,1))] px-4 py-8 text-foreground dark:bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.08),transparent_32%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.08),transparent_28%),linear-gradient(to_bottom,rgba(11,12,16,1),rgba(8,9,12,1))] sm:px-6">
+      <OpenInAppBanner />
       <div className="mx-auto w-full max-w-5xl rounded-4xl border border-white/80 bg-white/90 p-6 shadow-2xl shadow-slate-950/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85 dark:shadow-black/30 sm:p-8">
         <div
           className={`rounded-4xl bg-linear-to-r ${avatarBackground.accent} p-1`}
