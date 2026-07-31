@@ -8,7 +8,7 @@
  * update at all.
  */
 
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v7";
 const SHELL_CACHE = `katchup-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `katchup-assets-${CACHE_VERSION}`;
 const PAGE_CACHE = `katchup-pages-${CACHE_VERSION}`;

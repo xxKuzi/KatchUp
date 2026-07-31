@@ -1063,8 +1063,8 @@ export default function FriendsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <p className="rounded-full bg-amber-100/70 px-3 py-1 text-sm font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
-                            {formatXp(friend.xp)} XP
+                          <p className="rounded-full bg-emerald-100/70 px-3 py-1 text-sm font-bold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                            {formatXp(friend.learnedWords ?? 0)} words learned
                           </p>
                           <button
                             onClick={() => router.push(`/friends/${friend.profileCode}`)}
