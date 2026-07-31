@@ -14,6 +14,7 @@ import {
   Zap,
   Newspaper,
   Heart,
+  MessageSquare,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -506,6 +507,16 @@ function Navbar() {
                     </div>
 
                     <ThemeToggle />
+
+                    <a
+                      href="https://forms.gle/8vLUPfbE5REEe9xd7"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-900/20 bg-slate-900/80 px-4 py-3.5 text-sm font-bold text-slate-200 transition hover:bg-slate-900 dark:border-slate-100/10 dark:bg-slate-100/10 dark:text-slate-400 dark:hover:bg-slate-100/20"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      {t("navbar.sendFeedback", "Send Feedback")}
+                    </a>
 
                     <div className="space-y-2">
                       <button
