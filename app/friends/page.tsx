@@ -5,7 +5,9 @@ import { useAuthState } from "@/app/_lib/auth";
 import { useLanguage } from "@/app/_lib/languageContext";
 import { useLearningLevelState } from "@/app/_lib/useLearningLevel";
 import QRCode from "qrcode";
-import { Pencil, UserMinus, Swords } from "lucide-react";
+import { Pencil, UserMinus, Swords, ScanLine, Eye } from "lucide-react";
+import ScanQrDialog from "./_components/ScanQrDialog";
+import CardMenu, { MenuItem } from "@/app/_components/CardMenu";
 import { useLanguagePair } from "@/app/_lib/useLanguagePair";
 import { useLearningLevel } from "@/app/_lib/useLearningLevel";
 import { LANGS, LANG_LABELS, LANG_FLAGS, CEFR_LEVELS, type Lang, type CefrLevel } from "@/app/_lib/languages";
@@ -19,6 +21,7 @@ import {
   clearDuoPartner,
   createEmptyFriendTaskState,
   createInitialFriendsLeagueState,
+  formatShortDate,
   formatTimestamp,
   getWeeklyTimeRemaining,
   getWeekKey,
@@ -127,6 +130,7 @@ export default function FriendsPage() {
   const [profileUrl, setProfileUrl] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [isScanQrOpen, setIsScanQrOpen] = useState(false);
   const [friendToRemove, setFriendToRemove] = useState<FriendPlayer | null>(null);
   const [friendToChallenge, setFriendToChallenge] = useState<FriendPlayer | null>(null);
   const [selectedChallengeMode, setSelectedChallengeMode] = useState<"fair" | "personal">("personal");
@@ -867,6 +871,14 @@ export default function FriendsPage() {
                 <p className="mt-2 break-all text-[0.7rem] text-slate-400 dark:text-slate-500">
                   {profileUrl}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setIsScanQrOpen(true)}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-sky-200 bg-sky-50/60 px-4 py-2 text-sm font-semibold text-sky-600 transition hover:bg-sky-100/70 dark:border-white/10 dark:bg-white/[0.03] dark:text-sky-300 dark:hover:bg-white/5"
+                >
+                  <ScanLine className="h-4 w-4" />
+                  Scan a friend&apos;s QR code
+                </button>
               </div>
             </section>
 
@@ -1034,43 +1046,91 @@ export default function FriendsPage() {
                   </div>
                 ) : (
                   state.friends.map((friend, index) => (
-                    <div
-                      key={friend.id}
-                      className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/60 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-black text-sky-500 dark:bg-sky-500/10 dark:text-sky-300">
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className="font-semibold text-slate-800 dark:text-slate-100">
-                            {friend.name}
+                    <div key={friend.id}>
+                      {/* Desktop */}
+                      <div className="hidden items-center justify-between rounded-2xl border border-slate-100 bg-white/60 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03] sm:flex">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-black text-sky-500 dark:bg-sky-500/10 dark:text-sky-300">
+                            {index + 1}
+                          </span>
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">
+                              {friend.name}
+                            </p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">
+                              Joined {formatTimestamp(friend.joinedAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="rounded-full bg-amber-100/70 px-3 py-1 text-sm font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
+                            {formatXp(friend.xp)} XP
                           </p>
-                          <p className="text-xs text-slate-400 dark:text-slate-500">
-                            Joined {formatTimestamp(friend.joinedAt)}
-                          </p>
+                          <button
+                            onClick={() => router.push(`/friends/${friend.profileCode}`)}
+                            className="p-1.5 text-slate-400 hover:text-sky-500 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-500/10 transition duration-150"
+                            title="See profile"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleChallengeFriend(friend)}
+                            className="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition duration-150"
+                            title="Challenge to Duel"
+                          >
+                            <Swords className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveFriend(friend)}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition duration-150"
+                            title="Remove Friend"
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <p className="rounded-full bg-amber-100/70 px-3 py-1 text-sm font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
-                          {formatXp(friend.xp)} XP
-                        </p>
-                        <button
-                          onClick={() => handleChallengeFriend(friend)}
-                          className="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition duration-150"
-                          title="Challenge to Duel"
-                        >
-                          <Swords className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleRemoveFriend(friend)}
-                          className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10 transition duration-150"
-                          title="Remove Friend"
-                        >
-                          <UserMinus className="h-4 w-4" />
-                        </button>
-                      </div>
 
+                      {/* Mobile */}
+                      <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/60 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03] sm:hidden">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-black text-sky-500 dark:bg-sky-500/10 dark:text-sky-300">
+                            {index + 1}
+                          </span>
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">
+                              {friend.name}
+                            </p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">
+                              {formatShortDate(friend.joinedAt)}
+                            </p>
+                            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-300">
+                              {friend.learnedWords ?? 0} words learned
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleChallengeFriend(friend)}
+                            className="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition duration-150"
+                            title="Challenge to Duel"
+                          >
+                            <Swords className="h-4 w-4" />
+                          </button>
+                          <CardMenu label="Friend actions">
+                            <MenuItem
+                              onClick={() => router.push(`/friends/${friend.profileCode}`)}
+                            >
+                              See profile
+                            </MenuItem>
+                            <MenuItem
+                              tone="danger"
+                              onClick={() => handleRemoveFriend(friend)}
+                            >
+                              Remove friend
+                            </MenuItem>
+                          </CardMenu>
+                        </div>
+                      </div>
                     </div>
                   ))
                 )}
@@ -1221,6 +1281,10 @@ export default function FriendsPage() {
           </div>
         </div>
       </FeatureGate>
+
+      {isScanQrOpen ? (
+        <ScanQrDialog onClose={() => setIsScanQrOpen(false)} />
+      ) : null}
 
       {friendToRemove ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">

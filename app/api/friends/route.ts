@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { userProfiles, friendships, duoQuests, userWordStats } from "@/db/schema";
-import { eq, sql, and, or } from "drizzle-orm";
+import { eq, sql, and, or, inArray } from "drizzle-orm";
 import { auth } from "@/auth";
 import type { FriendPlayer } from "@/app/friends/_lib/league";
 import { pusher } from "@/lib/realtime/pusher-server";
@@ -84,6 +84,7 @@ export async function GET(request: NextRequest) {
       nickname: userProfiles.nickname,
       currentXp: userProfiles.currentXp,
       joinedAt: friendships.createdAt,
+      friendUserId: friendships.friendUserId,
     })
     .from(friendships)
     .innerJoin(userProfiles, eq(friendships.friendUserId, userProfiles.userId))
@@ -96,17 +97,34 @@ export async function GET(request: NextRequest) {
       nickname: userProfiles.nickname,
       currentXp: userProfiles.currentXp,
       joinedAt: friendships.createdAt,
+      friendUserId: friendships.userId,
     })
     .from(friendships)
     .innerJoin(userProfiles, eq(friendships.userId, userProfiles.userId))
     .where(and(eq(friendships.friendUserId, currentUserId), eq(friendships.status, "accepted")));
 
-  const friendsList: FriendPlayer[] = [...sentAccepted, ...receivedAccepted].map((row) => ({
+  const acceptedFriends = [...sentAccepted, ...receivedAccepted];
+  const friendUserIds = acceptedFriends.map((row) => row.friendUserId);
+
+  // Real learned-word counts (userWordStats rows only ever come from actual
+  // practice — the level test only raises userLevelProgress.wordFloor, so
+  // known=true here already excludes anything "given" at placement).
+  const learnedCounts = friendUserIds.length
+    ? await db
+        .select({ userId: userWordStats.userId, count: sql<number>`count(*)::int` })
+        .from(userWordStats)
+        .where(and(inArray(userWordStats.userId, friendUserIds), eq(userWordStats.known, true)))
+        .groupBy(userWordStats.userId)
+    : [];
+  const learnedWordsByUserId = new Map(learnedCounts.map((row) => [row.userId, row.count]));
+
+  const friendsList: FriendPlayer[] = acceptedFriends.map((row) => ({
     id: row.profileCode,
     name: row.nickname,
     xp: row.currentXp,
     joinedAt: row.joinedAt.toISOString(),
     profileCode: row.profileCode,
+    learnedWords: learnedWordsByUserId.get(row.friendUserId) ?? 0,
   }));
 
   // 3. Fetch incoming pending requests (friendUserId = currentUserId)
