@@ -12,7 +12,7 @@ live duels, and vocabulary decks you can write yourself or have generated for yo
 ## What it is
 
 Most vocab apps are a deck of flashcards with a streak counter bolted on. KatchUp
-is built around playing against someone else instead — six game modes built on
+is mainly built around playing against someone else instead — six game modes built on
 the same word data, a live duel against a real opponent or a bot, and a
 leaderboard that tracks it. Decks are yours to shape: add words by hand, import
 a JSON list, or hand a topic to Gemini and get a deck back. It runs installed as
@@ -102,6 +102,4 @@ doesn't show up).
 
 ## License
 
-All rights reserved. This repository is shared for portfolio and viewing
-purposes only — no permission is granted to use, copy, modify, or distribute
-it. See [LICENSE](./LICENSE).
+This repository is shared for portfolio and viewing purposes only. You may clone and run the project locally solely to evaluate it. However, no permission is granted to use the code in other projects, modify it, or distribute it. See [LICENSE](./LICENSE).
