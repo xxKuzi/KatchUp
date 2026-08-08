@@ -44,13 +44,13 @@ env:
   - variable: PUSHER_APP_ID
     value: "2141801"
   - variable: PUSHER_KEY
-    value: "0b5660d31dd1251c80df"
+    value: "034e8cfe39f236780f4b"
   - variable: PUSHER_SECRET
     secret: pusher-secret
   - variable: PUSHER_CLUSTER
     value: "eu"
   - variable: NEXT_PUBLIC_PUSHER_KEY
-    value: "0b5660d31dd1251c80df"
+    value: "034e8cfe39f236780f4b"
   - variable: NEXT_PUBLIC_PUSHER_CLUSTER
     value: "eu"
 
