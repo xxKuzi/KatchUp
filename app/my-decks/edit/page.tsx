@@ -10,6 +10,8 @@ import { hasArticles, splitInlineArticle } from "../../_lib/articles";
 import ShareDeckDialog from "../_components/ShareDeckDialog";
 import ArticleSelect from "../_components/ArticleSelect";
 import WordCountSelect from "../_components/WordCountSelect";
+import ImportWordsPanel from "../_components/ImportWordsPanel";
+import type { ImportedWord } from "../_lib/importWords";
 import { leaveDeck } from "../_lib/shareClient";
 import {
   DeckMeta,
@@ -81,6 +83,7 @@ function DeckEditorPage() {
   const [newNativeWord, setNewNativeWord] = useState("");
   const [newForeignWord, setNewForeignWord] = useState("");
   const [newArticle, setNewArticle] = useState<string | null>(null);
+  const [importNotice, setImportNotice] = useState("");
 
   // AI deck generation state.
   const [aiTopic, setAiTopic] = useState("");
@@ -133,6 +136,7 @@ function DeckEditorPage() {
 
   // Load the selected deck's words into an editable draft.
   useEffect(() => {
+    setImportNotice("");
     if (!selectedDeckId) {
       setDraft(null);
       return;
@@ -295,6 +299,8 @@ function DeckEditorPage() {
       const refreshed = await getDeck(draft.id);
       setDraft(reconcileInlineArticles(refreshed.deck));
       setDirty(false);
+      // The notice asks for a save; it has had one.
+      setImportNotice("");
       await refreshDecks();
     } finally {
       setSaving(false);
@@ -356,6 +362,33 @@ function DeckEditorPage() {
     setNewNativeWord("");
     setNewForeignWord("");
     setNewArticle(null);
+  };
+
+  /**
+   * Appends imported rows to the draft.
+   *
+   * Draft-only on purpose: the rows land looking exactly like hand-typed ones,
+   * editable and deletable, and reloading without saving throws the whole import
+   * away. `mutateDraft` marks the deck dirty, so the Save button and the
+   * unsaved-changes guard already cover it.
+   */
+  const handleImportWords = (incoming: ImportedWord[]) => {
+    mutateDraft((deck) => ({
+      ...deck,
+      words: [
+        ...deck.words,
+        ...incoming.map((word, index) => ({
+          id: tempId(),
+          native: word.native,
+          foreign: word.foreign,
+          article: word.article,
+          orderIndex: deck.words.length + index,
+        })),
+      ],
+    }));
+    setImportNotice(
+      `Added ${incoming.length} ${incoming.length === 1 ? "word" : "words"} — press Save changes to keep them.`,
+    );
   };
 
   const updateWord = (
@@ -698,6 +731,21 @@ function DeckEditorPage() {
                   </label>
                 </div>
               </div>
+
+              <ImportWordsPanel
+                nativeLang={normalizeLang(draft.nativeLang)}
+                foreignLang={foreignLang}
+                nativeLabel={draft.nativeLang}
+                foreignLabel={draft.foreignLang}
+                disabled={draft.role === "viewer"}
+                onImport={handleImportWords}
+              />
+
+              {importNotice && (
+                <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  {importNotice}
+                </p>
+              )}
 
               <form
                 onSubmit={handleAddWord}
