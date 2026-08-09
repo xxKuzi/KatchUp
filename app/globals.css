@@ -251,6 +251,51 @@ body {
 .animate-mesh {
   background-size: 200% 200%;
   animation: mesh-gradient 12s ease infinite;
+  /* Off screen the banner still repaints every frame for nobody. A ScrollTrigger
+     adds .mesh-running while it is in view; paused costs nothing. */
+  animation-play-state: paused;
+}
+
+.animate-mesh.mesh-running {
+  animation-play-state: running;
+}
+
+/* Landing feature cards ------------------------------------------------- */
+
+.spotlight-card {
+  --spot-x: 50%;
+  --spot-y: 50%;
+}
+
+.spotlight-card.is-spotlit {
+  box-shadow:
+    0 20px 40px -15px var(--spot-color),
+    0 0 30px 1px var(--spot-color);
+}
+
+.spotlight-overlay {
+  opacity: 0;
+  background: radial-gradient(
+    350px circle at var(--spot-x) var(--spot-y),
+    var(--spot-color),
+    transparent 80%
+  );
+}
+
+.spotlight-card.is-spotlit .spotlight-overlay {
+  opacity: 1;
+}
+
+/* Until the deal animation finishes the cards are mid-transform: hint the
+   compositor and hold the backdrop blur back, since blurring the page behind a
+   moving, scaling card is re-done on every single frame. */
+.feature-card {
+  will-change: transform;
+}
+
+.feature-container.cards-dealt .feature-card {
+  will-change: auto;
+  backdrop-filter: blur(12px);
 }
 
 @keyframes sparkline-draw {

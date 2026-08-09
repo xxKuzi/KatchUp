@@ -306,6 +306,13 @@ function ProgressChartWidget({ isCardHovered }: { isCardHovered?: boolean }) {
   );
 }
 
+/**
+ * The spotlight follows the cursor, so it cannot live in React state: a
+ * setState per mousemove re-renders the card (and its parent) dozens of times
+ * a second, which is exactly when the deal animation and scrolling need the
+ * main thread. The position is written straight to the node as CSS variables
+ * and the hover look is a class, so a moving cursor costs one style write.
+ */
 function SpotlightCard({
   children,
   className = "",
@@ -317,29 +324,29 @@ function SpotlightCard({
   accent?: "cyan" | "blue" | "amber";
   onHoverChange?: (hovered: boolean) => void;
 }) {
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  // Measured once per hover instead of once per move — getBoundingClientRect
+  // forces a layout read, and the card does not move while the cursor is on it.
+  const rect = useRef<DOMRect | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setCoords({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+    const el = cardRef.current;
+    const box = rect.current;
+    if (!el || !box) return;
+    el.style.setProperty("--spot-x", `${e.clientX - box.left}px`);
+    el.style.setProperty("--spot-y", `${e.clientY - box.top}px`);
   };
 
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (onHoverChange) {
-      onHoverChange(true);
-    }
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    rect.current = e.currentTarget.getBoundingClientRect();
+    cardRef.current?.classList.add("is-spotlit");
+    onHoverChange?.(true);
   };
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
-    if (onHoverChange) {
-      onHoverChange(false);
-    }
+    rect.current = null;
+    cardRef.current?.classList.remove("is-spotlit");
+    onHoverChange?.(false);
   };
 
   const glowColor = {
@@ -350,24 +357,15 @@ function SpotlightCard({
 
   return (
     <div
+      ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs transition duration-300 dark:border-slate-800/80 dark:bg-slate-900/60 backdrop-blur-md hover:-translate-y-1 hover:border-slate-350 dark:hover:border-slate-700 ${className}`}
-      style={{
-        boxShadow: isHovered
-          ? `0 20px 40px -15px ${glowColor}, 0 0 30px 1px ${glowColor}`
-          : undefined,
-      }}
+      className={`spotlight-card relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs transition duration-300 dark:border-slate-800/80 dark:bg-slate-900/60 hover:-translate-y-1 hover:border-slate-350 dark:hover:border-slate-700 ${className}`}
+      style={{ "--spot-color": glowColor } as React.CSSProperties}
     >
       {/* Spotlight overlay */}
-      <div
-        className="pointer-events-none absolute -inset-px transition-opacity duration-300"
-        style={{
-          opacity: isHovered ? 1 : 0,
-          background: `radial-gradient(350px circle at ${coords.x}px ${coords.y}px, ${glowColor}, transparent 80%)`,
-        }}
-      />
+      <div className="spotlight-overlay pointer-events-none absolute -inset-px transition-opacity duration-300" />
       {/* Grid overlay */}
       <div className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05] bg-[linear-gradient(to_right,rgba(255,255,255,0.4)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.4)_1px,transparent_1px)] bg-[size:16px_16px]" />
 
@@ -467,12 +465,30 @@ export default function Home() {
         "-=0.6",
       );
 
+      // The CTA's mesh gradient animates background-position, which repaints the
+      // whole banner every frame and cannot be composited. Off screen that is
+      // pure waste competing with the scroll, so it only runs while visible.
+      ScrollTrigger.create({
+        trigger: ".cta-card",
+        start: "top bottom",
+        end: "bottom top",
+        toggleClass: { targets: ".cta-card", className: "mesh-running" },
+      });
+
       // 2. Feature cards dealing timeline (flows like cards dealt from a wrist deck)
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: ".feature-container",
           start: "top 88%",
           once: true,
+        },
+        // The cards carry a backdrop blur and a compositing hint only until they
+        // have landed: re-blurring what is behind a card on every frame of a
+        // transform is the expensive part, and it is invisible mid-flight.
+        onComplete: () => {
+          container.current
+            ?.querySelector(".feature-container")
+            ?.classList.add("cards-dealt");
         },
       });
 
@@ -738,7 +754,7 @@ export default function Home() {
             <div
               key={bubble.text + i}
               style={{ top: bubble.top, left: bubble.left }}
-              className={`absolute flex items-center gap-1.5 rounded-full border border-slate-500/10 bg-slate-900/10 px-3 py-1 backdrop-blur-xs ${bubble.color} ${bubble.size} ${bubble.animation}`}
+              className={`absolute flex items-center gap-1.5 rounded-full border border-slate-500/10 bg-slate-900/10 px-3 py-1 ${bubble.color} ${bubble.size} ${bubble.animation}`}
             >
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-60" />
               {bubble.text}
