@@ -5,6 +5,19 @@
 # keep the clock from ever getting close.
 #
 # The REST URL is already public in apphosting.yaml; only the token is a secret.
+#
+# This workflow is the BACKUP, not the primary. GitHub disables scheduled
+# workflows in a public repository after 60 days with no repository activity,
+# and this repo is not committed to often, so it cannot be relied on alone. The
+# primary is an Upstash QStash schedule on the same weekly cron, which has no
+# inactivity rule:
+#
+#   scheduleId  scd_72uBf4wmQ1N7sycv6wubvRm1pr6q
+#   destination https://star-burro-188578.upstash.io/set/keepalive/qstash
+#
+# Both write the same key, so whichever runs is enough. The value tells them
+# apart: QStash writes the literal "qstash", this workflow writes a unix
+# timestamp.
 name: Upstash keepalive
 
 on:
