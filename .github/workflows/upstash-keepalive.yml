@@ -1,0 +1,30 @@
+# Upstash archives free-tier databases after a minimum of 30 days of inactivity:
+# the instance is removed and the data has to be restored into a new database,
+# which means new credentials in apphosting.yaml and a redeploy. KatchUp is quiet
+# enough that a 30-day gap is realistic, so this writes a single key every week to
+# keep the clock from ever getting close.
+#
+# The REST URL is already public in apphosting.yaml; only the token is a secret.
+name: Upstash keepalive
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC — exactly 7 days apart.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      # A write rather than a read, so it counts as activity under any
+      # reasonable definition. The key is overwritten each run, so it never
+      # grows. -f fails the job on a non-2xx, which turns a dead token or an
+      # already-archived database into a red run instead of silence.
+      - name: Write keepalive key
+        env:
+          URL: https://star-burro-188578.upstash.io
+          TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: |
+          curl -sSf -X POST "$URL/set/keepalive/$(date +%s)" \
+            -H "Authorization: Bearer $TOKEN"
